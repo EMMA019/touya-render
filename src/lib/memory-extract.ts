@@ -35,7 +35,8 @@ const NAME_INTRO =
 
 const CALL_ME = /([一-龯ぁ-んァ-ンA-Za-z]{1,12})って呼んで/;
 
-const PREFERENCE = /(.{1,16}?)が(好き|嫌い|苦手)/;
+/** Value cannot include punctuation, so 「直って呼んで。」 is not part of the like. */
+const PREFERENCE = /([一-龯ぁ-んァ-ンA-Za-z0-9ー・]{1,16})が(好き|嫌い|苦手)/;
 
 const AGREEMENT = /(?:約束|これからは)[は：:\s　]*(.{1,30})/;
 
@@ -116,6 +117,8 @@ function looksLikePreferenceValue(value: string): boolean {
   if (/^(それ|これ|あれ|どれ|何か|なに)$/.test(text)) return false;
   if (looksLikeQuestion(text) || INTERROGATIVE.test(text)) return false;
   if (/[？?]/.test(text)) return false;
+  if (/呼んで|名前|約束/.test(text)) return false;
+  if (/[。．.！!]/.test(text)) return false;
   return true;
 }
 

@@ -69,7 +69,7 @@ NEXT_PUBLIC_API_BASE=https://touya.onrender.com npm run build:cf
 npx --yes serve out -l 8788
 ```
 
-`http://127.0.0.1:8788` を開き、DevTools の Network で `/api/*` が `touya.onrender.com` に向かうことを確認します。`build:cf` は API ルートを一時的に退避してから `output: "export"` します。終わると `src/app/api` は元に戻ります。Render の `npm run build` は触りません。
+`http://127.0.0.1:8788` を開き、DevTools の Network で `/api/*` が `touya.onrender.com` に向かうことを確認します。`build:cf` は API ルートを一時的に退避してから `output: "export"` します。成果物は `out/`、中間は `.next-cf/` なので Render 用の `.next` は上書きしません。終わると `src/app/api` は元に戻ります。
 
 ## Workers + Assets（任意）
 

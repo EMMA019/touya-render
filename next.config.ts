@@ -8,6 +8,7 @@ const nextConfig: NextConfig = {
   ...(cloudflarePages
     ? {
         output: "export" as const,
+        distDir: ".next-cf",
         trailingSlash: true,
         images: { unoptimized: true },
       }

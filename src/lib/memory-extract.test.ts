@@ -77,6 +77,13 @@ test("preference stores the value, not the question phrasing", () => {
   assert.deepEqual(extractMemoryFacts("ワインはどんなのが好き？"), []);
 });
 
+test("name plus preference keeps each value, not the whole utterance", () => {
+  const facts = extractMemoryFacts("直って呼んで。深い熟成のワインが好き");
+  assert.ok(facts.some((f) => f.kind === "profile" && f.text === "呼び名は直"));
+  assert.ok(facts.some((f) => f.kind === "preference" && f.text === "深い熟成のワインが好き"));
+  assert.equal(facts.length, 2);
+});
+
 test("save-cue still drops a question payload", () => {
   assert.deepEqual(extractMemoryFacts("覚えて、僕はどんなワイン好き？"), []);
   assert.deepEqual(extractMemoryFacts("覚えて、どんなワインが好き"), []);
