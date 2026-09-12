@@ -418,7 +418,10 @@ export function ChatView({
       />
 
       <div className="relative z-10 flex h-full flex-col">
-        <header className="flex items-center gap-1.5 px-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
+        <p className="pt-[max(0.45rem,env(safe-area-inset-top))] text-center text-[11px] tracking-[0.22em] text-white/50">
+          燈夜
+        </p>
+        <header className="flex items-center gap-1.5 px-3 pt-1">
           <div className="flex shrink-0 items-center gap-1.5">
             <Link
               href="/"

@@ -4,26 +4,27 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Home,
-  MessageSquare,
-  Sparkles,
   ShieldCheck,
-  Compass,
   Crown,
   Moon,
   Info,
+  type LucideIcon,
 } from "lucide-react";
 import { ModeToggle } from "@/components/mode-toggle";
+import { useChatMode } from "@/components/mode-provider";
 import { APP_NAME, APP_NAME_KANA } from "@/lib/config";
 import { cn } from "@/lib/utils";
 
 export function PortalSidebar({ className }: { className?: string }) {
   const pathname = usePathname();
+  const { chatMode } = useChatMode();
 
-  const NAV_ITEMS = [
+  const NAV_ITEMS: { href: string; label: string; icon: LucideIcon; active: boolean }[] = [
     { href: "/", label: "ホーム", icon: Home, active: pathname === "/" },
-    { href: "/diag", label: "相手診断", icon: Compass, active: pathname === "/diag" },
     { href: "/premium", label: "広告なし", icon: Crown, active: pathname === "/premium" },
-    { href: "/policy", label: "約束と安心", icon: ShieldCheck, active: pathname === "/policy" },
+    ...(chatMode === "nsfw"
+      ? []
+      : [{ href: "/policy", label: "約束", icon: ShieldCheck, active: pathname === "/policy" }]),
   ];
 
   return (

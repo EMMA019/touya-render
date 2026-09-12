@@ -9,7 +9,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import jp.touya.app.ui.CharacterListScreen
 import jp.touya.app.ui.ChatScreen
-import jp.touya.app.ui.DiagnosisScreen
 import jp.touya.app.ui.PolicyScreen
 import jp.touya.app.ui.PremiumScreen
 import jp.touya.app.ui.theme.TouyaTheme
@@ -35,7 +34,6 @@ class MainActivity : ComponentActivity() {
                         opening = state.opening,
                         onSelect = viewModel::open,
                         onRetry = viewModel::refresh,
-                        onDiagnosis = viewModel::showDiagnosis,
                         onPremium = viewModel::showPremium,
                         onPolicy = viewModel::showPolicy,
                         mode = state.mode,
@@ -77,13 +75,8 @@ class MainActivity : ComponentActivity() {
                         onConfirmAge = viewModel::confirmAgeAndEnableNsfw,
                         onCloseAgeGate = viewModel::closeAgeGate,
                     )
-                    Screen.Diagnosis -> DiagnosisScreen(
-                        characters = state.characters,
-                        onSelect = viewModel::open,
-                        onBack = viewModel::showList,
-                    )
                     Screen.Premium -> PremiumScreen(onBack = viewModel::showList)
-                    Screen.Policy -> PolicyScreen(onBack = viewModel::showList)
+                    Screen.Policy -> PolicyScreen(onBack = viewModel::showList, nsfw = state.mode.nsfw)
                 }
             }
         }
