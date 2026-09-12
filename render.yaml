@@ -4,7 +4,7 @@
     runtime: node
     plan: free
     region: oregon
-    buildCommand: npm ci && npm run build
+    buildCommand: npm install && npm run build
     startCommand: npx next start --port $PORT --hostname 0.0.0.0
     healthCheckPath: /api/health
     envVars:
@@ -16,14 +16,5 @@
         value: deepseek-chat
       - key: NEXT_PUBLIC_ADS_ENABLED
         value: "1"
-  - type: cron
-    name: touya-keepalive
-    runtime: node
-    plan: free
-    region: oregon
-    schedule: "*/10 * * * *"
-    buildCommand: echo ok
-    startCommand: node -e "fetch(process.env.TOUYA_URL+'/api/health').then(r=>r.text()).then(console.log)"
-    envVars:
-      - key: TOUYA_URL
-        sync: false
+      - key: NODE_VERSION
+        value: "20"
