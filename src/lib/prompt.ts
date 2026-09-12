@@ -1,21 +1,28 @@
 import { BOND_LINE, type BondStage } from "./bond-types";
 import { bibleContract } from "./character-bible";
 import type { Character, CharacterSituation } from "./character-types";
+import { DEFAULT_CHAT_MODE, type ChatMode } from "./chat-mode";
 import type { Clock } from "./clock";
 import {
+  COMPANION_ADULT_OK,
   COMPANION_NOT_NSFW,
   KNOW_DONT_VOLUNTEER,
   MEMORY_USE,
   ONE_REPLY_CONTRACT,
   PRODUCT_BEHAVIOR,
+  PRODUCT_BEHAVIOR_NSFW,
+  productBehaviorFor,
 } from "./product-behavior";
 
 export {
+  COMPANION_ADULT_OK,
   COMPANION_NOT_NSFW,
   KNOW_DONT_VOLUNTEER,
   MEMORY_USE,
   ONE_REPLY_CONTRACT,
   PRODUCT_BEHAVIOR,
+  PRODUCT_BEHAVIOR_NSFW,
+  productBehaviorFor,
 };
 
 export type PromptContext = {
@@ -24,7 +31,17 @@ export type PromptContext = {
   streak?: number;
   remaining?: number;
   affinityName?: string;
+  chatMode?: ChatMode;
 };
+
+const SITUATION_SHARED =
+  "名札や看板の文字は言わない。聞かれない限り場面を並べない。返事は今の場面の空気に自然に合わせる。検索や別モデルは呼ばない。";
+
+const SITUATION_SFW_CLOTHED = "仮装でも服は着たまま。下着や肌の強調はしない。";
+
+function situationConstraint(mode: ChatMode): string {
+  return mode === "nsfw" ? SITUATION_SHARED : `${SITUATION_SFW_CLOTHED}${SITUATION_SHARED}`;
+}
 
 const PART_JA: Record<string, string> = {
   dawn: "明け方",
@@ -51,10 +68,11 @@ export function buildSystemPrompt(
   stage?: BondStage,
   context: PromptContext = {}
 ): string {
+  const chatMode = context.chatMode ?? DEFAULT_CHAT_MODE;
   const parts = [
     character.systemPrompt,
     bibleContract(character.bible, character.situations),
-    PRODUCT_BEHAVIOR,
+    productBehaviorFor(chatMode),
   ];
   if (stage) {
     parts.push(`【距離】${BOND_LINE[stage]}`);
@@ -88,7 +106,7 @@ export function buildSystemPrompt(
       [
         `【今の場面】${situation.title}。${situation.setting}。`,
         look ? `見た目: ${look}` : "",
-        "仮装でも服は着たまま。下着や肌の強調はしない。名札や看板の文字は言わない。聞かれない限り場面を並べない。返事は今の場面の空気に自然に合わせる。検索や別モデルは呼ばない。",
+        situationConstraint(chatMode),
       ]
         .filter(Boolean)
         .join(""),

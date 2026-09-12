@@ -196,6 +196,7 @@ export async function POST(request: Request) {
     streak: bond.streak,
     remaining: quota.remaining,
     affinityName: affinity.name,
+    chatMode,
   });
 
   const stream = new ReadableStream({
