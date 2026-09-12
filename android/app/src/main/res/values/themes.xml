@@ -1,0 +1,7 @@
+<resources>
+    <style name="Theme.Touya" parent="android:Theme.Material.NoActionBar">
+        <item name="android:statusBarColor">#120C18</item>
+        <item name="android:navigationBarColor">#0D0A12</item>
+        <item name="android:windowBackground">#120C18</item>
+    </style>
+</resources>
