@@ -2,6 +2,7 @@ import {
   NSFW_AGE_REQUIRED,
   NSFW_AGE_REQUIRED_JA,
 } from "@/lib/chat-mode";
+import { jsonApi } from "@/lib/cors";
 import { publicModeFromProfile } from "@/lib/mode-public";
 import { getVisitorId } from "@/lib/visitor";
 import {
@@ -11,12 +12,13 @@ import {
 } from "@/lib/visitor-profile";
 
 export const dynamic = "force-dynamic";
+export { OPTIONS } from "@/lib/cors";
 
 /** Current mode + age confirmation. Never returns the install id. */
-export async function GET() {
+export async function GET(request: Request) {
   const visitorId = await getVisitorId();
   const profile = visitorId ? await readVisitorProfile(visitorId) : emptyVisitorProfile();
-  return Response.json(publicModeFromProfile(profile));
+  return jsonApi(request, publicModeFromProfile(profile));
 }
 
 /**
@@ -27,14 +29,14 @@ export async function GET() {
 export async function POST(request: Request) {
   const visitorId = await getVisitorId();
   if (!visitorId) {
-    return Response.json({ error: "visitor_missing" }, { status: 400 });
+    return jsonApi(request, { error: "visitor_missing" }, { status: 400 });
   }
 
   let body: { confirmAge?: boolean; chatMode?: unknown };
   try {
     body = (await request.json()) as typeof body;
   } catch {
-    return Response.json({ error: "invalid_json" }, { status: 400 });
+    return jsonApi(request, { error: "invalid_json" }, { status: 400 });
   }
 
   const result = await applyVisitorModeChange(visitorId, {
@@ -43,10 +45,11 @@ export async function POST(request: Request) {
   });
   const mode = publicModeFromProfile(result.profile);
   if (!result.ok) {
-    return Response.json(
+    return jsonApi(
+      request,
       { error: NSFW_AGE_REQUIRED, message: NSFW_AGE_REQUIRED_JA, ...mode, mode },
       { status: 403 }
     );
   }
-  return Response.json(mode);
+  return jsonApi(request, mode);
 }

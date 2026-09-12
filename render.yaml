@@ -26,3 +26,7 @@
         value: "20"
       - key: NPM_CONFIG_PRODUCTION
         value: "false"
+      # Optional. Comma-separated extra browser origins (custom CF domain).
+      # *.pages.dev / *.workers.dev / localhost are already allowed in code.
+      - key: TOUYA_CORS_ORIGINS
+        sync: false

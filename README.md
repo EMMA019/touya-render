@@ -85,9 +85,10 @@ npm start
 | `USAGE_STORE_PATH` | 日次カウントの JSON。既定 `./data/usage.json`。 |
 | `SEXUAL_STORE_PATH` | 性的エスカレーションの JSON。既定 `./data/sexual-strikes.json`。 |
 | `MEMORY_STORE_PATH` | キャラ別の短い記憶。既定 `./data/memory.json`。 |
+| `NEXT_PUBLIC_API_BASE` | ブラウザが叩く API の Origin。空なら同一オリジン。Cloudflare Pages のビルドでは `https://touya.onrender.com`。 |
+| `TOUYA_CORS_ORIGINS` | Render API が許可する追加 Origin（カンマ区切り）。`*.pages.dev` はコード側で許可済み。 |
 | `NEXT_PUBLIC_ADS_ENABLED` | `0` で広告枠を隠す。NSFW モード中はこれと別に広告を止める。 |
 | `VISITOR_STORE_PATH` | 年齢確認と `chatMode`。既定 `./data/visitors.json`。 |
-| `NEXT_PUBLIC_API_BASE` | ブラウザが叩く API の Origin。空なら同一オリジン。Cloudflare 静的書き出しでは `https://touya.onrender.com`。 |
 | `TOUYA_ANON_PEPPER` | インストール UUID をハッシュする胡椒。変えるとカウンタが別物になります。 |
 | `ENTITLEMENTS_STORE_PATH` | Play Billing スタブの JSON。既定 `./data/entitlements.json`。 |
 | `BOND_STORE_PATH` | 会った日数。既定 `./data/bonds.json`。 |
@@ -282,7 +283,18 @@ Kairi の「記憶 + 接地」は参考にしますが、検索引用スタッ�
 - ニュース速報を「知っている」とは言わせません。
 - 生成後に短いソフトフィルタ（`src/lib/character-bible.ts`）をかけます。矛盾や数値の漏えいは直すだけで、DeepSeek を呼び直しません。
 
-## デプロイ（安く）
+## デプロイ
+
+本番の分け方: **API は Render、公開 Web は Cloudflare Pages。** Android は Render を直接叩きます。
+
+| 面 | ホスト | コマンド / 出力 |
+| --- | --- | --- |
+| API +（予備の）同一オリジン UI | [Render](https://touya.onrender.com) | `npm install --include=dev && npm run build` → `npx next start --port $PORT --hostname 0.0.0.0` |
+| 公開ブラウザ UI | Cloudflare Pages | `npm install --include=dev && npm run build:cf` → 出力 `out/` |
+
+Cloudflare ダッシュボードに入れる値（`NEXT_PUBLIC_API_BASE=https://touya.onrender.com` など）は [docs/cloudflare.md](docs/cloudflare.md) にまとめています。
+
+VPS にまとめて置く場合:
 
 1. このリポジトリを安い VPS か Fly / Railway に置く。
 2. `DEEPSEEK_API_KEY` をホストのシークレットに入れる。
@@ -306,6 +318,8 @@ src/app/api/session       残通数のみ（ID は返さない）
 src/app/api/reward        AdMob リワード完了スタブ
 shared/characters/*.json  キャラ正本（1人1ファイル。サーバー専用）
 scripts/new-character.mjs テンプレ複製。パイプラインは触らない
+scripts/build-cf-pages.mjs Cloudflare 向け静的書き出し（API は含めない）
+docs/cloudflare.md        Pages の build / 出力 / 環境変数
 src/lib/anonymous-id.ts   インストール UUID のハッシュ
 src/lib/chat-gate.ts      性的内容の事前ゲート（API禁止）
 src/lib/product-behavior.ts 知っていても言わない／1回生成／NSFWに乗らない

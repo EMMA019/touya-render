@@ -1,7 +1,7 @@
 /**
  * Browser origin of the Render API.
  * Empty = same-origin (local `next dev` / Render-hosted UI).
- * Cloudflare Pages may set NEXT_PUBLIC_API_BASE=https://touya.onrender.com.
+ * Cloudflare Pages must set NEXT_PUBLIC_API_BASE=https://touya.onrender.com at build time.
  * Android keeps its own API_BASE_URL and does not read this.
  */
 export function apiBase(): string {

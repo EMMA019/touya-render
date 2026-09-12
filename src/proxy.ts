@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { corsHeaders } from "@/lib/cors";
 import { isInstallUuid } from "@/lib/install-uuid";
 import { ANON_COOKIE, ANON_HEADER, VISITOR_COOKIE } from "@/lib/config";
 
@@ -17,6 +18,17 @@ export function proxy(request: NextRequest) {
 
   const headers = new Headers(request.headers);
   if (visitorId) headers.set(ANON_HEADER, visitorId);
+
+  if (request.nextUrl.pathname.startsWith("/api/")) {
+    if (request.method === "OPTIONS") {
+      return new NextResponse(null, { status: 204, headers: corsHeaders(request) });
+    }
+    const response = NextResponse.next({ request: { headers } });
+    corsHeaders(request).forEach((value, key) => {
+      response.headers.set(key, value);
+    });
+    return response;
+  }
 
   return NextResponse.next({ request: { headers } });
 }

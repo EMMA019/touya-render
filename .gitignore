@@ -15,7 +15,9 @@
 
 # next.js
 /.next/
+/.next-cf/
 /out/
+.cf-hide/
 
 # production
 /build

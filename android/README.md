@@ -1,6 +1,6 @@
 # 燈夜 Android（フェーズ 2）
 
-Web MVP と同じ Next.js API を叩く薄い Jetpack Compose クライアントです。Web の戻りループ（今夜の台詞・不在・フック・絆・記憶・解放）を Kotlin 側でも同じ規則で組み立てます。
+Web MVP と同じ Next.js API を叩く薄い Jetpack Compose クライアントです。公開 Web を Cloudflare Pages に出しても、**API は Render（`https://touya.onrender.com`）のまま**です。このアプリの `API_BASE_URL` は変えません。Web の戻りループ（今夜の台詞・不在・フック・絆・記憶・解放）を Kotlin 側でも同じ規則で組み立てます。
 
 - キャラ一覧（今夜の台詞）・チャット・SSE・残通数・診断・約束・広告なし案内
 - 会話は端末に最大20通。昨日のフックは翌日の開口に使う
