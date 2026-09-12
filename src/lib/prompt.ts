@@ -71,7 +71,7 @@ export function buildSystemPrompt(
   const chatMode = context.chatMode ?? DEFAULT_CHAT_MODE;
   const parts = [
     character.systemPrompt,
-    bibleContract(character.bible, character.situations),
+    bibleContract(character.bible, character.situations, chatMode),
     productBehaviorFor(chatMode),
   ];
   if (stage) {

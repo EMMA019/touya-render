@@ -210,7 +210,7 @@ export async function POST(request: Request) {
       let assembled = "";
       try {
         if (useDemo) {
-          const reply = applyBibleFilter(pickDemoReply(character, userText), character);
+          const reply = applyBibleFilter(pickDemoReply(character, userText), character, chatMode, userText);
           const safe =
             chatMode === "sfw" && isSexualOutput(reply)
               ? refusalText(character.refusalStyle, 2)
@@ -260,7 +260,7 @@ export async function POST(request: Request) {
           }
         }
 
-        const filtered = applyBibleFilter(assembled, character);
+        const filtered = applyBibleFilter(assembled, character, chatMode, userText);
         if (chatMode === "sfw" && isSexualOutput(filtered)) {
           controller.enqueue(
             sse({
