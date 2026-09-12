@@ -2,14 +2,21 @@ import { incrementAffinity, readAffinity, shouldIncrementAffinity } from "@/lib/
 import { touchBond } from "@/lib/bond";
 import { applyBibleFilter } from "@/lib/character-bible";
 import { getCharacter } from "@/lib/characters";
+import { resolveChatBackend } from "@/lib/chat-backend";
 import { evaluateChatGate } from "@/lib/chat-gate";
 import {
   NSFW_AGE_REQUIRED,
   NSFW_AGE_REQUIRED_JA,
   resolveChatMode,
 } from "@/lib/chat-mode";
-import { demoFallbackEnabled, hasDeepseekKey } from "@/lib/config";
+import {
+  OPENROUTER_MISSING_JA,
+  demoFallbackEnabled,
+  hasDeepseekKey,
+  hasOpenRouterKey,
+} from "@/lib/config";
 import { extractDelta, streamDeepseek } from "@/lib/deepseek";
+import { streamOpenRouter } from "@/lib/openrouter";
 import { pickDemoReply, streamText } from "@/lib/demo";
 import { extractMemoryFacts } from "@/lib/memory-extract";
 import { rememberFacts } from "@/lib/memory-store";
@@ -138,15 +145,26 @@ export async function POST(request: Request) {
     );
   }
 
-  const useDemo = demoFallbackEnabled() && !hasDeepseekKey();
-  const useLive = hasDeepseekKey();
-
-  if (!useLive && !useDemo) {
+  const backend = resolveChatBackend({
+    mode: chatMode,
+    hasDeepseekKey: hasDeepseekKey(),
+    hasOpenRouterKey: hasOpenRouterKey(),
+    demoEnabled: demoFallbackEnabled(),
+  });
+  if (!backend.ok) {
+    if (backend.error === "openrouter_missing") {
+      return Response.json(
+        { error: "openrouter_missing", message: OPENROUTER_MISSING_JA },
+        { status: 503 }
+      );
+    }
     return Response.json(
       { error: "no_backend", message: "DEEPSEEK_API_KEY を設定してください。" },
       { status: 503 }
     );
   }
+  const liveBackend = backend.backend;
+  const useDemo = liveBackend === "demo";
 
   const quota = await consumeTurn(visitorId);
   if (!quota.allowed) {
@@ -160,7 +178,7 @@ export async function POST(request: Request) {
     );
   }
 
-  // Cost-honest: one allowed send = one DeepSeek call. Memory is rules-only (no extra LLM, no supervisor).
+  // Cost-honest: one allowed send = one LLM call. Memory is rules-only (no extra LLM, no supervisor).
   const extracted = extractMemoryFacts(userText);
   const facts = await rememberFacts(visitorId, character.id, extracted);
   const bond = await touchBond(visitorId, character.id, facts.length);
@@ -203,10 +221,10 @@ export async function POST(request: Request) {
           return;
         }
 
-        const upstream = await streamDeepseek({
-          systemPrompt,
-          messages: history,
-        });
+        const upstream =
+          liveBackend === "openrouter"
+            ? await streamOpenRouter({ systemPrompt, messages: history })
+            : await streamDeepseek({ systemPrompt, messages: history });
         const reader = upstream.getReader();
         const decoder = new TextDecoder();
         let carry = "";
@@ -225,7 +243,9 @@ export async function POST(request: Request) {
             if (delta) {
               if (firstTokenAt === null) {
                 firstTokenAt = Date.now();
-                console.info(`[touya] ttft_ms=${firstTokenAt - started} character=${character.id}`);
+                console.info(
+                  `[touya] ttft_ms=${firstTokenAt - started} character=${character.id} backend=${liveBackend}`
+                );
               }
               assembled += delta;
               controller.enqueue(sse({ type: "delta", text: delta }));

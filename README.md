@@ -75,8 +75,11 @@ npm start
 
 | 変数 | 役割 |
 | --- | --- |
-| `DEEPSEEK_API_KEY` | サーバー専用。クライアントには出しません。 |
+| `DEEPSEEK_API_KEY` | サーバー専用。SFW の本文。クライアントには出しません。 |
 | `DEEPSEEK_MODEL` | 既定 `deepseek-chat`（安価な通常チャット）。 |
+| `OPENROUTER_API_KEY` | サーバー専用。NSFW の本文。無いと NSFW は 503（DeepSeek に落とさない）。 |
+| `OPENROUTER_NSFW_MODEL` | 既定 `nousresearch/hermes-3-llama-3.1-70b`。 |
+| `OPENROUTER_BASE_URL` | 既定 `https://openrouter.ai/api/v1`。 |
 | `TOUYA_DEMO` | 未設定: 鍵が無いときだけデモ。`1` でデモ強制。`0` でデモ禁止。 |
 | `TOUYA_DEBUG_UNLIMITED` | ローカル専用。`1` で日次無料枠を無視（親密度・内容ゲートはそのまま）。本番では未設定。 |
 | `USAGE_STORE_PATH` | 日次カウントの JSON。既定 `./data/usage.json`。 |

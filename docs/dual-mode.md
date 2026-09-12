@@ -21,10 +21,26 @@
 - `POST /api/mode` `{ confirmAge?: true, chatMode?: "sfw" \| "nsfw" }`
 - `POST /api/chat` は任意で `mode` を受け取る。サーバーの年齢確認と照合する。
 
-## 後回し（この骨格ではやらない）
+## モデルの振り分け
 
-- NSFW 向けのプロンプト / 口調 / 本文生成
-- 検閲なしモデルや DeepSeek 以外への差し替え
+| モード | 呼び出し先 | 鍵 |
+| --- | --- | --- |
+| SFW | DeepSeek（`DEEPSEEK_API_KEY`） | 無いときはデモ返答。DeepSeek 以外には落ちない。 |
+| NSFW | OpenRouter（`OPENROUTER_API_KEY`） | **無いときは 503。DeepSeek には切り替えない。** |
+
+1通あたり LLM は1回です。Render の Environment にサーバー専用で入れます。クライアントには出しません。
+
+| 変数 | 既定 | 役割 |
+| --- | --- | --- |
+| `OPENROUTER_API_KEY` | （空） | NSFW 必須。空なら `openrouter_missing`。 |
+| `OPENROUTER_NSFW_MODEL` | `nousresearch/hermes-3-llama-3.1-70b` | OpenRouter の低拒否 / ロールプレイ系カタログ ID。差し替え可。 |
+| `OPENROUTER_BASE_URL` | `https://openrouter.ai/api/v1` | OpenAI 互換。 |
+
+本文の NSFW 磨き（口調・プロンプト）はまだです。今は振り分けと安全ゲートだけです。
+
+## 後回し
+
+- NSFW 向けのプロンプト / 口調 / 本文の仕上げ
 - 1通あたり複数回のモデル呼び出し
 - キャラを「女子高生」にする、年齢数字を出す
 - 未成年・違法コンテンツの緩和（緩和しない）

@@ -17,6 +17,11 @@ export const MAX_MESSAGE_CHARS = 400;
 export const MAX_COMPLETION_TOKENS = 260;
 export const DEEPSEEK_BASE_URL = "https://api.deepseek.com";
 export const DEFAULT_DEEPSEEK_MODEL = "deepseek-chat";
+export const OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
+/** Low-refusal / roleplay catalog id. Override with OPENROUTER_NSFW_MODEL. */
+export const DEFAULT_OPENROUTER_NSFW_MODEL = "nousresearch/hermes-3-llama-3.1-70b";
+export const OPENROUTER_MISSING_JA =
+  "NSFW には OPENROUTER_API_KEY が必要です。DeepSeek には切り替えません。";
 
 /** Legacy cookie name. New installs use ANON_COOKIE, set by the client. */
 export const VISITOR_COOKIE = "touya_vid";
@@ -73,6 +78,18 @@ export function deepseekModel(): string {
 
 export function hasDeepseekKey(): boolean {
   return Boolean(process.env.DEEPSEEK_API_KEY?.trim());
+}
+
+export function hasOpenRouterKey(): boolean {
+  return Boolean(process.env.OPENROUTER_API_KEY?.trim());
+}
+
+export function openRouterBaseUrl(): string {
+  return (process.env.OPENROUTER_BASE_URL?.trim() || OPENROUTER_BASE_URL).replace(/\/+$/, "");
+}
+
+export function openRouterNsfwModel(): string {
+  return process.env.OPENROUTER_NSFW_MODEL?.trim() || DEFAULT_OPENROUTER_NSFW_MODEL;
 }
 
 /** Canned demo replies only when the API key is missing. TOUYA_DEMO=0 disables that fallback. */

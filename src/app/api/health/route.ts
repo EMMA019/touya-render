@@ -1,5 +1,5 @@
 import { CHAT_MODES, DEFAULT_CHAT_MODE } from "@/lib/chat-mode";
-import { debugUnlimitedEnabled } from "@/lib/config";
+import { debugUnlimitedEnabled, hasOpenRouterKey } from "@/lib/config";
 import { publicModeFromProfile } from "@/lib/mode-public";
 import { getVisitorId } from "@/lib/visitor";
 import { emptyVisitorProfile, readVisitorProfile } from "@/lib/visitor-profile";
@@ -17,6 +17,8 @@ export async function GET() {
     debugUnlimited: debugUnlimitedEnabled(),
     defaultMode: DEFAULT_CHAT_MODE,
     chatModes: CHAT_MODES,
+    backends: { sfw: "deepseek", nsfw: "openrouter" },
+    openRouterConfigured: hasOpenRouterKey(),
     ...mode,
     mode,
   });
