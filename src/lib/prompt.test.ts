@@ -5,6 +5,7 @@ import {
   buildSystemPrompt,
   COMPANION_ADULT_OK,
   COMPANION_NOT_NSFW,
+  NSFW_ANSWER_DIRECT,
   KNOW_DONT_VOLUNTEER,
   ONE_REPLY_CONTRACT,
 } from "./prompt";
@@ -176,7 +177,10 @@ test("nsfw prompt uses adult-allowed companion rules and relaxes clothing", () =
   });
   assert.ok(prompt.includes(COMPANION_ADULT_OK));
   assert.match(prompt, /合意のあるおとなの性的な会話/);
-  assert.match(prompt, /説教や道徳の講義はしない/);
+  assert.match(prompt, /説教・道徳の講義はしない/);
+  assert.match(prompt, /話題そらしはしない/);
+  assert.ok(prompt.includes(NSFW_ANSWER_DIRECT));
+  assert.ok(prompt.endsWith(NSFW_ANSWER_DIRECT));
   assert.match(prompt, /未成年/);
   assert.match(prompt, /女子高生/);
   assert.match(prompt, /実在の児童ポルノは扱わない/);

@@ -6,6 +6,7 @@ import type { Clock } from "./clock";
 import {
   COMPANION_ADULT_OK,
   COMPANION_NOT_NSFW,
+  NSFW_ANSWER_DIRECT,
   KNOW_DONT_VOLUNTEER,
   MEMORY_USE,
   ONE_REPLY_CONTRACT,
@@ -17,6 +18,7 @@ import {
 export {
   COMPANION_ADULT_OK,
   COMPANION_NOT_NSFW,
+  NSFW_ANSWER_DIRECT,
   KNOW_DONT_VOLUNTEER,
   MEMORY_USE,
   ONE_REPLY_CONTRACT,
@@ -129,6 +131,9 @@ export function buildSystemPrompt(
   }
   if (memorySummary) {
     parts.push(`【覚えていること】${memorySummary}`, MEMORY_USE);
+  }
+  if (chatMode === "nsfw") {
+    parts.push(NSFW_ANSWER_DIRECT);
   }
   return parts.join("\n");
 }
