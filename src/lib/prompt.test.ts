@@ -1,7 +1,13 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import type { Character } from "./character-types";
-import { buildSystemPrompt, KNOW_DONT_VOLUNTEER, ONE_REPLY_CONTRACT } from "./prompt";
+import {
+  buildSystemPrompt,
+  COMPANION_ADULT_OK,
+  COMPANION_NOT_NSFW,
+  KNOW_DONT_VOLUNTEER,
+  ONE_REPLY_CONTRACT,
+} from "./prompt";
 
 test("prompt injects a short memory summary once and forbids volunteering", () => {
   const character = {
@@ -120,4 +126,67 @@ test("prompt injects affinity name only, not counts or history", () => {
   assert.equal(affinityLine, "【親密度】仲良し。名前だけ持つ。数値や履歴は言わない。");
   assert.doesNotMatch(affinityLine ?? "", /\d/);
   assert.equal(prompt.split("【親密度】").length, 2);
+});
+
+function fixtureCharacter(): Character {
+  return {
+    systemPrompt: "短い人格。",
+    situations: [
+      { id: "cafe-rain", title: "雨のカフェ", setting: "カフェ", look: "ニット", image: null },
+    ],
+    bible: {
+      name: "桃瀬 ひより",
+      job: "大学生",
+      setting: "カフェ",
+      personality: ["甘え"],
+      never: ["速報"],
+    },
+  } as Character;
+}
+
+const halloween: Character["situations"][number] = {
+  id: "halloween-witch",
+  title: "ハロウィン",
+  setting: "かぼちゃ灯りの小さなポーチ。",
+  look: "小さな魔女帽と黒の長袖ドレス。",
+  season: "halloween",
+  image: null,
+};
+
+test("sfw prompt keeps companion-not-nsfw and clothed situation", () => {
+  const sfw = buildSystemPrompt(fixtureCharacter(), "", halloween, "familiar", {
+    chatMode: "sfw",
+  });
+  const omitted = buildSystemPrompt(fixtureCharacter(), "", halloween);
+  for (const prompt of [sfw, omitted]) {
+    assert.ok(prompt.includes(COMPANION_NOT_NSFW));
+    assert.match(prompt, /性的なロールプレイには乗らない/);
+    assert.doesNotMatch(prompt, /合意のあるおとなの性的な会話/);
+    assert.ok(!prompt.includes(COMPANION_ADULT_OK));
+    assert.match(prompt, /服は着たまま/);
+    assert.match(prompt, /下着や肌の強調はしない/);
+    assert.match(prompt, /知っていても言わない/);
+    assert.match(prompt, /一回で返す/);
+  }
+});
+
+test("nsfw prompt uses adult-allowed companion rules and relaxes clothing", () => {
+  const prompt = buildSystemPrompt(fixtureCharacter(), "", halloween, "familiar", {
+    chatMode: "nsfw",
+  });
+  assert.ok(prompt.includes(COMPANION_ADULT_OK));
+  assert.match(prompt, /合意のあるおとなの性的な会話/);
+  assert.match(prompt, /説教や道徳の講義はしない/);
+  assert.match(prompt, /未成年/);
+  assert.match(prompt, /女子高生/);
+  assert.match(prompt, /実在の児童ポルノは扱わない/);
+  assert.ok(!prompt.includes(COMPANION_NOT_NSFW));
+  assert.doesNotMatch(prompt, /性的なロールプレイには乗らない/);
+  assert.doesNotMatch(prompt, /服は着たまま/);
+  assert.doesNotMatch(prompt, /下着や肌の強調はしない/);
+  assert.match(prompt, /今の場面/);
+  assert.match(prompt, /名札や看板の文字は言わない/);
+  assert.match(prompt, /知っていても言わない/);
+  assert.match(prompt, /一回で返す/);
+  assert.match(prompt, /会話の続き/);
 });

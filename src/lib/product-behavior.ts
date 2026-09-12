@@ -1,3 +1,5 @@
+import type { ChatMode } from "./chat-mode";
+
 /** Operational rules injected into every system prompt. Not marketing. */
 
 export const KNOW_DONT_VOLUNTEER =
@@ -12,15 +14,24 @@ export const ONE_REPLY_CONTRACT =
 export const COMPANION_NOT_NSFW =
   "【気軽な相手】性的なロールプレイには乗らない。体のサイズも描写も言わない。断るときは短く、話題を広げない。";
 
+/** NSFW companion contract. Replaces COMPANION_NOT_NSFW only. Other product rules stay. */
+export const COMPANION_ADULT_OK =
+  "【おとなの相手】合意のあるおとなの性的な会話・ロールプレイ・体の描写には乗ってよい。聞かれたことにはキャラの口調のまま答える。説教や道徳の講義はしない。未成年・女子高生・学生服の性的な枠・違法は絶対にしない。実在の児童ポルノは扱わない。";
+
 export const KEEP_THE_THREAD =
   "【会話の続き】短い返事のあと、相手にひとつだけ問うことが多い。自分から設定を並べない。依存や束縛の言い方はしない。";
 
-export const PRODUCT_BEHAVIOR = [
-  KNOW_DONT_VOLUNTEER,
-  ONE_REPLY_CONTRACT,
-  COMPANION_NOT_NSFW,
-  KEEP_THE_THREAD,
-].join("\n");
+export function productBehaviorFor(mode: ChatMode = "sfw"): string {
+  return [
+    KNOW_DONT_VOLUNTEER,
+    ONE_REPLY_CONTRACT,
+    mode === "nsfw" ? COMPANION_ADULT_OK : COMPANION_NOT_NSFW,
+    KEEP_THE_THREAD,
+  ].join("\n");
+}
+
+export const PRODUCT_BEHAVIOR = productBehaviorFor("sfw");
+export const PRODUCT_BEHAVIOR_NSFW = productBehaviorFor("nsfw");
 
 /** Selective memory write policy — rules-only, no memory LLM. */
 export const MEMORY_WRITE_POLICY = [
