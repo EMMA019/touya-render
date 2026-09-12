@@ -1,4 +1,4 @@
-﻿plugins {
+plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.compose")
@@ -15,7 +15,7 @@ android {
         versionCode = 1
         versionName = "0.1.0"
         // Emulator loopback to the host Next.js API. Device on LAN: change to the PC IP.
-        buildConfigField("String", "API_BASE_URL", "\"http://127.0.0.1:43127\"")
+        buildConfigField("String", "API_BASE_URL", "\"https://touya.onrender.com\"")
     }
 
     buildTypes {
