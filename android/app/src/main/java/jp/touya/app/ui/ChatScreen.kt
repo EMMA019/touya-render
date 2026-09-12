@@ -131,25 +131,13 @@ fun ChatScreen(
                 .imePadding()
                 .navigationBarsPadding(),
         ) {
-            Box(
+            Row(
                 Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 12.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(
-                    character.name,
-                    modifier = Modifier
-                        .align(Alignment.Center)
-                        .padding(horizontal = 88.dp)
-                        .fillMaxWidth(),
-                    color = Color.White,
-                    style = MaterialTheme.typography.titleMedium,
-                    textAlign = TextAlign.Center,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
                 Row(
-                    Modifier.align(Alignment.CenterStart),
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
@@ -165,8 +153,16 @@ fun ChatScreen(
                     }
                     AffinityHeart(affinity)
                 }
+                Text(
+                    character.name,
+                    modifier = Modifier.weight(1f).padding(horizontal = 8.dp),
+                    color = Color.White,
+                    style = MaterialTheme.typography.titleMedium,
+                    textAlign = TextAlign.Center,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
                 ChatSettingsMenu(
-                    modifier = Modifier.align(Alignment.CenterEnd),
                     mode = mode,
                     situations = character.situations,
                     situationId = situationId,

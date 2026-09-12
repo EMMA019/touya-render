@@ -418,8 +418,8 @@ export function ChatView({
       />
 
       <div className="relative z-10 flex h-full flex-col">
-        <header className="relative flex items-center justify-between px-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
-          <div className="z-10 flex min-w-0 items-center gap-1.5">
+        <header className="flex items-center gap-1.5 px-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
+          <div className="flex shrink-0 items-center gap-1.5">
             <Link
               href="/"
               aria-label="戻る"
@@ -429,7 +429,7 @@ export function ChatView({
             </Link>
             <AffinityHeart affinity={affinity} />
           </div>
-          <p className="pointer-events-none absolute inset-x-20 truncate text-center text-[15px] font-medium text-white drop-shadow">
+          <p className="min-w-0 flex-1 truncate text-center text-[15px] font-medium text-white drop-shadow">
             {character.name}
           </p>
           <ChatGearMenu
@@ -626,7 +626,7 @@ function ChatGearMenu({
   }, [open]);
 
   return (
-    <div ref={rootRef} className="relative z-20">
+    <div ref={rootRef} className="relative z-20 shrink-0">
       <button
         type="button"
         aria-label="設定"
