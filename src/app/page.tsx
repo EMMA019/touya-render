@@ -1,3 +1,4 @@
+import { AdSlot } from "@/components/ad-slot";
 import { PortalSidebar } from "@/components/portal-sidebar";
 import { PortalBannerHero } from "@/components/portal-banner-hero";
 import { PortalUpsellBanner } from "@/components/portal-upsell-banner";
@@ -61,6 +62,8 @@ export default async function HomePage() {
 
         {/* Scrollable Main Body */}
         <main className="flex-1 px-4 sm:px-6 py-6 max-w-6xl w-full mx-auto space-y-7 pb-24">
+          <AdSlot placement="banner" />
+
           {/* Hero Banner Carousel/Pickup */}
           <PortalBannerHero />
 

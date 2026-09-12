@@ -11,10 +11,13 @@ import jp.touya.app.data.EMPTY_AFFINITY
 import jp.touya.app.data.EMPTY_BOND
 import jp.touya.app.data.AffinityPublic
 import jp.touya.app.data.MemoryRow
+import jp.touya.app.data.EMPTY_MODE
 import jp.touya.app.data.Quota
 import jp.touya.app.data.TouyaClient
+import jp.touya.app.data.VisitorStore
 import jp.touya.app.data.seedSituationGreeting
 import jp.touya.app.data.situationGreeting
+import jp.touya.app.domain.ModePublic
 import jp.touya.app.domain.composeOpening
 import jp.touya.app.domain.jstDayKey
 import jp.touya.app.domain.readClock
@@ -47,6 +50,8 @@ data class UiState(
     val rewarding: Boolean = false,
     val rewardMessage: String? = null,
     val situationCard: Boolean = true,
+    val mode: ModePublic = EMPTY_MODE,
+    val ageGateOpen: Boolean = false,
 )
 
 sealed interface Screen {
@@ -60,8 +65,17 @@ sealed interface Screen {
 class TouyaViewModel(
     private val client: TouyaClient,
     private val store: ChatStore,
+    private val visitorStore: VisitorStore? = null,
 ) : ViewModel() {
-    private val _state = MutableStateFlow(UiState())
+    private val _state = MutableStateFlow(
+        UiState(
+            mode = ModePublic(
+                chatMode = visitorStore?.cachedChatMode() ?: "sfw",
+                ageConfirmed = visitorStore?.cachedAgeConfirmed() == true,
+                adsEnabled = (visitorStore?.cachedChatMode() ?: "sfw") != "nsfw",
+            ),
+        ),
+    )
     val state: StateFlow<UiState> = _state
     private var seq = 0
 
@@ -74,11 +88,17 @@ class TouyaViewModel(
             _state.update { it.copy(loading = true, error = null) }
             runCatching {
                 withContext(Dispatchers.IO) {
-                    client.characters() to client.usage()
+                    client.characters() to client.session()
                 }
-            }.onSuccess { (characters, quota) ->
+            }.onSuccess { (characters, session) ->
+                cacheMode(session.mode)
                 _state.update {
-                    it.copy(characters = characters, quota = quota, loading = false)
+                    it.copy(
+                        characters = characters,
+                        quota = session.quota,
+                        mode = session.mode,
+                        loading = false,
+                    )
                 }
             }.onFailure { err ->
                 _state.update {
@@ -234,8 +254,13 @@ class TouyaViewModel(
                     client.streamChat(
                         characterId = screen.character.id,
                         situationId = _state.value.situationId.ifBlank { null },
+                        mode = _state.value.mode.chatMode,
                         messages = history,
                         onQuota = { quota -> _state.update { s -> s.copy(quota = quota) } },
+                        onMode = { mode ->
+                            cacheMode(mode)
+                            _state.update { s -> s.copy(mode = mode) }
+                        },
                         onBond = { bond ->
                             _state.update { s ->
                                 val screenState = s.screen as? Screen.Chat
@@ -338,8 +363,61 @@ class TouyaViewModel(
         }
     }
 
+    fun requestNsfw() {
+        if (_state.value.mode.ageConfirmed) {
+            setMode(chatMode = "nsfw")
+        } else {
+            _state.update { it.copy(ageGateOpen = true) }
+        }
+    }
+
+    fun closeAgeGate() {
+        _state.update { it.copy(ageGateOpen = false) }
+    }
+
+    fun confirmAgeAndEnableNsfw() {
+        setMode(confirmAge = true, chatMode = "nsfw", closeGate = true)
+    }
+
+    fun leaveNsfw() {
+        setMode(chatMode = "sfw")
+    }
+
+    fun toggleMode() {
+        if (_state.value.mode.nsfw) leaveNsfw() else requestNsfw()
+    }
+
+    private fun setMode(confirmAge: Boolean = false, chatMode: String? = null, closeGate: Boolean = false) {
+        viewModelScope.launch {
+            runCatching {
+                withContext(Dispatchers.IO) { client.setMode(confirmAge, chatMode) }
+            }.onSuccess { mode ->
+                cacheMode(mode)
+                _state.update {
+                    it.copy(
+                        mode = mode,
+                        ageGateOpen = if (closeGate) false else it.ageGateOpen,
+                        error = null,
+                    )
+                }
+            }.onFailure { err ->
+                _state.update {
+                    it.copy(
+                        ageGateOpen = if (closeGate) false else it.ageGateOpen,
+                        error = err.message,
+                    )
+                }
+            }
+        }
+    }
+
+    private fun cacheMode(mode: ModePublic) {
+        visitorStore?.cacheMode(mode.chatMode, mode.ageConfirmed)
+    }
+
     fun watchReward() {
         if (_state.value.rewarding) return
+        if (!_state.value.mode.adsEnabled) return
         if ((_state.value.quota?.rewardsLeft ?: 0) <= 0) return
         viewModelScope.launch {
             _state.update { it.copy(rewarding = true, rewardMessage = null) }
@@ -391,11 +469,11 @@ class TouyaViewModel(
     }
 
     companion object {
-        fun factory(client: TouyaClient, store: ChatStore): ViewModelProvider.Factory =
+        fun factory(client: TouyaClient, store: ChatStore, visitorStore: VisitorStore? = null): ViewModelProvider.Factory =
             object : ViewModelProvider.Factory {
                 @Suppress("UNCHECKED_CAST")
                 override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                    return TouyaViewModel(client, store) as T
+                    return TouyaViewModel(client, store, visitorStore) as T
                 }
             }
     }

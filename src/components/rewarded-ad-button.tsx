@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { useChatMode } from "@/components/mode-provider";
+import { apiUrl } from "@/lib/api-base";
 import { anonymousHeaders } from "@/lib/anonymous-client";
 import { REWARD_EXTRA_TURNS } from "@/lib/config";
 import type { Quota } from "@/lib/quota-types";
@@ -12,10 +14,13 @@ export function RewardedAdButton({
   rewardsLeft: number;
   onGranted: (quota: Quota) => void;
 }) {
+  const { adsEnabled } = useChatMode();
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
-    if (rewardsLeft <= 0) {
+  if (!adsEnabled) return null;
+
+  if (rewardsLeft <= 0) {
     return (
       <p className="text-xs text-amber-100/50">
         本日のリワード広告枠は上限に達しました。日本時間の午前0時に再度ご利用いただけます。
@@ -27,7 +32,7 @@ export function RewardedAdButton({
     setBusy(true);
     setMessage(null);
     try {
-      const response = await fetch("/api/reward", {
+      const response = await fetch(apiUrl("/api/reward"), {
         method: "POST",
         headers: anonymousHeaders(),
       });

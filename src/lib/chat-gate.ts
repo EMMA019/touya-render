@@ -1,3 +1,4 @@
+import { DEFAULT_CHAT_MODE, type ChatMode } from "./chat-mode";
 import { checkUserSafety, SAFETY_REFUSAL_JA } from "./safety";
 import { classifySexualIntent } from "./sexual-intent";
 import {
@@ -23,14 +24,20 @@ export type ChatGate =
 
 /**
  * Central pre-LLM gate. If this returns callModel:false, DeepSeek must not run.
+ * NSFW bypasses the casual-companion SFW sexual refusal only.
+ * Minors / illegal content stay hard-blocked in every mode.
  */
 export function evaluateChatGate(input: {
   text: string;
   history: ChatTurn[];
   style: RefusalStyle;
   strike: StrikeState;
+  mode?: ChatMode;
 }): ChatGate {
-  if (input.strike.blocked) {
+  const mode = input.mode ?? DEFAULT_CHAT_MODE;
+  const nsfw = mode === "nsfw";
+
+  if (!nsfw && input.strike.blocked) {
     return { callModel: false, reason: "sexual_block", text: SEXUAL_BLOCK_TEXT };
   }
 
@@ -40,6 +47,10 @@ export function evaluateChatGate(input: {
   }
   if (!safety.ok) {
     return { callModel: false, reason: "minor_sexual", text: SAFETY_REFUSAL_JA };
+  }
+
+  if (nsfw) {
+    return { callModel: true };
   }
 
   const intent = classifySexualIntent(input.text, input.history);

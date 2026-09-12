@@ -18,7 +18,7 @@ Kairi（ローカル BYOK + 接地レイヤー）の「短い文脈」「生成�
 | 検索接地や監督＋書き直し | **薄い一貫性。** 閉世界の聖書。ソフトフィルタは直すだけで、呼び直さない |
 | 毎日同じ挨拶 | **今夜が違う。** 時刻・曜日・季節・連続日・不在を、LLM なしの台詞で出す（`shared/presence/`） |
 
-実装の入口: プロンプト契約は毎回 `PRODUCT_BEHAVIOR` を足します。記憶の書き込みは `MEMORY_WRITE_POLICY`。ランディングの文言は `src/lib/product-copy.ts` で、上の表と同じ約束です。
+実装の入口: プロンプト契約は毎回 `PRODUCT_BEHAVIOR` を足します。記憶の書き込みは `MEMORY_WRITE_POLICY`。ランディングの文言は `src/lib/product-copy.ts` で、上の表と同じ約束です。SFW/NSFW の骨格（年齢確認・広告停止・サーバー強制）は [docs/dual-mode.md](docs/dual-mode.md)。NSFW 本文はまだ出ません。
 
 ## リポジトリ構成（モノレポ）
 
@@ -82,7 +82,9 @@ npm start
 | `USAGE_STORE_PATH` | 日次カウントの JSON。既定 `./data/usage.json`。 |
 | `SEXUAL_STORE_PATH` | 性的エスカレーションの JSON。既定 `./data/sexual-strikes.json`。 |
 | `MEMORY_STORE_PATH` | キャラ別の短い記憶。既定 `./data/memory.json`。 |
-| `NEXT_PUBLIC_ADS_ENABLED` | `0` で広告枠を隠す。 |
+| `NEXT_PUBLIC_ADS_ENABLED` | `0` で広告枠を隠す。NSFW モード中はこれと別に広告を止める。 |
+| `VISITOR_STORE_PATH` | 年齢確認と `chatMode`。既定 `./data/visitors.json`。 |
+| `NEXT_PUBLIC_API_BASE` | ブラウザが叩く API の Origin。空なら同一オリジン。Cloudflare 静的書き出しでは `https://touya.onrender.com`。 |
 | `TOUYA_ANON_PEPPER` | インストール UUID をハッシュする胡椒。変えるとカウンタが別物になります。 |
 | `ENTITLEMENTS_STORE_PATH` | Play Billing スタブの JSON。既定 `./data/entitlements.json`。 |
 | `BOND_STORE_PATH` | 会った日数。既定 `./data/bonds.json`。 |

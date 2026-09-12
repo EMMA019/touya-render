@@ -43,8 +43,10 @@ import jp.touya.app.data.CharacterPublic
 import jp.touya.app.data.ChatMessage
 import jp.touya.app.data.EMPTY_AFFINITY
 import jp.touya.app.data.MemoryRow
+import jp.touya.app.data.EMPTY_MODE
 import jp.touya.app.data.Quota
 import jp.touya.app.data.situationCardLines
+import jp.touya.app.domain.ModePublic
 import jp.touya.app.domain.LOCKED_SITUATION_HINT
 import jp.touya.app.domain.pickHook
 import jp.touya.app.domain.suggestionsFor
@@ -77,6 +79,11 @@ fun ChatScreen(
     onReportWrong: () -> Unit,
     onReward: () -> Unit,
     onPremium: () -> Unit,
+    mode: ModePublic = EMPTY_MODE,
+    ageGateOpen: Boolean = false,
+    onToggleMode: () -> Unit = {},
+    onConfirmAge: () -> Unit = {},
+    onCloseAgeGate: () -> Unit = {},
 ) {
     val limited = quota?.debugUnlimited != true && (quota?.remaining ?: 1) <= 0
     val situation = character.situations.firstOrNull { it.id == situationId }
@@ -133,6 +140,7 @@ fun ChatScreen(
                     ) {
                         Text("覚", color = Color.White)
                     }
+                    ModeChip(mode, onClick = onToggleMode)
                     QuotaPill(quota, compact = true)
                 }
             }
@@ -247,22 +255,24 @@ fun ChatScreen(
                         "「${character.farewell}${if (hook.isNotBlank()) " $hook" else ""}」",
                         color = Color.White,
                     )
-                    if ((quota?.rewardsLeft ?: 0) <= 0) {
-                        Text("今日のリワード広告はここまで。日本時間の0時に戻ります。", color = Color.White.copy(alpha = 0.55f))
-                    } else {
-                        Button(onReward, enabled = !rewarding, modifier = Modifier.fillMaxWidth()) {
-                            Text(if (rewarding) "読み込み中…" else "広告を見て +3通（AdMob スタブ）")
+                    if (mode.adsEnabled) {
+                        if ((quota?.rewardsLeft ?: 0) <= 0) {
+                            Text("今日のリワード広告はここまで。日本時間の0時に戻ります。", color = Color.White.copy(alpha = 0.55f))
+                        } else {
+                            Button(onReward, enabled = !rewarding, modifier = Modifier.fillMaxWidth()) {
+                                Text(if (rewarding) "読み込み中…" else "広告を見て +3通（AdMob スタブ）")
+                            }
+                            Text(
+                                "本番は AdMob リワード。今は完了扱いで通数だけ足します。アカウントは不要です。",
+                                color = Color.White.copy(alpha = 0.5f),
+                            )
                         }
-                        Text(
-                            "本番は AdMob リワード。今は完了扱いで通数だけ足します。アカウントは不要です。",
-                            color = Color.White.copy(alpha = 0.5f),
-                        )
-                    }
-                    if (rewardMessage != null) {
-                        Text(rewardMessage, color = Color(0xFFE8C48A))
-                    }
-                    TextButton(onPremium, Modifier.fillMaxWidth()) {
-                        Text("広告なしで話す", color = Color.White.copy(alpha = 0.65f))
+                        if (rewardMessage != null) {
+                            Text(rewardMessage, color = Color(0xFFE8C48A))
+                        }
+                        TextButton(onPremium, Modifier.fillMaxWidth()) {
+                            Text("広告なしで話す", color = Color.White.copy(alpha = 0.65f))
+                        }
                     }
                 }
             }
@@ -328,6 +338,7 @@ fun ChatScreen(
             onClose = { onToggleMemory(false) },
             onForget = onForget,
         )
+        AgeGateDialog(open = ageGateOpen, onConfirm = onConfirmAge, onCancel = onCloseAgeGate)
     }
 }
 

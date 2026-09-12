@@ -7,10 +7,13 @@ import { AffinityHeart } from "@/components/affinity-heart";
 import { BondLamp } from "@/components/bond-lamp";
 import { MemorySheet } from "@/components/memory-sheet";
 import type { UiMessage } from "@/components/message-bubble";
+import { ModeToggle } from "@/components/mode-toggle";
+import { useChatMode } from "@/components/mode-provider";
 import { PortraitStage } from "@/components/portrait-stage";
 import { RewardedAdButton } from "@/components/rewarded-ad-button";
 import { DebugUnlimitedMark } from "@/components/quota-pill";
 import { SituationSceneCard } from "@/components/situation-scene-card";
+import { apiUrl } from "@/lib/api-base";
 import { anonymousHeaders } from "@/lib/anonymous-client";
 import type { Bond, BondStage } from "@/lib/bond-types";
 import { situationGreeting, type CharacterPublic } from "@/lib/character-types";
@@ -51,6 +54,7 @@ export function ChatView({
   initialUnlocked: string[];
   initialAffinity: AffinityPublic;
 }) {
+  const { chatMode, adsEnabled } = useChatMode();
   const firstOpen = character.situations.find((scene) => initialUnlocked.includes(scene.id))?.id;
   const initialSituation =
     character.situations.find((scene) => scene.id === firstOpen) ?? character.situations[0];
@@ -138,13 +142,13 @@ export function ChatView({
   }, [character.situations, bond.daysMet, affinity.level]);
 
   useEffect(() => {
-    void fetch("/api/session", { headers: anonymousHeaders() })
+    void fetch(apiUrl("/api/session"), { headers: anonymousHeaders() })
       .then((response) => response.json())
       .then((body: { quota?: Quota }) => {
         if (body.quota) setQuota(body.quota);
       })
       .catch(() => undefined);
-    void fetch(`/api/companion?characterId=${character.id}`, { headers: anonymousHeaders() })
+    void fetch(apiUrl(`/api/companion?characterId=${character.id}`), { headers: anonymousHeaders() })
       .then((response) => response.json())
       .then((body: { bond?: Bond; memory?: MemoryRow[]; unlocked?: string[]; affinity?: AffinityPublic }) => {
         if (body.bond) setBond(body.bond);
@@ -207,12 +211,13 @@ export function ChatView({
     ]);
 
     try {
-      const response = await fetch("/api/chat", {
+      const response = await fetch(apiUrl("/api/chat"), {
         method: "POST",
         headers: anonymousHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           characterId: character.id,
           situationId,
+          mode: chatMode,
           messages: [...historyPayload, { role: "user", content: trimmed }],
         }),
       });
@@ -235,6 +240,11 @@ export function ChatView({
           throw new Error(character.farewell);
         }
         throw new Error(body.message ?? "少し待ってから。");
+      }
+
+      if (response.status === 403) {
+        const body = (await response.json().catch(() => ({}))) as { message?: string };
+        throw new Error(body.message ?? "18歳以上の確認が必要です。");
       }
 
       if (!response.ok || !response.body) {
@@ -352,7 +362,7 @@ export function ChatView({
         }
         return done;
       });
-      void fetch(`/api/memory?characterId=${character.id}`, { headers: anonymousHeaders() })
+      void fetch(apiUrl(`/api/memory?characterId=${character.id}`), { headers: anonymousHeaders() })
         .then((response) => response.json())
         .then((body: { facts?: MemoryRow[] }) => {
           if (body.facts) setMemory(body.facts);
@@ -375,7 +385,7 @@ export function ChatView({
   }
 
   async function forget(text: string) {
-    const response = await fetch("/api/memory", {
+    const response = await fetch(apiUrl("/api/memory"), {
       method: "DELETE",
       headers: anonymousHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({ characterId: character.id, text }),
@@ -386,7 +396,7 @@ export function ChatView({
 
   async function reportWrong() {
     if (!lastAssistant || feedbackSent) return;
-    await fetch("/api/feedback", {
+    await fetch(apiUrl("/api/feedback"), {
       method: "POST",
       headers: anonymousHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({
@@ -428,6 +438,7 @@ export function ChatView({
             >
               <Bookmark className="size-4" />
             </button>
+            <ModeToggle compact />
             <div
               className="flex items-center gap-1.5 rounded-full bg-black/40 px-3 py-1.5 text-white backdrop-blur-md"
               title="今日の残り"
@@ -507,13 +518,17 @@ export function ChatView({
               「{character.farewell}
               {` ${pickHook(character.presence, `${character.id}-hook`, "")}`}」
             </p>
-      <RewardedAdButton
-        rewardsLeft={quota.rewardsLeft}
-        onGranted={(next) => setQuota(next)}
-      />
+      {adsEnabled ? (
+        <RewardedAdButton
+          rewardsLeft={quota.rewardsLeft}
+          onGranted={(next) => setQuota(next)}
+        />
+      ) : null}
+      {adsEnabled ? (
       <Link href="/premium" className="block text-center text-[11px] text-white/60 underline-offset-2 hover:underline">
         広告を非表示にして話す
       </Link>
+      ) : null}
     </div>
   ) : null}
 

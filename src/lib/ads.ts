@@ -14,6 +14,14 @@ export type AdPlacement = "banner" | "sidebar" | "infeed" | "rewarded";
 export const ADS_ENABLED = process.env.NEXT_PUBLIC_ADS_ENABLED !== "0";
 export const ADS_PROVIDER = "admob";
 
+/**
+ * AdMob (banner + rewarded) is allowed only in SFW.
+ * NSFW mode turns ads fully off — env flag alone is not enough.
+ */
+export function adsAllowed(mode: "sfw" | "nsfw" = "sfw", envEnabled = ADS_ENABLED): boolean {
+  return envEnabled && mode !== "nsfw";
+}
+
 export const ADMOB_APP_ID = process.env.NEXT_PUBLIC_ADMOB_APP_ID?.trim() ?? "";
 export const ADMOB_BANNER_UNIT = process.env.NEXT_PUBLIC_ADMOB_BANNER_UNIT?.trim() ?? "";
 export const ADMOB_REWARDED_UNIT = process.env.NEXT_PUBLIC_ADMOB_REWARDED_UNIT?.trim() ?? "";

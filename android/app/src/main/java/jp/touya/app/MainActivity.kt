@@ -17,7 +17,7 @@ import jp.touya.app.ui.theme.TouyaTheme
 class MainActivity : ComponentActivity() {
     private val viewModel: TouyaViewModel by viewModels {
         val app = application as TouyaApp
-        TouyaViewModel.factory(app.client, app.chatStore)
+        TouyaViewModel.factory(app.client, app.chatStore, app.visitorStore)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -38,6 +38,11 @@ class MainActivity : ComponentActivity() {
                         onDiagnosis = viewModel::showDiagnosis,
                         onPremium = viewModel::showPremium,
                         onPolicy = viewModel::showPolicy,
+                        mode = state.mode,
+                        ageGateOpen = state.ageGateOpen,
+                        onToggleMode = viewModel::toggleMode,
+                        onConfirmAge = viewModel::confirmAgeAndEnableNsfw,
+                        onCloseAgeGate = viewModel::closeAgeGate,
                     )
                     is Screen.Chat -> ChatScreen(
                         character = screen.character,
@@ -66,6 +71,11 @@ class MainActivity : ComponentActivity() {
                         onReportWrong = viewModel::reportWrong,
                         onReward = viewModel::watchReward,
                         onPremium = viewModel::showPremium,
+                        mode = state.mode,
+                        ageGateOpen = state.ageGateOpen,
+                        onToggleMode = viewModel::toggleMode,
+                        onConfirmAge = viewModel::confirmAgeAndEnableNsfw,
+                        onCloseAgeGate = viewModel::closeAgeGate,
                     )
                     Screen.Diagnosis -> DiagnosisScreen(
                         characters = state.characters,

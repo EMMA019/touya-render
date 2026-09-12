@@ -27,8 +27,10 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import jp.touya.app.data.CharacterPublic
+import jp.touya.app.data.EMPTY_MODE
 import jp.touya.app.data.Quota
 import jp.touya.app.data.formatBwh
+import jp.touya.app.domain.ModePublic
 import jp.touya.app.domain.pickTodayLine
 import jp.touya.app.domain.readClock
 
@@ -44,6 +46,11 @@ fun CharacterListScreen(
     onDiagnosis: () -> Unit,
     onPremium: () -> Unit,
     onPolicy: () -> Unit,
+    mode: ModePublic = EMPTY_MODE,
+    ageGateOpen: Boolean = false,
+    onToggleMode: () -> Unit = {},
+    onConfirmAge: () -> Unit = {},
+    onCloseAgeGate: () -> Unit = {},
 ) {
     val clock = remember { readClock() }
     Column(
@@ -59,7 +66,10 @@ fun CharacterListScreen(
                 Text("とうや", style = MaterialTheme.typography.labelSmall)
                 Text("燈夜", style = MaterialTheme.typography.headlineMedium)
             }
-            QuotaPill(quota)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                ModeChip(mode, onClick = onToggleMode)
+                QuotaPill(quota)
+            }
         }
         Text("夜に、話せる相手がいる。", style = MaterialTheme.typography.titleMedium)
         Text(
@@ -73,7 +83,7 @@ fun CharacterListScreen(
             TextButton(onPolicy) { Text("燈夜のこだわりと約束") }
             TextButton(onPremium) { Text("広告なしで話す") }
         }
-        AdPlaceholder()
+        AdPlaceholder(adsEnabled = mode.adsEnabled)
         when {
             loading -> CircularProgressIndicator()
             error != null -> {
@@ -148,5 +158,6 @@ fun CharacterListScreen(
                 }
             }
         }
+        AgeGateDialog(open = ageGateOpen, onConfirm = onConfirmAge, onCancel = onCloseAgeGate)
     }
 }
