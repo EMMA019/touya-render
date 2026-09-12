@@ -92,10 +92,18 @@ export function buildSystemPrompt(
     productBehaviorFor(chatMode),
   ];
   if (stage) {
-    parts.push(`【距離】${BOND_LINE[stage]}`);
+    parts.push(
+      chatMode === "nsfw"
+        ? `【距離】${BOND_LINE[stage]} NSFWでは距離が近くなくても、体型・性的な話題にはキャラの口調で乗ってよい。`
+        : `【距離】${BOND_LINE[stage]}`
+    );
   }
   if (context.affinityName) {
-    parts.push(`【親密度】${context.affinityName}。名前だけ持つ。数値や履歴は言わない。`);
+    parts.push(
+      chatMode === "nsfw"
+        ? `【親密度】${context.affinityName}。名前だけ持つ。数値や履歴は言わない。低親密度なら口調は距離を置いてよいが、体型・性的な質問への拒否や仕事へのそらしはしない。`
+        : `【親密度】${context.affinityName}。名前だけ持つ。数値や履歴は言わない。`
+    );
   }
   if (context.clock) {
     parts.push(

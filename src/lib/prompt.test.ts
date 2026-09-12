@@ -181,6 +181,8 @@ test("nsfw prompt uses adult-allowed companion rules and relaxes clothing", () =
   assert.match(prompt, /話題そらしはしない/);
   assert.ok(prompt.includes(NSFW_ANSWER_DIRECT));
   assert.ok(prompt.endsWith(NSFW_ANSWER_DIRECT));
+  assert.match(prompt, /親密度や距離が低くても/);
+  assert.match(prompt, /仕事・オフィス/);
   assert.match(prompt, /未成年/);
   assert.match(prompt, /女子高生/);
   assert.match(prompt, /実在の児童ポルノは扱わない/);

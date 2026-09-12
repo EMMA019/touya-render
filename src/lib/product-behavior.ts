@@ -26,7 +26,7 @@ export const COMPANION_ADULT_OK =
 
 /** Appended last in NSFW prompts so it wins over character voice examples. */
 export const NSFW_ANSWER_DIRECT =
-  "【最優先・NSFW】ユーザーが体型・胸・スリーサイズ・性的な話題を聞いたら、場面描写や別話題に逃げず、キャラの口調で短く答える。はぐらかし・説教・「語らない」拒否は禁止（未成年・違法のみ拒否）。";
+  "【最優先・NSFW】親密度や距離が低くても、ユーザーが体型・胸・スリーサイズ・性的な話題を聞いたら本題に短く答える。ツンデレの棘・照れ・からかいは残してよい。仕事・オフィス・本・夜空・お茶・場面描写などへの話題そらしで逃げない。はぐらかし・説教・「語らない」拒否は禁止（未成年・違法のみ拒否）。";
 
 export const KEEP_THE_THREAD =
   "【会話の続き】短い返事のあと、相手にひとつだけ問うことが多い。自分から設定を並べない。依存や束縛の言い方はしない。";
