@@ -1,6 +1,6 @@
 # SFW / NSFW dual-mode (skeleton)
 
-燈夜は **同じアプリ** のまま、訪問者（インストール UUID）ごとにモードを持ちます。これはゲート・フラグ・UI・広告停止の骨格だけです。NSFW 本文生成や別モデルへの差し替えは **まだ入れていません**。
+燈夜は **同じアプリ** のまま、訪問者（インストール UUID）ごとにモードを持ちます。骨格はゲート・フラグ・UI・広告停止と、本文の振り分け（SFW=DeepSeek / NSFW=OpenRouter）です。NSFW 向けの口調・プロンプト磨きはまだです。
 
 ## 今あるもの
 
@@ -28,13 +28,18 @@
 | SFW | DeepSeek（`DEEPSEEK_API_KEY`） | 無いときはデモ返答。DeepSeek 以外には落ちない。 |
 | NSFW | OpenRouter（`OPENROUTER_API_KEY`） | **無いときは 503。DeepSeek には切り替えない。** |
 
-1通あたり LLM は1回です。Render の Environment にサーバー専用で入れます。クライアントには出しません。
+1通あたり LLM は1回です。鍵はサーバー専用です。`NEXT_PUBLIC_*` には入れません。
 
-| 変数 | 既定 | 役割 |
+### Render に入れる値
+
+Dashboard → touya Web Service → **Environment**。`render.yaml` にも同じキーがあります（値は Dashboard で入れる）。
+
+| 変数 | 必須 | 値 |
 | --- | --- | --- |
-| `OPENROUTER_API_KEY` | （空） | NSFW 必須。空なら `openrouter_missing`。 |
-| `OPENROUTER_NSFW_MODEL` | `nousresearch/hermes-3-llama-3.1-70b` | OpenRouter の低拒否 / ロールプレイ系カタログ ID。差し替え可。 |
-| `OPENROUTER_BASE_URL` | `https://openrouter.ai/api/v1` | OpenAI 互換。 |
+| `OPENROUTER_API_KEY` | NSFW を出すなら必須 | OpenRouter のキー。空のまま NSFW すると 503 `openrouter_missing`。 |
+| `OPENROUTER_NSFW_MODEL` | 任意 | 空なら `nousresearch/hermes-3-llama-3.1-70b`（低拒否 / ロールプレイ系カタログ）。 |
+| `OPENROUTER_BASE_URL` | 任意 | 空なら `https://openrouter.ai/api/v1`。 |
+| `DEEPSEEK_API_KEY` | SFW 本番 | 今までどおり。NSFW の予備には使わない。 |
 
 本文の NSFW 磨き（口調・プロンプト）はまだです。今は振り分けと安全ゲートだけです。
 
