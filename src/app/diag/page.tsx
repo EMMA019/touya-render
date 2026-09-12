@@ -2,7 +2,7 @@ import Link from "next/link";
 import { DiagnosisQuiz } from "@/components/diagnosis-quiz";
 import { listPublicCharacters } from "@/lib/characters";
 
-export const dynamic = "force-dynamic";
+export const dynamic = process.env.TOUYA_CF_PAGES === "1" ? "force-static" : "force-dynamic";
 
 export default function DiagnosisPage() {
   const roster = listPublicCharacters();

@@ -45,3 +45,39 @@ test("lasting relationship beat needs a keep cue", () => {
   const kept = extractMemoryFacts("覚えて、友達として続いてほしい");
   assert.ok(kept.some((f) => f.kind === "relationship"));
 });
+
+test("screenshot: wine preference question is not a nickname or preference fact", () => {
+  assert.deepEqual(extractMemoryFacts("僕はどんなワイン好き？"), []);
+  assert.deepEqual(extractMemoryFacts("僕はどんなワインが好き？"), []);
+  assert.deepEqual(extractMemoryFacts("どんなワインが好き"), []);
+  assert.deepEqual(extractMemoryFacts("どんなワインが好き？"), []);
+  assert.deepEqual(extractMemoryFacts("僕はどんなワイン好き"), []);
+});
+
+test("does not store interrogatives or meta-asks as 呼び名", () => {
+  assert.deepEqual(extractMemoryFacts("僕の名前は何？"), []);
+  assert.deepEqual(extractMemoryFacts("なんて呼んでほしいと思う？"), []);
+  assert.deepEqual(extractMemoryFacts("呼び名はどんなワイン好き"), []);
+});
+
+test("nickname only from a clear call-me or name statement", () => {
+  const callMe = extractMemoryFacts("直って呼んで");
+  assert.equal(callMe.length, 1);
+  assert.equal(callMe[0].kind, "profile");
+  assert.equal(callMe[0].text, "呼び名は直");
+
+  const named = extractMemoryFacts("僕の名前は太郎");
+  assert.ok(named.some((f) => f.kind === "profile" && f.text === "呼び名は太郎"));
+});
+
+test("preference stores the value, not the question phrasing", () => {
+  const liked = extractMemoryFacts("深い熟成のワインが好き");
+  assert.deepEqual(liked, [{ kind: "preference", text: "深い熟成のワインが好き" }]);
+  assert.deepEqual(extractMemoryFacts("どんなワインが好き"), []);
+  assert.deepEqual(extractMemoryFacts("ワインはどんなのが好き？"), []);
+});
+
+test("save-cue still drops a question payload", () => {
+  assert.deepEqual(extractMemoryFacts("覚えて、僕はどんなワイン好き？"), []);
+  assert.deepEqual(extractMemoryFacts("覚えて、どんなワインが好き"), []);
+});

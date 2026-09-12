@@ -11,6 +11,7 @@ import { PortraitStage } from "@/components/portrait-stage";
 import { RewardedAdButton } from "@/components/rewarded-ad-button";
 import { DebugUnlimitedMark } from "@/components/quota-pill";
 import { SituationSceneCard } from "@/components/situation-scene-card";
+import { apiUrl } from "@/lib/api-base";
 import { anonymousHeaders } from "@/lib/anonymous-client";
 import type { Bond, BondStage } from "@/lib/bond-types";
 import { situationGreeting, type CharacterPublic } from "@/lib/character-types";
@@ -138,13 +139,13 @@ export function ChatView({
   }, [character.situations, bond.daysMet, affinity.level]);
 
   useEffect(() => {
-    void fetch("/api/session", { headers: anonymousHeaders() })
+    void fetch(apiUrl("/api/session"), { headers: anonymousHeaders() })
       .then((response) => response.json())
       .then((body: { quota?: Quota }) => {
         if (body.quota) setQuota(body.quota);
       })
       .catch(() => undefined);
-    void fetch(`/api/companion?characterId=${character.id}`, { headers: anonymousHeaders() })
+    void fetch(apiUrl(`/api/companion?characterId=${character.id}`), { headers: anonymousHeaders() })
       .then((response) => response.json())
       .then((body: { bond?: Bond; memory?: MemoryRow[]; unlocked?: string[]; affinity?: AffinityPublic }) => {
         if (body.bond) setBond(body.bond);
@@ -207,7 +208,7 @@ export function ChatView({
     ]);
 
     try {
-      const response = await fetch("/api/chat", {
+      const response = await fetch(apiUrl("/api/chat"), {
         method: "POST",
         headers: anonymousHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
@@ -352,7 +353,7 @@ export function ChatView({
         }
         return done;
       });
-      void fetch(`/api/memory?characterId=${character.id}`, { headers: anonymousHeaders() })
+      void fetch(apiUrl(`/api/memory?characterId=${character.id}`), { headers: anonymousHeaders() })
         .then((response) => response.json())
         .then((body: { facts?: MemoryRow[] }) => {
           if (body.facts) setMemory(body.facts);
@@ -375,7 +376,7 @@ export function ChatView({
   }
 
   async function forget(text: string) {
-    const response = await fetch("/api/memory", {
+    const response = await fetch(apiUrl("/api/memory"), {
       method: "DELETE",
       headers: anonymousHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({ characterId: character.id, text }),
@@ -386,7 +387,7 @@ export function ChatView({
 
   async function reportWrong() {
     if (!lastAssistant || feedbackSent) return;
-    await fetch("/api/feedback", {
+    await fetch(apiUrl("/api/feedback"), {
       method: "POST",
       headers: anonymousHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({
