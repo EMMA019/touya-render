@@ -1,10 +1,9 @@
 "use client";
 
-import { Bookmark, ChevronLeft, Lock, MessageCircle, SendHorizontal } from "lucide-react";
+import { ChevronLeft, Lock, MessageCircle, SendHorizontal, Settings } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AffinityHeart } from "@/components/affinity-heart";
-import { BondLamp } from "@/components/bond-lamp";
 import { MemorySheet } from "@/components/memory-sheet";
 import type { UiMessage } from "@/components/message-bubble";
 import { ModeToggle } from "@/components/mode-toggle";
@@ -419,38 +418,45 @@ export function ChatView({
       />
 
       <div className="relative z-10 flex h-full flex-col">
-        <header className="flex items-center justify-between px-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
-          <Link
-            href="/"
-            aria-label="戻る"
-            className="grid size-10 place-items-center rounded-full bg-black/40 text-white backdrop-blur-md"
-          >
-            <ChevronLeft className="size-5" />
-          </Link>
-          <div className="flex items-center gap-1.5">
-            <AffinityHeart affinity={affinity} />
-            <BondLamp stage={bond.stage} />
-            <button
-              type="button"
-              aria-label="覚えていること"
-              onClick={() => setMemoryOpen(true)}
+        <header className="relative flex items-center justify-between px-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
+          <div className="z-10 flex min-w-0 items-center gap-1.5">
+            <Link
+              href="/"
+              aria-label="戻る"
               className="grid size-10 place-items-center rounded-full bg-black/40 text-white backdrop-blur-md"
             >
-              <Bookmark className="size-4" />
-            </button>
-            <ModeToggle compact />
-            <div
-              className="flex items-center gap-1.5 rounded-full bg-black/40 px-3 py-1.5 text-white backdrop-blur-md"
+              <ChevronLeft className="size-5" />
+            </Link>
+            <AffinityHeart affinity={affinity} />
+          </div>
+          <p className="pointer-events-none absolute inset-x-20 truncate text-center text-[15px] font-medium text-white drop-shadow">
+            {character.name}
+          </p>
+          <ChatGearMenu
+            situations={character.situations}
+            situationId={situationId}
+            unlocked={unlocked}
+            onSelectSituation={selectSituation}
+            onOpenMemory={() => setMemoryOpen(true)}
+          />
+        </header>
+        <div className="mt-1 flex items-center gap-1.5 px-3">
+          {chatMode === "nsfw" ? (
+            <span className="rounded-full bg-rose-400/20 px-2 py-0.5 text-[10px] font-semibold tracking-wider text-rose-100">
+              NSFW
+            </span>
+          ) : null}
+          <DebugUnlimitedMark on={quota.debugUnlimited} />
+          {!quota.debugUnlimited ? (
+            <span
+              className="inline-flex items-center gap-1 rounded-full bg-black/35 px-2 py-0.5 text-[10px] text-white/70 backdrop-blur-md"
               title="今日の残り"
             >
-              <MessageCircle className="size-3.5 opacity-80" />
-              <span className="font-mono text-sm tabular-nums">
-                {quota.debugUnlimited ? "∞" : quota.remaining}
-              </span>
-              <DebugUnlimitedMark on={quota.debugUnlimited} />
-            </div>
-          </div>
-        </header>
+              <MessageCircle className="size-3 opacity-80" />
+              {quota.remaining}
+            </span>
+          ) : null}
+        </div>
 
         <div className="mt-3 flex gap-1.5 overflow-x-auto px-3 [scrollbar-width:none]">
           {character.situations.map((scene) => {
@@ -588,6 +594,91 @@ export function ChatView({
         onClose={() => setMemoryOpen(false)}
         onForget={(text) => void forget(text)}
       />
+    </div>
+  );
+}
+
+function ChatGearMenu({
+  situations,
+  situationId,
+  unlocked,
+  onSelectSituation,
+  onOpenMemory,
+}: {
+  situations: CharacterPublic["situations"];
+  situationId: string;
+  unlocked: string[];
+  onSelectSituation: (id: string) => void;
+  onOpenMemory: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function onDoc(event: MouseEvent) {
+      if (rootRef.current && !rootRef.current.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, [open]);
+
+  return (
+    <div ref={rootRef} className="relative z-20">
+      <button
+        type="button"
+        aria-label="設定"
+        aria-expanded={open}
+        onClick={() => setOpen((value) => !value)}
+        className="grid size-10 place-items-center rounded-full bg-black/40 text-white backdrop-blur-md"
+      >
+        <Settings className="size-5" />
+      </button>
+      {open ? (
+        <div className="absolute right-0 z-30 mt-1.5 min-w-52 rounded-xl border border-white/10 bg-[#16101f]/95 py-1.5 shadow-xl backdrop-blur-md">
+          <div className="flex items-center justify-between gap-3 px-3 py-1.5">
+            <span className="text-[12px] text-white/80">モード</span>
+            <ModeToggle compact />
+          </div>
+          <button
+            type="button"
+            className="block w-full px-3 py-2 text-left text-[13px] text-white/90 hover:bg-white/10"
+            onClick={() => {
+              setOpen(false);
+              onOpenMemory();
+            }}
+          >
+            記憶
+          </button>
+          <div className="my-1 border-t border-white/10" />
+          <p className="px-3 py-1 text-[10px] tracking-wide text-white/45">シチュエーション</p>
+          {situations.map((scene) => {
+            const isOpen = unlocked.includes(scene.id);
+            const selected = scene.id === situationId;
+            return (
+              <button
+                key={scene.id}
+                type="button"
+                disabled={!isOpen}
+                className={cn(
+                  "block w-full px-3 py-1.5 text-left text-[13px]",
+                  isOpen ? "text-white/90 hover:bg-white/10" : "text-white/40",
+                )}
+                onClick={() => {
+                  if (!isOpen) return;
+                  setOpen(false);
+                  onSelectSituation(scene.id);
+                }}
+              >
+                {isOpen ? scene.title : `🔒 ${scene.title}`}
+                {selected ? "  ✓" : ""}
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
     </div>
   );
 }

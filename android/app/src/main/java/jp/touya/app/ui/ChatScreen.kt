@@ -19,22 +19,35 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Button
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilledIconButton
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import jp.touya.app.data.AffinityPublic
@@ -45,6 +58,7 @@ import jp.touya.app.data.EMPTY_AFFINITY
 import jp.touya.app.data.MemoryRow
 import jp.touya.app.data.EMPTY_MODE
 import jp.touya.app.data.Quota
+import jp.touya.app.data.SituationPublic
 import jp.touya.app.data.situationCardLines
 import jp.touya.app.domain.ModePublic
 import jp.touya.app.domain.LOCKED_SITUATION_HINT
@@ -117,33 +131,53 @@ fun ChatScreen(
                 .imePadding()
                 .navigationBarsPadding(),
         ) {
-            Row(
-                Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 10.dp),
             ) {
-                IconButton(
-                    onClick = onBack,
-                    colors = IconButtonDefaults.iconButtonColors(containerColor = Color.Black.copy(alpha = 0.4f)),
-                ) {
-                    Text("←", color = Color.White)
-                }
+                Text(
+                    character.name,
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .padding(horizontal = 88.dp)
+                        .fillMaxWidth(),
+                    color = Color.White,
+                    style = MaterialTheme.typography.titleMedium,
+                    textAlign = TextAlign.Center,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    Modifier.align(Alignment.CenterStart),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    AffinityHeart(affinity)
-                    BondLamp(bond.stage)
                     IconButton(
-                        onClick = { onToggleMemory(true) },
+                        onClick = onBack,
                         colors = IconButtonDefaults.iconButtonColors(containerColor = Color.Black.copy(alpha = 0.4f)),
                     ) {
-                        Text("覚", color = Color.White)
+                        Icon(
+                            Icons.AutoMirrored.Outlined.ArrowBack,
+                            contentDescription = "戻る",
+                            tint = Color.White,
+                        )
                     }
-                    ModeChip(mode, onClick = onToggleMode)
-                    QuotaPill(quota, compact = true)
+                    AffinityHeart(affinity)
                 }
+                ChatSettingsMenu(
+                    modifier = Modifier.align(Alignment.CenterEnd),
+                    mode = mode,
+                    situations = character.situations,
+                    situationId = situationId,
+                    unlocked = unlocked,
+                    onToggleMode = onToggleMode,
+                    onOpenMemory = { onToggleMemory(true) },
+                    onSituation = onSituation,
+                )
             }
+
+            ChatChromeTags(mode = mode, quota = quota)
 
             Row(
                 Modifier
@@ -339,6 +373,123 @@ fun ChatScreen(
             onForget = onForget,
         )
         AgeGateDialog(open = ageGateOpen, onConfirm = onConfirmAge, onCancel = onCloseAgeGate)
+    }
+}
+
+@Composable
+private fun ChatSettingsMenu(
+    mode: ModePublic,
+    situations: List<SituationPublic>,
+    situationId: String,
+    unlocked: List<String>,
+    onToggleMode: () -> Unit,
+    onOpenMemory: () -> Unit,
+    onSituation: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var menuOpen by remember { mutableStateOf(false) }
+    Box(modifier) {
+        IconButton(
+            onClick = { menuOpen = true },
+            colors = IconButtonDefaults.iconButtonColors(containerColor = Color.Black.copy(alpha = 0.4f)),
+        ) {
+            Icon(
+                Icons.Outlined.Settings,
+                contentDescription = "設定",
+                tint = Color.White,
+            )
+        }
+        DropdownMenu(
+            expanded = menuOpen,
+            onDismissRequest = { menuOpen = false },
+        ) {
+            DropdownMenuItem(
+                text = {
+                    Text(if (mode.nsfw) "SFWに切り替える" else "NSFWに切り替える")
+                },
+                trailingIcon = {
+                    Text(if (mode.nsfw) "NSFW" else "SFW")
+                },
+                onClick = {
+                    menuOpen = false
+                    onToggleMode()
+                },
+            )
+            DropdownMenuItem(
+                text = { Text("記憶") },
+                onClick = {
+                    menuOpen = false
+                    onOpenMemory()
+                },
+            )
+            HorizontalDivider()
+            Text(
+                "シチュエーション",
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            situations.forEach { scene ->
+                val open = unlocked.isEmpty() || scene.id in unlocked
+                val selected = scene.id == situationId
+                DropdownMenuItem(
+                    text = {
+                        Text(
+                            buildString {
+                                append(if (open) scene.title else "🔒 ${scene.title}")
+                                if (selected) append("  ✓")
+                            },
+                        )
+                    },
+                    enabled = open,
+                    onClick = {
+                        menuOpen = false
+                        onSituation(scene.id)
+                    },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ChatChromeTags(mode: ModePublic, quota: Quota?) {
+    val debug = quota?.debugUnlimited == true
+    if (!mode.nsfw && quota == null) return
+    Row(
+        Modifier.padding(start = 12.dp, end = 12.dp, bottom = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (mode.nsfw) {
+            Surface(shape = CircleShape, color = Color(0x33FB7185)) {
+                Text(
+                    "NSFW",
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color(0xFFFFE4E6),
+                )
+            }
+        }
+        if (debug) {
+            Surface(shape = CircleShape, color = Color(0x3322C55E)) {
+                Text(
+                    "DEBUG",
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color(0xFFD9F99D),
+                )
+            }
+        } else if (quota != null) {
+            Surface(shape = CircleShape, color = Color.Black.copy(alpha = 0.35f)) {
+                Text(
+                    "残り ${quota.remaining}",
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color.White.copy(alpha = 0.72f),
+                )
+            }
+        }
     }
 }
 
