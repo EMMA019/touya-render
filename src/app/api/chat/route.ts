@@ -4,6 +4,7 @@ import { applyBibleFilter } from "@/lib/character-bible";
 import { getCharacter } from "@/lib/characters";
 import { evaluateChatGate } from "@/lib/chat-gate";
 import { demoFallbackEnabled, hasDeepseekKey } from "@/lib/config";
+import { applyCors, corsHeaders, jsonApi } from "@/lib/cors";
 import { extractDelta, streamDeepseek } from "@/lib/deepseek";
 import { pickDemoReply, streamText } from "@/lib/demo";
 import { extractMemoryFacts } from "@/lib/memory-extract";
@@ -21,6 +22,7 @@ import { readClock } from "@/lib/clock";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
+export { OPTIONS } from "@/lib/cors";
 
 type Body = {
   characterId?: string;
@@ -35,33 +37,33 @@ function sse(data: unknown): Uint8Array {
 export async function POST(request: Request) {
   const visitorId = await getVisitorId();
   if (!visitorId) {
-    return Response.json({ error: "visitor_missing" }, { status: 400 });
+    return jsonApi(request, { error: "visitor_missing" }, { status: 400 });
   }
 
   const pace = checkRateLimit(visitorId);
   if (pace === "cooldown") {
-    return Response.json({ error: "cooldown", message: "少し間を置いてね。" }, { status: 429 });
+    return jsonApi(request, { error: "cooldown", message: "少し間を置いてね。" }, { status: 429 });
   }
   if (pace === "busy") {
-    return Response.json({ error: "busy", message: "送りすぎです。1分待ってください。" }, { status: 429 });
+    return jsonApi(request, { error: "busy", message: "送りすぎです。1分待ってください。" }, { status: 429 });
   }
 
   let body: Body;
   try {
     body = (await request.json()) as Body;
   } catch {
-    return Response.json({ error: "invalid_json" }, { status: 400 });
+    return jsonApi(request, { error: "invalid_json" }, { status: 400 });
   }
 
   const character = getCharacter(body.characterId ?? "");
   if (!character) {
-    return Response.json({ error: "unknown_character" }, { status: 400 });
+    return jsonApi(request, { error: "unknown_character" }, { status: 400 });
   }
 
   const history = trimHistory(Array.isArray(body.messages) ? body.messages : []);
   const userText = lastUserText(history);
   if (!userText) {
-    return Response.json({ error: "empty" }, { status: 400 });
+    return jsonApi(request, { error: "empty" }, { status: 400 });
   }
 
   const strike = await readSexualStrike(visitorId, character.id);
@@ -104,7 +106,7 @@ export async function POST(request: Request) {
           controller.close();
         },
       }),
-      { headers: streamHeaders() }
+      { headers: streamHeaders(request) }
     );
   }
 
@@ -112,7 +114,8 @@ export async function POST(request: Request) {
   const useLive = hasDeepseekKey();
 
   if (!useLive && !useDemo) {
-    return Response.json(
+    return jsonApi(
+      request,
       { error: "no_backend", message: "DEEPSEEK_API_KEY を設定してください。" },
       { status: 503 }
     );
@@ -120,7 +123,8 @@ export async function POST(request: Request) {
 
   const quota = await consumeTurn(visitorId);
   if (!quota.allowed) {
-    return Response.json(
+    return jsonApi(
+      request,
       {
         error: "quota",
         message: "本日の無料枠を使い切りました。日本時間の0時に回復します。広告を見て足すか、また明日どうぞ。",
@@ -230,13 +234,13 @@ export async function POST(request: Request) {
     },
   });
 
-  return new Response(stream, { headers: streamHeaders() });
+  return applyCors(new Response(stream, { headers: streamHeaders(request) }), request);
 }
 
-function streamHeaders() {
-  return {
-    "Content-Type": "text/event-stream; charset=utf-8",
-    "Cache-Control": "no-cache, no-transform",
-    Connection: "keep-alive",
-  };
+function streamHeaders(request: Request): Headers {
+  const headers = corsHeaders(request);
+  headers.set("Content-Type", "text/event-stream; charset=utf-8");
+  headers.set("Cache-Control", "no-cache, no-transform");
+  headers.set("Connection", "keep-alive");
+  return headers;
 }

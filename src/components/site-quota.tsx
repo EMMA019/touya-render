@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { QuotaPill } from "@/components/quota-pill";
+import { apiUrl } from "@/lib/api-base";
 import { anonymousHeaders } from "@/lib/anonymous-client";
 import { FREE_DAILY_TURNS } from "@/lib/config";
 
@@ -12,7 +13,7 @@ export function SiteQuota() {
 
   useEffect(() => {
     let cancelled = false;
-    void fetch("/api/session", { headers: anonymousHeaders() })
+    void fetch(apiUrl("/api/session"), { headers: anonymousHeaders() })
       .then((response) => response.json())
       .then((body: { quota?: { remaining?: number; limit?: number; debugUnlimited?: boolean }; debugUnlimited?: boolean }) => {
         if (cancelled || !body.quota) return;

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { apiUrl } from "@/lib/api-base";
 import { anonymousHeaders } from "@/lib/anonymous-client";
 import { REWARD_EXTRA_TURNS } from "@/lib/config";
 import type { Quota } from "@/lib/quota-types";
@@ -27,7 +28,7 @@ export function RewardedAdButton({
     setBusy(true);
     setMessage(null);
     try {
-      const response = await fetch("/api/reward", {
+      const response = await fetch(apiUrl("/api/reward"), {
         method: "POST",
         headers: anonymousHeaders(),
       });

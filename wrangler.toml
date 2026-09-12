@@ -1,0 +1,5 @@
+# Optional. `npx wrangler pages deploy out --project-name touya-web`
+# Dashboard builds should still use: npm install --include=dev && npm run build:cf
+name = "touya-web"
+compatibility_date = "2026-09-01"
+pages_build_output_dir = "out"
