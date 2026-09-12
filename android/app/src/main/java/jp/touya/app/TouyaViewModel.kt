@@ -57,7 +57,6 @@ data class UiState(
 sealed interface Screen {
     data object List : Screen
     data class Chat(val character: CharacterPublic) : Screen
-    data object Diagnosis : Screen
     data object Premium : Screen
     data object Policy : Screen
 }
@@ -196,10 +195,6 @@ class TouyaViewModel(
             it.copy(screen = Screen.List, messages = emptyList(), error = null, memoryOpen = false)
         }
         refresh()
-    }
-
-    fun showDiagnosis() {
-        _state.update { it.copy(screen = Screen.Diagnosis, error = null) }
     }
 
     fun showPremium() {

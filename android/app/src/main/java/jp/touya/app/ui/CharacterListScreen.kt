@@ -43,7 +43,6 @@ fun CharacterListScreen(
     opening: Boolean,
     onSelect: (CharacterPublic) -> Unit,
     onRetry: () -> Unit,
-    onDiagnosis: () -> Unit,
     onPremium: () -> Unit,
     onPolicy: () -> Unit,
     mode: ModePublic = EMPTY_MODE,
@@ -76,11 +75,7 @@ fun CharacterListScreen(
             "雨の音を聴きながらでも、仕事帰りでも。4人の中から、今の気分に合う相手を選んでください。昨夜話した続きも覚えています。会員登録は不要です。無料枠は1日10通。日付が変わると、また話しかけられます。",
             style = MaterialTheme.typography.bodyMedium,
         )
-        Button(onDiagnosis, Modifier.fillMaxWidth()) {
-            Text("今夜の相手を診断する")
-        }
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            TextButton(onPolicy) { Text("燈夜のこだわりと約束") }
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
             TextButton(onPremium) { Text("広告なしで話す") }
         }
         AdPlaceholder(adsEnabled = mode.adsEnabled)
@@ -143,7 +138,11 @@ fun CharacterListScreen(
                 item {
                     Column(verticalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.padding(top = 8.dp)) {
                         Text(
-                            "登場人物はすべて大人のフィクションキャラクターです。未成年を連想させる表現や、成人向け・NSFWコンテンツは取り扱っておりません。",
+                            if (mode.nsfw) {
+                                "登場人物はすべて大人のフィクションキャラクターです。未成年を連想させる表現は扱いません。"
+                            } else {
+                                "登場人物はすべて大人のフィクションキャラクターです。未成年を連想させる表現や、成人向け・NSFWコンテンツは取り扱っておりません。"
+                            },
                             style = MaterialTheme.typography.labelSmall,
                         )
                         Text(
@@ -154,6 +153,9 @@ fun CharacterListScreen(
                             "無料の会話可能数は日本時間の毎日午前0時にリセットされます。リワード広告をご覧いただくことで、当日分の会話数を増やすことができます。",
                             style = MaterialTheme.typography.labelSmall,
                         )
+                        if (!mode.nsfw) {
+                            TextButton(onPolicy) { Text("こだわりと約束") }
+                        }
                     }
                 }
             }
