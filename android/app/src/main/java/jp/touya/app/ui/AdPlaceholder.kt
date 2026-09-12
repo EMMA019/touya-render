@@ -13,7 +13,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun AdPlaceholder(modifier: Modifier = Modifier, label: String = "AdMob バナー（プレースホルダ）") {
+fun AdPlaceholder(
+    modifier: Modifier = Modifier,
+    label: String = "AdMob バナー（プレースホルダ）",
+    adsEnabled: Boolean = true,
+) {
+    if (!adsEnabled) return
     Box(
         modifier
             .fillMaxWidth()

@@ -10,10 +10,13 @@ class TouyaApp : Application() {
         private set
     lateinit var chatStore: ChatStore
         private set
+    lateinit var visitorStore: VisitorStore
+        private set
 
     override fun onCreate() {
         super.onCreate()
-        val installId = VisitorStore(this).anonymousInstallId()
+        visitorStore = VisitorStore(this)
+        val installId = visitorStore.anonymousInstallId()
         client = TouyaClient(installId)
         chatStore = ChatStore(this)
     }

@@ -59,7 +59,9 @@ buildConfigField("String", "API_BASE_URL", "\"http://10.0.2.2:43127\"")
 
 ```
 GET  /api/health
-GET  /api/session        # 残通数のみ。ID は返さない
+GET  /api/session        # 残通数 + chatMode / adsEnabled。ID は返さない
+GET  /api/mode           # モードと年齢確認
+POST /api/mode           # { confirmAge, chatMode }  NSFW は年齢確認後だけ
 GET  /api/characters     # 公開情報 + presence。prompt / bible は含まない
 GET  /api/companion      # ?characterId=  絆・記憶・解放済み場面
 GET  /api/memory         # 覚えていること

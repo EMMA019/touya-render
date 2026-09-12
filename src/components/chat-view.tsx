@@ -7,6 +7,8 @@ import { AffinityHeart } from "@/components/affinity-heart";
 import { BondLamp } from "@/components/bond-lamp";
 import { MemorySheet } from "@/components/memory-sheet";
 import type { UiMessage } from "@/components/message-bubble";
+import { ModeToggle } from "@/components/mode-toggle";
+import { useChatMode } from "@/components/mode-provider";
 import { PortraitStage } from "@/components/portrait-stage";
 import { RewardedAdButton } from "@/components/rewarded-ad-button";
 import { DebugUnlimitedMark } from "@/components/quota-pill";
@@ -52,6 +54,7 @@ export function ChatView({
   initialUnlocked: string[];
   initialAffinity: AffinityPublic;
 }) {
+  const { chatMode, adsEnabled } = useChatMode();
   const firstOpen = character.situations.find((scene) => initialUnlocked.includes(scene.id))?.id;
   const initialSituation =
     character.situations.find((scene) => scene.id === firstOpen) ?? character.situations[0];
@@ -214,6 +217,7 @@ export function ChatView({
         body: JSON.stringify({
           characterId: character.id,
           situationId,
+          mode: chatMode,
           messages: [...historyPayload, { role: "user", content: trimmed }],
         }),
       });
@@ -236,6 +240,11 @@ export function ChatView({
           throw new Error(character.farewell);
         }
         throw new Error(body.message ?? "少し待ってから。");
+      }
+
+      if (response.status === 403) {
+        const body = (await response.json().catch(() => ({}))) as { message?: string };
+        throw new Error(body.message ?? "18歳以上の確認が必要です。");
       }
 
       if (!response.ok || !response.body) {
@@ -429,6 +438,7 @@ export function ChatView({
             >
               <Bookmark className="size-4" />
             </button>
+            <ModeToggle compact />
             <div
               className="flex items-center gap-1.5 rounded-full bg-black/40 px-3 py-1.5 text-white backdrop-blur-md"
               title="今日の残り"
@@ -508,13 +518,17 @@ export function ChatView({
               「{character.farewell}
               {` ${pickHook(character.presence, `${character.id}-hook`, "")}`}」
             </p>
-      <RewardedAdButton
-        rewardsLeft={quota.rewardsLeft}
-        onGranted={(next) => setQuota(next)}
-      />
+      {adsEnabled ? (
+        <RewardedAdButton
+          rewardsLeft={quota.rewardsLeft}
+          onGranted={(next) => setQuota(next)}
+        />
+      ) : null}
+      {adsEnabled ? (
       <Link href="/premium" className="block text-center text-[11px] text-white/60 underline-offset-2 hover:underline">
         広告を非表示にして話す
       </Link>
+      ) : null}
     </div>
   ) : null}
 

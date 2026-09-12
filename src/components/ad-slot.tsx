@@ -1,3 +1,6 @@
+"use client";
+
+import { useChatMode } from "@/components/mode-provider";
 import { AD_COPY, ADS_ENABLED, type AdPlacement } from "@/lib/ads";
 import { cn } from "@/lib/utils";
 
@@ -7,7 +10,8 @@ type AdSlotProps = {
 };
 
 export function AdSlot({ placement, className }: AdSlotProps) {
-  if (!ADS_ENABLED) return null;
+  const { adsEnabled } = useChatMode();
+  if (!ADS_ENABLED || !adsEnabled) return null;
   const copy = AD_COPY[placement];
 
   return (

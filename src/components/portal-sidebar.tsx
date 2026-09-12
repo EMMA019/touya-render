@@ -12,6 +12,7 @@ import {
   Moon,
   Info,
 } from "lucide-react";
+import { ModeToggle } from "@/components/mode-toggle";
 import { APP_NAME, APP_NAME_KANA } from "@/lib/config";
 import { cn } from "@/lib/utils";
 
@@ -74,6 +75,10 @@ export function PortalSidebar({ className }: { className?: string }) {
 
       {/* Sidebar Footer info */}
       <div className="border-t border-white/5 p-4 space-y-3">
+        <div className="flex items-center justify-between rounded-xl border border-white/5 bg-black/20 px-2.5 py-2">
+          <span className="text-[10px] text-amber-100/45">モード</span>
+          <ModeToggle />
+        </div>
         <div className="rounded-xl border border-white/5 bg-black/20 p-2.5">
           <div className="flex items-center gap-1.5 text-[11px] text-amber-200/80">
             <Info className="size-3 text-amber-300" />

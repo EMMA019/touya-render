@@ -2,15 +2,28 @@ import { incrementAffinity, readAffinity, shouldIncrementAffinity } from "@/lib/
 import { touchBond } from "@/lib/bond";
 import { applyBibleFilter } from "@/lib/character-bible";
 import { getCharacter } from "@/lib/characters";
+import { resolveChatBackend } from "@/lib/chat-backend";
 import { evaluateChatGate } from "@/lib/chat-gate";
-import { demoFallbackEnabled, hasDeepseekKey } from "@/lib/config";
+import {
+  NSFW_AGE_REQUIRED,
+  NSFW_AGE_REQUIRED_JA,
+  resolveChatMode,
+} from "@/lib/chat-mode";
+import {
+  OPENROUTER_MISSING_JA,
+  demoFallbackEnabled,
+  hasDeepseekKey,
+  hasOpenRouterKey,
+} from "@/lib/config";
 import { applyCors, corsHeaders, jsonApi } from "@/lib/cors";
 import { extractDelta, streamDeepseek } from "@/lib/deepseek";
+import { streamOpenRouter } from "@/lib/openrouter";
 import { pickDemoReply, streamText } from "@/lib/demo";
 import { extractMemoryFacts } from "@/lib/memory-extract";
 import { rememberFacts } from "@/lib/memory-store";
 import { summarizeMemory } from "@/lib/memory-summary";
 import { lastUserText, trimHistory, type ChatTurn } from "@/lib/messages";
+import { publicModeFromProfile } from "@/lib/mode-public";
 import { isSexualOutput } from "@/lib/output-moderation";
 import { buildSystemPrompt } from "@/lib/prompt";
 import { checkRateLimit } from "@/lib/rate-limit";
@@ -18,6 +31,7 @@ import { refusalText } from "@/lib/sexual-refusals";
 import { bumpSexualStrike, readSexualStrike } from "@/lib/sexual-strikes";
 import { consumeTurn, readQuota } from "@/lib/usage";
 import { getVisitorId } from "@/lib/visitor";
+import { applyVisitorModeChange, readVisitorProfile } from "@/lib/visitor-profile";
 import { readClock } from "@/lib/clock";
 
 export const dynamic = "force-dynamic";
@@ -28,6 +42,7 @@ type Body = {
   characterId?: string;
   situationId?: string;
   messages?: ChatTurn[];
+  mode?: unknown;
 };
 
 function sse(data: unknown): Uint8Array {
@@ -66,12 +81,33 @@ export async function POST(request: Request) {
     return jsonApi(request, { error: "empty" }, { status: 400 });
   }
 
+  const profile = await readVisitorProfile(visitorId);
+  const resolved = resolveChatMode({
+    requested: body.mode,
+    storedMode: profile.chatMode,
+    ageConfirmed: profile.ageConfirmed,
+  });
+  if (!resolved.ok) {
+    const mode = publicModeFromProfile(profile);
+    return jsonApi(
+      request,
+      { error: NSFW_AGE_REQUIRED, message: NSFW_AGE_REQUIRED_JA, ...mode, mode },
+      { status: 403 }
+    );
+  }
+  if (body.mode !== undefined && resolved.mode !== profile.chatMode) {
+    await applyVisitorModeChange(visitorId, { chatMode: resolved.mode });
+  }
+  const chatMode = resolved.mode;
+  const modePublic = publicModeFromProfile({ ...profile, chatMode });
+
   const strike = await readSexualStrike(visitorId, character.id);
   const gate = evaluateChatGate({
     text: userText,
     history,
     style: character.refusalStyle,
     strike,
+    mode: chatMode,
   });
 
   if (!gate.callModel) {
@@ -93,12 +129,14 @@ export async function POST(request: Request) {
         start(controller) {
           controller.enqueue(sse({ type: "quota", ...quota }));
           controller.enqueue(sse({ type: "affinity", ...affinity }));
+          controller.enqueue(sse({ type: "mode", ...modePublic }));
           controller.enqueue(
             sse({
               type: "gate",
               reason: gate.reason,
               skipApi: true,
               level: "level" in gate ? gate.level : undefined,
+              mode: chatMode,
             })
           );
           controller.enqueue(sse({ type: "delta", text: gate.text }));
@@ -110,16 +148,28 @@ export async function POST(request: Request) {
     );
   }
 
-  const useDemo = demoFallbackEnabled() && !hasDeepseekKey();
-  const useLive = hasDeepseekKey();
-
-  if (!useLive && !useDemo) {
+  const backend = resolveChatBackend({
+    mode: chatMode,
+    hasDeepseekKey: hasDeepseekKey(),
+    hasOpenRouterKey: hasOpenRouterKey(),
+    demoEnabled: demoFallbackEnabled(),
+  });
+  if (!backend.ok) {
+    if (backend.error === "openrouter_missing") {
+      return jsonApi(
+        request,
+        { error: "openrouter_missing", message: OPENROUTER_MISSING_JA },
+        { status: 503 }
+      );
+    }
     return jsonApi(
       request,
       { error: "no_backend", message: "DEEPSEEK_API_KEY を設定してください。" },
       { status: 503 }
     );
   }
+  const liveBackend = backend.backend;
+  const useDemo = liveBackend === "demo";
 
   const quota = await consumeTurn(visitorId);
   if (!quota.allowed) {
@@ -134,7 +184,7 @@ export async function POST(request: Request) {
     );
   }
 
-  // Cost-honest: one allowed send = one DeepSeek call. Memory is rules-only (no extra LLM, no supervisor).
+  // Cost-honest: one allowed send = one LLM call. Memory is rules-only (no extra LLM, no supervisor).
   const extracted = extractMemoryFacts(userText);
   const facts = await rememberFacts(visitorId, character.id, extracted);
   const bond = await touchBond(visitorId, character.id, facts.length);
@@ -153,15 +203,17 @@ export async function POST(request: Request) {
       controller.enqueue(sse({ type: "quota", ...quota }));
       controller.enqueue(sse({ type: "bond", ...bond }));
       controller.enqueue(sse({ type: "affinity", ...affinity }));
+      controller.enqueue(sse({ type: "mode", ...modePublic }));
       const started = Date.now();
       let firstTokenAt: number | null = null;
       let assembled = "";
       try {
         if (useDemo) {
           const reply = applyBibleFilter(pickDemoReply(character, userText), character);
-          const safe = isSexualOutput(reply)
-            ? refusalText(character.refusalStyle, 2)
-            : reply;
+          const safe =
+            chatMode === "sfw" && isSexualOutput(reply)
+              ? refusalText(character.refusalStyle, 2)
+              : reply;
           for await (const chunk of streamText(safe)) {
             assembled += chunk;
             if (firstTokenAt === null) {
@@ -175,10 +227,10 @@ export async function POST(request: Request) {
           return;
         }
 
-        const upstream = await streamDeepseek({
-          systemPrompt,
-          messages: history,
-        });
+        const upstream =
+          liveBackend === "openrouter"
+            ? await streamOpenRouter({ systemPrompt, messages: history })
+            : await streamDeepseek({ systemPrompt, messages: history });
         const reader = upstream.getReader();
         const decoder = new TextDecoder();
         let carry = "";
@@ -197,7 +249,9 @@ export async function POST(request: Request) {
             if (delta) {
               if (firstTokenAt === null) {
                 firstTokenAt = Date.now();
-                console.info(`[touya] ttft_ms=${firstTokenAt - started} character=${character.id}`);
+                console.info(
+                  `[touya] ttft_ms=${firstTokenAt - started} character=${character.id} backend=${liveBackend}`
+                );
               }
               assembled += delta;
               controller.enqueue(sse({ type: "delta", text: delta }));
@@ -206,7 +260,7 @@ export async function POST(request: Request) {
         }
 
         const filtered = applyBibleFilter(assembled, character);
-        if (isSexualOutput(filtered)) {
+        if (chatMode === "sfw" && isSexualOutput(filtered)) {
           controller.enqueue(
             sse({
               type: "replace",

@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Noto_Sans_JP, Shippori_Mincho } from "next/font/google";
+import { AgeGateModal } from "@/components/age-gate-modal";
 import { AnonBootstrap } from "@/components/anon-bootstrap";
+import { ModeProvider } from "@/components/mode-provider";
 import { META_DESCRIPTION, META_TITLE } from "@/lib/product-copy";
 import "./globals.css";
 
@@ -29,7 +31,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="flex min-h-full flex-col font-sans">
         <AnonBootstrap />
-        {children}
+        <ModeProvider>
+          {children}
+          <AgeGateModal />
+        </ModeProvider>
       </body>
     </html>
   );

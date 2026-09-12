@@ -7,6 +7,7 @@ import { CharacterPortalCard } from "@/components/character-portal-card";
 import { SituationCardGrid } from "@/components/situation-card-grid";
 import { RecentChatBar } from "@/components/recent-chat-bar";
 import { DifferenceNotes } from "@/components/difference-notes";
+import { AdSlot } from "@/components/ad-slot";
 import { SiteQuota } from "@/components/site-quota";
 import { apiUrl } from "@/lib/api-base";
 import { anonymousHeaders } from "@/lib/anonymous-client";
@@ -66,6 +67,7 @@ export function HomePortal({ initialCharacters }: { initialCharacters: Character
         </header>
 
         <main className="flex-1 px-4 sm:px-6 py-6 max-w-6xl w-full mx-auto space-y-7 pb-24">
+          <AdSlot placement="banner" />
           <PortalBannerHero />
 
           <section className="space-y-3">

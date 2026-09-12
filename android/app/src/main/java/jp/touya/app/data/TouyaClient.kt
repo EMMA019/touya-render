@@ -1,6 +1,7 @@
 package jp.touya.app.data
 
 import jp.touya.app.BuildConfig
+import jp.touya.app.domain.ModePublic
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -29,6 +30,22 @@ class TouyaClient(
         return JSONObject(body).optBoolean("ok")
     }
 
+    fun setMode(confirmAge: Boolean = false, chatMode: String? = null): ModePublic {
+        val payload = JSONObject().apply {
+            if (confirmAge) put("confirmAge", true)
+            if (!chatMode.isNullOrBlank()) put("chatMode", chatMode)
+        }
+        val response = http.newCall(
+            request("/api/mode").post(payload.toString().toRequestBody(jsonType)).build(),
+        ).execute()
+        val body = response.body?.string().orEmpty()
+        val root = runCatching { JSONObject(body) }.getOrNull() ?: JSONObject()
+        if (!response.isSuccessful) {
+            throw ApiException(root.optString("message").ifBlank { "モードを変更できません。" }, response.code)
+        }
+        return parseMode(root)
+    }
+
     fun characters(): List<CharacterPublic> {
         val root = JSONObject(get("/api/characters"))
         val list = root.getJSONArray("characters")
@@ -43,9 +60,12 @@ class TouyaClient(
         return parseQuota(JSONObject(get("/api/usage")))
     }
 
-    fun session(): Quota {
+    fun session(): SessionSnapshot {
         val root = JSONObject(get("/api/session"))
-        return parseQuota(root.getJSONObject("quota"))
+        return SessionSnapshot(
+            quota = parseQuota(root.getJSONObject("quota")),
+            mode = parseMode(root),
+        )
     }
 
     fun companion(characterId: String): CompanionSnapshot {
@@ -107,10 +127,12 @@ class TouyaClient(
     fun streamChat(
         characterId: String,
         situationId: String? = null,
+        mode: String? = null,
         messages: List<ChatMessage>,
         onQuota: (Quota) -> Unit,
         onBond: (Bond) -> Unit,
         onAffinity: (AffinityPublic) -> Unit = {},
+        onMode: (ModePublic) -> Unit = {},
         onDelta: (String) -> Unit,
         onReplace: (String) -> Unit,
         onDone: (gated: Boolean) -> Unit,
@@ -119,6 +141,7 @@ class TouyaClient(
             .put("characterId", characterId)
             .apply {
                 if (!situationId.isNullOrBlank()) put("situationId", situationId)
+                if (!mode.isNullOrBlank()) put("mode", mode)
             }
             .put(
                 "messages",
@@ -138,6 +161,13 @@ class TouyaClient(
             .build()
 
         http.newCall(request).execute().use { response ->
+            if (response.code == 403) {
+                val err = response.body?.string().orEmpty()
+                val obj = runCatching { JSONObject(err) }.getOrNull()
+                throw ApiException(obj?.optString("message").orEmpty().ifBlank {
+                    "18歳以上の確認が必要です。"
+                }, response.code)
+            }
             if (response.code == 429) {
                 val err = response.body?.string().orEmpty()
                 val obj = runCatching { JSONObject(err) }.getOrNull()
@@ -164,6 +194,7 @@ class TouyaClient(
                     "quota" -> onQuota(parseQuota(obj))
                     "bond" -> onBond(parseBond(obj))
                     "affinity" -> onAffinity(parseAffinity(obj))
+                    "mode" -> onMode(parseMode(obj))
                     "delta" -> onDelta(obj.optString("text"))
                     "replace" -> onReplace(obj.optString("text"))
                     "done" -> onDone(obj.optBoolean("gated"))
@@ -286,6 +317,19 @@ class TouyaClient(
                 seven = stringList(streaks?.optJSONArray("seven")),
             ),
             suggestionsByStage = byStage,
+        )
+    }
+
+    private fun parseMode(obj: JSONObject): ModePublic {
+        val nested = obj.optJSONObject("mode")
+        val src = nested ?: obj
+        val chatMode = src.optString("chatMode").ifBlank { obj.optString("chatMode") }.ifBlank { "sfw" }
+        val ads = if (src.has("adsEnabled")) src.optBoolean("adsEnabled") else obj.optBoolean("adsEnabled", chatMode != "nsfw")
+        return ModePublic(
+            chatMode = if (chatMode == "nsfw") "nsfw" else "sfw",
+            ageConfirmed = src.optBoolean("ageConfirmed", obj.optBoolean("ageConfirmed")),
+            ageConfirmedAt = src.optNullString("ageConfirmedAt") ?: obj.optNullString("ageConfirmedAt"),
+            adsEnabled = ads && chatMode != "nsfw",
         )
     }
 

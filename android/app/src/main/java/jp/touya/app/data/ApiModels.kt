@@ -1,5 +1,7 @@
 package jp.touya.app.data
 
+import jp.touya.app.domain.ModePublic
+
 data class Palette(
     val from: String,
     val to: String,
@@ -205,6 +207,13 @@ data class Quota(
     val premium: Boolean = false,
     val rewardsLeft: Int = 2,
     val debugUnlimited: Boolean = false,
+)
+
+val EMPTY_MODE = ModePublic()
+
+data class SessionSnapshot(
+    val quota: Quota,
+    val mode: ModePublic = EMPTY_MODE,
 )
 
 data class ChatMessage(

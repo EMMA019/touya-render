@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { ModeToggle } from "@/components/mode-toggle";
 import { QuotaPill } from "@/components/quota-pill";
 import { apiUrl } from "@/lib/api-base";
 import { anonymousHeaders } from "@/lib/anonymous-client";
@@ -29,5 +30,10 @@ export function SiteQuota() {
     };
   }, []);
 
-  return <QuotaPill remaining={remaining} limit={limit} debugUnlimited={debugUnlimited} />;
+  return (
+    <div className="inline-flex items-center gap-2">
+      <ModeToggle />
+      <QuotaPill remaining={remaining} limit={limit} debugUnlimited={debugUnlimited} />
+    </div>
+  );
 }

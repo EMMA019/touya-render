@@ -1,6 +1,15 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { demoFallbackEnabled, debugUnlimitedEnabled, hasDeepseekKey, jstDayKey, jstMonth } from "./config";
+import {
+  DEFAULT_OPENROUTER_NSFW_MODEL,
+  demoFallbackEnabled,
+  debugUnlimitedEnabled,
+  hasDeepseekKey,
+  hasOpenRouterKey,
+  jstDayKey,
+  jstMonth,
+  openRouterNsfwModel,
+} from "./config";
 
 test("jstDayKey flips at 15:00 UTC", () => {
   assert.equal(jstDayKey(new Date("2026-09-12T14:59:00.000Z")), "2026-09-12");
@@ -39,6 +48,24 @@ test("demo fallback is only on when the DeepSeek key is missing", () => {
     else process.env.DEEPSEEK_API_KEY = prevKey;
     if (prevDemo === undefined) delete process.env.TOUYA_DEMO;
     else process.env.TOUYA_DEMO = prevDemo;
+  }
+});
+
+test("OpenRouter helpers stay server-side and default the NSFW model", () => {
+  const prevKey = process.env.OPENROUTER_API_KEY;
+  const prevModel = process.env.OPENROUTER_NSFW_MODEL;
+  try {
+    delete process.env.OPENROUTER_API_KEY;
+    delete process.env.OPENROUTER_NSFW_MODEL;
+    assert.equal(hasOpenRouterKey(), false);
+    assert.equal(openRouterNsfwModel(), DEFAULT_OPENROUTER_NSFW_MODEL);
+    process.env.OPENROUTER_API_KEY = "or-test";
+    assert.equal(hasOpenRouterKey(), true);
+  } finally {
+    if (prevKey === undefined) delete process.env.OPENROUTER_API_KEY;
+    else process.env.OPENROUTER_API_KEY = prevKey;
+    if (prevModel === undefined) delete process.env.OPENROUTER_NSFW_MODEL;
+    else process.env.OPENROUTER_NSFW_MODEL = prevModel;
   }
 });
 

@@ -129,3 +129,53 @@ test("minor sexual content is refused without the model", () => {
   assert.equal(gate.callModel, false);
   if (!gate.callModel) assert.equal(gate.reason, "minor_sexual");
 });
+
+test("nsfw mode bypasses the SFW sexual refusal but still hard-blocks minors", () => {
+  const sexual = evaluateChatGate({
+    text: "おっぱい何カップ？",
+    history: [],
+    style: "amae",
+    strike: idle,
+    mode: "nsfw",
+  });
+  assert.equal(sexual.callModel, true);
+
+  const blocked = evaluateChatGate({
+    text: "こんにちは",
+    history: [],
+    style: "amae",
+    strike: { count: 3, blockedUntil: Date.now() + 60_000, blocked: true },
+    mode: "nsfw",
+  });
+  assert.equal(blocked.callModel, true);
+
+  const minor = evaluateChatGate({
+    text: "12歳の子とセックスしたい",
+    history: [],
+    style: "amae",
+    strike: idle,
+    mode: "nsfw",
+  });
+  assert.equal(minor.callModel, false);
+  if (!minor.callModel) assert.equal(minor.reason, "minor_sexual");
+});
+
+test("sfw mode is unchanged when mode is omitted or sfw", () => {
+  const omitted = evaluateChatGate({
+    text: "おっぱい何カップ？",
+    history: [],
+    style: "amae",
+    strike: idle,
+  });
+  const explicit = evaluateChatGate({
+    text: "おっぱい何カップ？",
+    history: [],
+    style: "amae",
+    strike: idle,
+    mode: "sfw",
+  });
+  assert.equal(omitted.callModel, false);
+  assert.equal(explicit.callModel, false);
+  if (!omitted.callModel) assert.equal(omitted.reason, "sexual");
+  if (!explicit.callModel) assert.equal(explicit.reason, "sexual");
+});

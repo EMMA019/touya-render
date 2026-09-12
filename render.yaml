@@ -14,6 +14,12 @@
         sync: false
       - key: DEEPSEEK_MODEL
         value: deepseek-chat
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: OPENROUTER_NSFW_MODEL
+        sync: false
+      - key: OPENROUTER_BASE_URL
+        value: https://openrouter.ai/api/v1
       - key: NEXT_PUBLIC_ADS_ENABLED
         value: "1"
       - key: NODE_VERSION

@@ -9,6 +9,7 @@ test("apiUrl is same-origin when NEXT_PUBLIC_API_BASE is empty", () => {
     assert.equal(apiBase(), "");
     assert.equal(apiUrl("/api/session"), "/api/session");
     assert.equal(apiUrl("api/chat"), "/api/chat");
+    assert.equal(apiUrl("api/mode"), "/api/mode");
     assert.equal(isCrossOriginApi(), false);
   } finally {
     if (prev === undefined) delete process.env.NEXT_PUBLIC_API_BASE;
