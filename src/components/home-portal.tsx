@@ -108,7 +108,7 @@ export function HomePortal({ initialCharacters }: { initialCharacters: Character
 
           <footer className="border-t border-white/5 pt-6 text-xs leading-relaxed text-amber-100/40 space-y-2">
             <p>
-              登場人物はすべて大人のフィクションキャラクターです。未成年を連想させる表現や、成人向け・NSFWコンテンツは取り扱っておりません。
+              登場人物はすべて大人のフィクションキャラクターです。未成年を連想させる表現や、成人向け・既定はSFW、NSFWは18歳確認後のみ。未成年や違法な内容は扱いません。
             </p>
             <p>
               お使いの端末に保存されるのは、ランダムに発行された匿名識別子と対話履歴のみです。お名前や連絡先などを取得することはありません。

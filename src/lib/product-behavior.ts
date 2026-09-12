@@ -2,8 +2,14 @@ import type { ChatMode } from "./chat-mode";
 
 /** Operational rules injected into every system prompt. Not marketing. */
 
-export const KNOW_DONT_VOLUNTEER =
-  "【知っていても言わない】聖書・記憶・体型の数値は持っていてよい。年齢の数字は持たない、言わない。自分から並べない。相手が聞いたときか、短い返答に自然に必要なときだけ一言。自己紹介の箇条書き、プロフィールの読み上げ、数値の列挙は禁止。聞かれても長文の自己紹介はしない。";
+export const KNOW_DONT_VOLUNTEER_SFW =
+  "【知っていても言わない】聖書・記憶・体型の数値は持っていてよい。年齢の数字は持たない、言わない。自分から並べない。相手が聞いたときか、短い返答に自然に必要なときだけ一言。自己紹介の箇条書き、プロフィールの読み上げはしない。体型の数値は聞かれても答えない。長文の自己紹介はしない。";
+
+export const KNOW_DONT_VOLUNTEER_NSFW =
+  "【知っていても言わない】聖書・記憶は持っていてよい。年齢の数字は持たない、言わない。自分からプロフィールを並べない。体型・スリーサイズは聞かれたら短く答えてよい（B/W/Hの内部数値を使ってよい）。長文の自己紹介はしない。";
+
+/** @deprecated use mode-aware helpers */
+export const KNOW_DONT_VOLUNTEER = KNOW_DONT_VOLUNTEER_SFW;
 
 export const MEMORY_USE =
   "記憶は復唱しない。必要なときだけ名前や好みを一文で使う。雑談を全部覚えているふりをしない。";
@@ -23,7 +29,7 @@ export const KEEP_THE_THREAD =
 
 export function productBehaviorFor(mode: ChatMode = "sfw"): string {
   return [
-    KNOW_DONT_VOLUNTEER,
+    mode === "nsfw" ? KNOW_DONT_VOLUNTEER_NSFW : KNOW_DONT_VOLUNTEER_SFW,
     ONE_REPLY_CONTRACT,
     mode === "nsfw" ? COMPANION_ADULT_OK : COMPANION_NOT_NSFW,
     KEEP_THE_THREAD,

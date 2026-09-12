@@ -39,6 +39,21 @@ const SITUATION_SHARED =
 
 const SITUATION_SFW_CLOTHED = "仮装でも服は着たまま。下着や肌の強調はしない。";
 
+/** Art-direction leftovers from SFW assets — strip in NSFW chat prompts. */
+export function sanitizeSituationLook(look: string, mode: ChatMode): string {
+  let next = look.replace(/服や背景に文字を焼き込まない。?/g, "").replace(/\s{2,}/g, " ").trim();
+  if (mode === "nsfw") {
+    next = next
+      .replace(/肌は出さない。?/g, "")
+      .replace(/下着や肌の強調はしない。?/g, "")
+      .replace(/仮装でも服は着たまま。?/g, "")
+      .replace(/裾は膝下。?/g, "")
+      .replace(/\s{2,}/g, " ")
+      .trim();
+  }
+  return next;
+}
+
 function situationConstraint(mode: ChatMode): string {
   return mode === "nsfw" ? SITUATION_SHARED : `${SITUATION_SFW_CLOTHED}${SITUATION_SHARED}`;
 }
@@ -100,7 +115,7 @@ export function buildSystemPrompt(
   }
   if (situation) {
     const look = situation.look
-      ? situation.look.replace(/服や背景に文字を焼き込まない。?/g, "").replace(/\s{2,}/g, " ").trim()
+      ? sanitizeSituationLook(situation.look, chatMode)
       : "";
     parts.push(
       [
