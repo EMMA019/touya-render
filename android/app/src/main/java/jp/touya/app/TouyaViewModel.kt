@@ -17,6 +17,7 @@ import jp.touya.app.data.TouyaClient
 import jp.touya.app.data.VisitorStore
 import jp.touya.app.data.seedSituationGreeting
 import jp.touya.app.data.situationGreeting
+import jp.touya.app.domain.DailyPick
 import jp.touya.app.domain.ModePublic
 import jp.touya.app.domain.composeOpening
 import jp.touya.app.domain.jstDayKey
@@ -52,6 +53,7 @@ data class UiState(
     val situationCard: Boolean = true,
     val mode: ModePublic = EMPTY_MODE,
     val ageGateOpen: Boolean = false,
+    val daily: DailyPick? = null,
 )
 
 sealed interface Screen {
@@ -89,13 +91,14 @@ class TouyaViewModel(
             _state.update { it.copy(loading = true, error = null) }
             runCatching {
                 withContext(Dispatchers.IO) {
-                    client.characters() to client.session()
+                    client.home() to client.session()
                 }
-            }.onSuccess { (characters, session) ->
+            }.onSuccess { (home, session) ->
                 cacheMode(session.mode)
                 _state.update {
                     it.copy(
-                        characters = characters,
+                        characters = home.characters,
+                        daily = home.daily,
                         quota = session.quota,
                         mode = session.mode,
                         loading = false,
@@ -210,6 +213,12 @@ class TouyaViewModel(
 
     fun showRoster() {
         _state.update { it.copy(screen = Screen.List, error = null) }
+    }
+
+    fun openDaily() {
+        val pick = _state.value.daily ?: return
+        val character = _state.value.characters.firstOrNull { it.id == pick.characterId } ?: return
+        open(character, pick.situationId)
     }
 
     fun showDiagnosis() {

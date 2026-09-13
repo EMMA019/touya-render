@@ -44,6 +44,7 @@ export const BOND_STORE_FILENAME = "bonds.json";
 export const AFFINITY_STORE_FILENAME = "affinity.json";
 export const FEEDBACK_STORE_FILENAME = "feedback.json";
 export const VISITOR_STORE_FILENAME = "visitors.json";
+export const DAILY_STORE_FILENAME = "daily.json";
 
 /** Daily quota and visit days follow Japan (JST), not UTC. */
 export const QUOTA_TIMEZONE = "Asia/Tokyo";

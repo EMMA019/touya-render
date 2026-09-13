@@ -46,7 +46,10 @@ import jp.touya.app.data.CharacterPublic
 import jp.touya.app.data.EMPTY_MODE
 import jp.touya.app.data.Quota
 import jp.touya.app.data.mediaUrl
+import jp.touya.app.domain.DailyPick
 import jp.touya.app.domain.ModePublic
+import jp.touya.app.domain.dailyPartnerLabel
+import jp.touya.app.domain.untilNextLabel
 import jp.touya.app.domain.ShelfTab
 import jp.touya.app.domain.collectShelfCards
 import jp.touya.app.domain.givenName
@@ -56,11 +59,13 @@ import jp.touya.app.domain.visibleShelfTabs
 @Composable
 fun SituationCardShelf(
     characters: List<CharacterPublic>,
+    daily: DailyPick? = null,
     quota: Quota?,
     loading: Boolean,
     error: String?,
     opening: Boolean,
     onOpenCard: (CharacterPublic, String) -> Unit,
+    onOpenDaily: () -> Unit = {},
     onRetry: () -> Unit,
     onRoster: () -> Unit,
     onDiagnosis: () -> Unit,
@@ -104,6 +109,7 @@ fun SituationCardShelf(
             style = MaterialTheme.typography.bodySmall,
             color = Color(0xFFD9C8B0),
         )
+        DailyShelfBanner(daily = daily, enabled = !opening, onClick = onOpenDaily)
 
         Row(
             Modifier.horizontalScroll(rememberScrollState()),
@@ -311,6 +317,62 @@ private fun FilterAvatar(
             }
         }
         Text(label, color = Color(0xFFD9C8B0), style = MaterialTheme.typography.labelSmall)
+    }
+}
+
+@Composable
+private fun DailyShelfBanner(
+    daily: DailyPick?,
+    enabled: Boolean,
+    onClick: () -> Unit,
+) {
+    if (daily == null) return
+    val art = mediaUrl(daily.image)
+    val progress = untilNextLabel(daily.untilNext, daily.untilNextName)
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .background(Color(0xFF161020))
+            .clickable(enabled = enabled, onClick = onClick)
+            .padding(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            Modifier
+                .size(width = 72.dp, height = 96.dp)
+                .clip(RoundedCornerShape(10.dp))
+                .background(Color(0xFF2A2038)),
+        ) {
+            if (art != null) {
+                AsyncImage(
+                    model = art,
+                    contentDescription = daily.title,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop,
+                    alignment = Alignment.Center,
+                )
+            }
+        }
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+            Text("今日のカード", style = MaterialTheme.typography.labelSmall, color = Color(0xFFE8C48A))
+            Text(
+                "今日の相手  ${dailyPartnerLabel(daily)}",
+                style = MaterialTheme.typography.bodyMedium,
+                color = Color(0xFFF6EDE0),
+            )
+            Text(
+                "今日のシチュ  ${daily.title}",
+                style = MaterialTheme.typography.bodySmall,
+                color = Color(0xFFD9C8B0),
+            )
+            if (progress != null) {
+                Text(progress, style = MaterialTheme.typography.labelSmall, color = Color(0xFFE8C48A))
+            } else if (daily.firstToday) {
+                Text("今日も来た", style = MaterialTheme.typography.labelSmall, color = Color(0xFFE8C48A))
+            }
+        }
     }
 }
 
