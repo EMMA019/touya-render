@@ -1,7 +1,6 @@
 import { getCharacter, isCharacterId } from "@/lib/characters";
 import { jsonApi } from "@/lib/cors";
 import { GIFT_COOLDOWN_JA, giveGift, listGiftsForVisitor } from "@/lib/gifts";
-import { checkRateLimit } from "@/lib/rate-limit";
 import { getVisitorId } from "@/lib/visitor";
 
 export const dynamic = "force-dynamic";
@@ -20,14 +19,6 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   const visitorId = await getVisitorId();
   if (!visitorId) return jsonApi(request, { error: "visitor_missing" }, { status: 400 });
-
-  const pace = checkRateLimit(visitorId);
-  if (pace === "cooldown") {
-    return jsonApi(request, { error: "cooldown", message: "少し間を置いてね。" }, { status: 429 });
-  }
-  if (pace === "busy") {
-    return jsonApi(request, { error: "busy", message: "送りすぎです。1分待ってください。" }, { status: 429 });
-  }
 
   let body: { characterId?: string; giftId?: string };
   try {
