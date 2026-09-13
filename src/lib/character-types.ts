@@ -30,11 +30,14 @@ export type SituationPublic = {
   id: string;
   title: string;
   image?: string | null;
+  /** Optional looping situation card video (Oz-style). PNG `image` stays required. */
+  video?: string | null;
   season?: SituationSeason;
   costume?: SituationCostume;
   greeting?: string;
   lines?: SituationLine[];
   minLevel?: number;
+  nsfwOnly?: boolean;
 };
 
 export type CharacterSituation = SituationPublic & {
@@ -69,18 +72,40 @@ export function situationGreeting(
   return line || fallback;
 }
 
-export function toPublicSituation(scene: CharacterSituation): SituationPublic {
+export function situationNsfwOnly(scene?: { nsfwOnly?: boolean } | null): boolean {
+  return scene?.nsfwOnly === true;
+}
+
+export function situationMediaPath(value: unknown): string | null {
+  if (value == null) return null;
+  if (typeof value !== "string") return null;
+  const path = value.trim();
+  return path || null;
+}
+
+export const LOCKED_INTIMATE_TITLE = "特別な時間";
+
+export function toPublicSituation(
+  scene: CharacterSituation,
+  access?: { nsfwAllowed?: boolean },
+): SituationPublic {
+  const video = situationMediaPath(scene.video);
+  const nsfwOnly = situationNsfwOnly(scene);
+  const revealIntimate = !nsfwOnly || access?.nsfwAllowed === true;
   return {
     id: scene.id,
-    title: scene.title,
-    image: scene.image ?? null,
+    title: revealIntimate ? scene.title : LOCKED_INTIMATE_TITLE,
+    image: revealIntimate ? scene.image ?? null : null,
+    ...(revealIntimate && video ? { video } : {}),
     season: scene.season,
     costume: scene.costume,
-    greeting: scene.greeting,
-    minLevel: situationMinLevel(scene),
-    lines: Array.isArray(scene.lines)
-      ? scene.lines.filter((line) => situationLineText(line).length > 0).slice(0, 3)
-      : undefined,
+    greeting: revealIntimate ? scene.greeting : undefined,
+    minLevel: nsfwOnly ? Math.max(situationMinLevel(scene), 2) : situationMinLevel(scene),
+    ...(nsfwOnly ? { nsfwOnly: true } : {}),
+    lines:
+      revealIntimate && Array.isArray(scene.lines)
+        ? scene.lines.filter((line) => situationLineText(line).length > 0).slice(0, 3)
+        : undefined,
   };
 }
 
@@ -122,6 +147,8 @@ export type CharacterPublic = {
   presence?: CharacterPresence;
   bwh?: CharacterBwh;
   affinity?: AffinityPublic;
+  /** Visitor-specific unlock ids from `/api/characters`. Empty means compute locally. */
+  unlocked?: string[];
 };
 
 export type CharacterBwh = {

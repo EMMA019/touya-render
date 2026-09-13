@@ -99,6 +99,10 @@ test("shipped characters stay adult-coded without ages", () => {
   assert.equal(pub.greeting, cafe.greeting);
   assert.deepEqual(pub.lines, cafe.lines);
   assert.equal("setting" in pub, false);
+  assert.equal("video" in pub, false);
+  assert.equal("nsfwOnly" in pub, false);
+  const pubVideo = toPublicSituation({ ...cafe, video: "/situations/hiyori/cafe-rain.mp4" });
+  assert.equal(pubVideo.video, "/situations/hiyori/cafe-rain.mp4");
 
   for (const character of roster) {
     const first = character.situations[0];

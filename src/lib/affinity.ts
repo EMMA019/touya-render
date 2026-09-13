@@ -6,6 +6,7 @@ import { levelFromCount, type AffinityPublic } from "./affinity-types";
 export {
   AFFINITY_LEVELS,
   EMPTY_AFFINITY,
+  NSFW_MIN_AFFINITY_LEVEL,
   levelFromCount,
   shouldIncrementAffinity,
   type AffinityPublic,

@@ -70,14 +70,18 @@ export function HomePortal({ initialCharacters }: { initialCharacters: Character
           <AdSlot placement="banner" />
           <PortalBannerHero />
 
-          <section className="space-y-3">
+          <SituationCardGrid roster={characters} />
+
+          <PortalUpsellBanner />
+
+          <section className="space-y-3" id="roster">
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-base font-bold tracking-tight text-amber-50">
-                  今夜の相手を選ぶ
+                  名簿
                 </h3>
                 <p className="text-xs text-amber-100/50">
-                  4人の女性コンパニオン。今の気分に合う人を選んでお話しください。
+                  相手のプロフィールから入るとき。
                 </p>
               </div>
               <Link
@@ -99,10 +103,6 @@ export function HomePortal({ initialCharacters }: { initialCharacters: Character
               ))}
             </div>
           </section>
-
-          <PortalUpsellBanner />
-
-          <SituationCardGrid roster={characters} />
 
           <DifferenceNotes />
 
