@@ -30,6 +30,8 @@ export type SituationPublic = {
   id: string;
   title: string;
   image?: string | null;
+  /** Optional looping situation card video (Oz-style). PNG `image` stays required. */
+  video?: string | null;
   season?: SituationSeason;
   costume?: SituationCostume;
   greeting?: string;
@@ -69,11 +71,20 @@ export function situationGreeting(
   return line || fallback;
 }
 
+export function situationMediaPath(value: unknown): string | null {
+  if (value == null) return null;
+  if (typeof value !== "string") return null;
+  const path = value.trim();
+  return path || null;
+}
+
 export function toPublicSituation(scene: CharacterSituation): SituationPublic {
+  const video = situationMediaPath(scene.video);
   return {
     id: scene.id,
     title: scene.title,
     image: scene.image ?? null,
+    ...(video ? { video } : {}),
     season: scene.season,
     costume: scene.costume,
     greeting: scene.greeting,

@@ -16,7 +16,7 @@ export function SituationPortrait({
 
   return (
     <div className={cn("relative min-h-[280px] overflow-hidden", className)}>
-      <PortraitStage character={character} situation={scene} className="absolute inset-0" />
+      <PortraitStage character={character} situation={scene} motion={false} className="absolute inset-0" />
     </div>
   );
 }

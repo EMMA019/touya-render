@@ -34,9 +34,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
 import jp.touya.app.data.AffinityPublic
 import jp.touya.app.data.Bond
 import jp.touya.app.data.CharacterPublic
@@ -101,15 +99,13 @@ fun ChatScreen(
     }
 
     Box(Modifier.fillMaxSize().background(Brush.verticalGradient(sky))) {
-        character.situationArt(situationId)?.let { art ->
-            AsyncImage(
-                model = art,
-                contentDescription = null,
-                modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Fit,
-                alignment = Alignment.Center,
-            )
-        }
+        ChatArtSurface(
+            characterId = character.id,
+            situationId = situationId,
+            stillModel = character.situationArt(situationId),
+            videoPath = character.situationVideo(situationId),
+            modifier = Modifier.fillMaxSize(),
+        )
         Column(
             Modifier
                 .fillMaxSize()
