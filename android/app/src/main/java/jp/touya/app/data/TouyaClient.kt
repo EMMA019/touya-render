@@ -246,11 +246,13 @@ class TouyaClient(
                             id = scene.optString("id"),
                             title = scene.optString("title"),
                             image = scene.optNullString("image"),
+                            video = scene.optNullString("video"),
                             season = scene.optNullString("season"),
                             costume = scene.optNullString("costume"),
                             greeting = scene.optNullString("greeting"),
                             lines = parseSituationLines(scene.optJSONArray("lines")),
                             minLevel = scene.optInt("minLevel", 0),
+                            nsfwOnly = scene.optBoolean("nsfwOnly", false),
                         ),
                     )
                 }
@@ -266,6 +268,7 @@ class TouyaClient(
             presence = obj.optJSONObject("presence")?.let { parsePresence(it) },
             bwh = parseBwh(obj.optJSONObject("bwh")),
             affinity = parseAffinity(obj.optJSONObject("affinity")),
+            unlocked = stringList(obj.optJSONArray("unlocked")),
         )
     }
 

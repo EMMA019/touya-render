@@ -1,4 +1,4 @@
-import { EMPTY_AFFINITY, readAffinity, type AffinityPublic } from "./affinity";
+import { EMPTY_AFFINITY, NSFW_MIN_AFFINITY_LEVEL, readAffinity, type AffinityPublic } from "./affinity";
 import { readBond, touchBond } from "./bond";
 import type { Bond } from "./bond-types";
 import type { CharacterId, SituationPublic } from "./character-types";
@@ -32,7 +32,13 @@ export async function loadCompanion(
     bond,
     memory,
     affinity,
-    unlocked: unlockedSituationIds(situations, bond.daysMet, new Date(), affinity.level),
+    unlocked: unlockedSituationIds(
+      situations,
+      bond.daysMet,
+      new Date(),
+      affinity.level,
+      affinity.level >= NSFW_MIN_AFFINITY_LEVEL,
+    ),
   };
 }
 

@@ -74,4 +74,12 @@ test("catalog rejects ages, school framing, and missing look contract", () => {
 
   const badStyle = { ...base(), artStyle: "oil" as Character["artStyle"] };
   assert.ok(validateCharacter(badStyle, "suzune.json").some((issue) => issue.includes("artStyle")));
+
+  const blankVideo = base();
+  blankVideo.situations = [{ ...blankVideo.situations[0], video: "   " }];
+  assert.ok(validateCharacter(blankVideo, "suzune.json").some((issue) => issue.includes("video")));
+
+  const withVideo = base();
+  withVideo.situations = [{ ...withVideo.situations[0], video: "/situations/suzune/stacks.mp4" }];
+  assert.deepEqual(validateCharacter(withVideo, "suzune.json"), []);
 });

@@ -54,4 +54,14 @@ class DiagnosisUnlockTest {
         assertEquals(true, isSituationUnlocked(daily, 1, september, 0))
         assertNull(daysUntilUnlock(maid, 3, september, 0))
     }
+
+    @Test
+    fun nsfwOnlyNeedsSpecialAndAllowed() {
+        val intimate = SituationPublic(id = "after-hours", title = "夜更け", nsfwOnly = true, minLevel = 2)
+        val september = Instant.parse("2026-09-12T13:00:00Z")
+        assertEquals(false, isSituationUnlocked(intimate, 10, september, 1, false))
+        assertEquals(false, isSituationUnlocked(intimate, 10, september, 2, false))
+        assertEquals(true, isSituationUnlocked(intimate, 0, september, 2, true))
+        assertEquals(LOCKED_INTIMATE_HINT, situationLockHint(intimate))
+    }
 }

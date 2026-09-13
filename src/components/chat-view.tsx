@@ -2,6 +2,7 @@
 
 import { Bookmark, ChevronLeft, Lock, MessageCircle, SendHorizontal } from "lucide-react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AffinityHeart } from "@/components/affinity-heart";
 import { BondLamp } from "@/components/bond-lamp";
@@ -46,6 +47,7 @@ export function ChatView({
   initialMemory,
   initialUnlocked,
   initialAffinity,
+  initialSituationId,
 }: {
   character: CharacterPublic;
   initialQuota: Quota;
@@ -53,9 +55,14 @@ export function ChatView({
   initialMemory: MemoryRow[];
   initialUnlocked: string[];
   initialAffinity: AffinityPublic;
+  initialSituationId?: string;
 }) {
   const { chatMode, adsEnabled } = useChatMode();
-  const firstOpen = character.situations.find((scene) => initialUnlocked.includes(scene.id))?.id;
+  const search = useSearchParams();
+  const wanted = (initialSituationId ?? search.get("s") ?? "").trim();
+  const firstOpen =
+    (wanted && initialUnlocked.includes(wanted) ? wanted : undefined) ??
+    character.situations.find((scene) => initialUnlocked.includes(scene.id))?.id;
   const initialSituation =
     character.situations.find((scene) => scene.id === firstOpen) ?? character.situations[0];
   const opening = composeOpening({
@@ -158,6 +165,17 @@ export function ChatView({
       })
       .catch(() => undefined);
   }, [character.id]);
+
+  useEffect(() => {
+    if (!wanted || !unlocked.includes(wanted) || wanted === situationId) return;
+    const scene = character.situations.find((row) => row.id === wanted);
+    if (!scene) return;
+    setSituationId(wanted);
+    setCardOpen(true);
+    setMessages((prev) =>
+      seedSituationGreeting(prev, wanted, situationGreeting(scene, character.greeting)),
+    );
+  }, [wanted, unlocked, character, situationId]);
 
   const historyPayload = useMemo(
     () => messages.map(({ role, content }) => ({ role, content })),

@@ -12,6 +12,7 @@ import jp.touya.app.ui.ChatScreen
 import jp.touya.app.ui.DiagnosisScreen
 import jp.touya.app.ui.PolicyScreen
 import jp.touya.app.ui.PremiumScreen
+import jp.touya.app.ui.SituationCardShelf
 import jp.touya.app.ui.theme.TouyaTheme
 
 class MainActivity : ComponentActivity() {
@@ -27,17 +28,36 @@ class MainActivity : ComponentActivity() {
             TouyaTheme {
                 val state by viewModel.state.collectAsState()
                 when (val screen = state.screen) {
+                    Screen.Shelf -> SituationCardShelf(
+                        characters = state.characters,
+                        quota = state.quota,
+                        loading = state.loading,
+                        error = state.error,
+                        opening = state.opening,
+                        onOpenCard = { character, situationId -> viewModel.open(character, situationId) },
+                        onRetry = viewModel::refresh,
+                        onRoster = viewModel::showRoster,
+                        onDiagnosis = viewModel::showDiagnosis,
+                        onPremium = viewModel::showPremium,
+                        onPolicy = viewModel::showPolicy,
+                        mode = state.mode,
+                        ageGateOpen = state.ageGateOpen,
+                        onToggleMode = viewModel::toggleMode,
+                        onConfirmAge = viewModel::confirmAgeAndEnableNsfw,
+                        onCloseAgeGate = viewModel::closeAgeGate,
+                    )
                     Screen.List -> CharacterListScreen(
                         characters = state.characters,
                         quota = state.quota,
                         loading = state.loading,
                         error = state.error,
                         opening = state.opening,
-                        onSelect = viewModel::open,
+                        onSelect = { viewModel.open(it) },
                         onRetry = viewModel::refresh,
                         onDiagnosis = viewModel::showDiagnosis,
                         onPremium = viewModel::showPremium,
                         onPolicy = viewModel::showPolicy,
+                        onShelf = viewModel::showList,
                         mode = state.mode,
                         ageGateOpen = state.ageGateOpen,
                         onToggleMode = viewModel::toggleMode,
@@ -79,7 +99,7 @@ class MainActivity : ComponentActivity() {
                     )
                     Screen.Diagnosis -> DiagnosisScreen(
                         characters = state.characters,
-                        onSelect = viewModel::open,
+                        onSelect = { viewModel.open(it) },
                         onBack = viewModel::showList,
                     )
                     Screen.Premium -> PremiumScreen(onBack = viewModel::showList)

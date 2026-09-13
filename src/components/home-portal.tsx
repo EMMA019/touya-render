@@ -66,18 +66,22 @@ export function HomePortal({ initialCharacters }: { initialCharacters: Character
           </div>
         </header>
 
-        <main className="flex-1 px-4 sm:px-6 py-6 max-w-6xl w-full mx-auto space-y-7 pb-24">
+        <main className="flex-1 px-4 sm:px-6 py-6 max-w-6xl w-full mx-auto space-y-7 pb-36">
+          <SituationCardGrid roster={characters} />
+
           <AdSlot placement="banner" />
           <PortalBannerHero />
 
-          <section className="space-y-3">
+          <PortalUpsellBanner />
+
+          <section className="space-y-3" id="roster">
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-base font-bold tracking-tight text-amber-50">
-                  今夜の相手を選ぶ
+                  名簿
                 </h3>
                 <p className="text-xs text-amber-100/50">
-                  4人の女性コンパニオン。今の気分に合う人を選んでお話しください。
+                  相手のプロフィールから入るとき。
                 </p>
               </div>
               <Link
@@ -99,10 +103,6 @@ export function HomePortal({ initialCharacters }: { initialCharacters: Character
               ))}
             </div>
           </section>
-
-          <PortalUpsellBanner />
-
-          <SituationCardGrid roster={characters} />
 
           <DifferenceNotes />
 

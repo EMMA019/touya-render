@@ -46,6 +46,7 @@ fun CharacterListScreen(
     onDiagnosis: () -> Unit,
     onPremium: () -> Unit,
     onPolicy: () -> Unit,
+    onShelf: () -> Unit = {},
     mode: ModePublic = EMPTY_MODE,
     ageGateOpen: Boolean = false,
     onToggleMode: () -> Unit = {},
@@ -71,6 +72,7 @@ fun CharacterListScreen(
                 QuotaPill(quota)
             }
         }
+        TextButton(onShelf) { Text("カード一覧へ戻る") }
         Text("夜に、話せる相手がいる。", style = MaterialTheme.typography.titleMedium)
         Text(
             "雨の音を聴きながらでも、仕事帰りでも。4人の中から、今の気分に合う相手を選んでください。昨夜話した続きも覚えています。会員登録は不要です。無料枠は1日10通。日付が変わると、また話しかけられます。",

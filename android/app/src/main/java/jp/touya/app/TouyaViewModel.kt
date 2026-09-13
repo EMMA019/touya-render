@@ -31,7 +31,7 @@ import kotlinx.coroutines.withContext
 import java.time.Instant
 
 data class UiState(
-    val screen: Screen = Screen.List,
+    val screen: Screen = Screen.Shelf,
     val characters: List<CharacterPublic> = emptyList(),
     val quota: Quota? = null,
     val messages: List<ChatMessage> = emptyList(),
@@ -55,6 +55,7 @@ data class UiState(
 )
 
 sealed interface Screen {
+    data object Shelf : Screen
     data object List : Screen
     data class Chat(val character: CharacterPublic) : Screen
     data object Diagnosis : Screen
@@ -108,7 +109,7 @@ class TouyaViewModel(
         }
     }
 
-    fun open(character: CharacterPublic) {
+    fun open(character: CharacterPublic, situationId: String? = null) {
         if (_state.value.opening) return
         viewModelScope.launch {
             _state.update { it.copy(opening = true, error = null, rewardMessage = null) }
@@ -121,11 +122,20 @@ class TouyaViewModel(
             val lastDay = store.loadLastVisitDay(character.id)
             val today = jstDayKey()
             val hook = if (lastDay != null && lastDay != today) store.loadHook(character.id) else null
+            val nsfwAllowed = affinity.level >= jp.touya.app.domain.NSFW_MIN_AFFINITY_LEVEL
             val unlocked = companion?.unlocked?.ifEmpty { null }
-                ?: unlockedSituationIds(character.situations, bond.daysMet, Instant.now(), affinity.level)
-            val situationId = character.situations.firstOrNull { unlocked.contains(it.id) }?.id
+                ?: unlockedSituationIds(
+                    character.situations,
+                    bond.daysMet,
+                    Instant.now(),
+                    affinity.level,
+                    nsfwAllowed,
+                )
+            val requested = situationId?.takeIf { it.isNotBlank() && (unlocked.isEmpty() || it in unlocked) }
+            val resolvedSituationId = requested
+                ?: character.situations.firstOrNull { unlocked.contains(it.id) }?.id
                 ?: character.situations.firstOrNull()?.id.orEmpty()
-            val scene = character.situations.firstOrNull { it.id == situationId }
+            val scene = character.situations.firstOrNull { it.id == resolvedSituationId }
             val opening = composeOpening(
                 id = character.id,
                 greeting = situationGreeting(scene, character.greeting),
@@ -156,7 +166,7 @@ class TouyaViewModel(
                     messages = messages,
                     input = "",
                     error = null,
-                    situationId = situationId,
+                    situationId = resolvedSituationId,
                     bond = bond,
                     affinity = affinity,
                     memory = companion?.memory.orEmpty(),
@@ -193,9 +203,13 @@ class TouyaViewModel(
 
     fun showList() {
         _state.update {
-            it.copy(screen = Screen.List, messages = emptyList(), error = null, memoryOpen = false)
+            it.copy(screen = Screen.Shelf, messages = emptyList(), error = null, memoryOpen = false)
         }
         refresh()
+    }
+
+    fun showRoster() {
+        _state.update { it.copy(screen = Screen.List, error = null) }
     }
 
     fun showDiagnosis() {
@@ -272,6 +286,7 @@ class TouyaViewModel(
                                             bond.daysMet,
                                             Instant.now(),
                                             s.affinity.level,
+                                            s.affinity.level >= jp.touya.app.domain.NSFW_MIN_AFFINITY_LEVEL,
                                         )
                                     } ?: s.unlocked,
                                 )
@@ -288,6 +303,7 @@ class TouyaViewModel(
                                             s.bond.daysMet,
                                             Instant.now(),
                                             affinity.level,
+                                            affinity.level >= jp.touya.app.domain.NSFW_MIN_AFFINITY_LEVEL,
                                         )
                                     } ?: s.unlocked,
                                 )

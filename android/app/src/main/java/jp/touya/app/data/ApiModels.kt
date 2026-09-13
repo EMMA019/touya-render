@@ -145,11 +145,15 @@ data class CharacterPublic(
     val presence: CharacterPresence? = null,
     val bwh: CharacterBwh? = null,
     val affinity: AffinityPublic = EMPTY_AFFINITY,
+    val unlocked: List<String> = emptyList(),
 ) {
     fun rosterArt(): String? = mediaUrl(portraitImage ?: situations.firstOrNull()?.image)
 
     fun situationArt(situationId: String): String? =
         mediaUrl(situations.firstOrNull { it.id == situationId }?.image ?: portraitImage)
+
+    fun situationVideo(situationId: String): String? =
+        situations.firstOrNull { it.id == situationId }?.video
 }
 
 data class SituationLine(
@@ -161,11 +165,13 @@ data class SituationPublic(
     val id: String,
     val title: String,
     val image: String? = null,
+    val video: String? = null,
     val season: String? = null,
     val costume: String? = null,
     val greeting: String? = null,
     val lines: List<SituationLine> = emptyList(),
     val minLevel: Int = 0,
+    val nsfwOnly: Boolean = false,
 )
 
 fun situationGreeting(situation: SituationPublic?, fallback: String): String {

@@ -1,4 +1,4 @@
-import { readAffinity } from "@/lib/affinity";
+import { NSFW_MIN_AFFINITY_LEVEL, readAffinity } from "@/lib/affinity";
 import { readBond, touchBond } from "@/lib/bond";
 import { getCharacter, getPublicCharacter } from "@/lib/characters";
 import { jsonApi } from "@/lib/cors";
@@ -27,7 +27,13 @@ export async function GET(request: Request) {
     bond,
     affinity,
     memory: facts.map(({ kind, text, at }) => ({ kind, text, at })),
-    unlocked: unlockedSituationIds(publicCharacter.situations, bond.daysMet, new Date(), affinity.level),
+    unlocked: unlockedSituationIds(
+      publicCharacter.situations,
+      bond.daysMet,
+      new Date(),
+      affinity.level,
+      affinity.level >= NSFW_MIN_AFFINITY_LEVEL,
+    ),
   });
 }
 

@@ -18,7 +18,7 @@ Kairi（ローカル BYOK + 接地レイヤー）の「短い文脈」「生成�
 | 検索接地や監督＋書き直し | **薄い一貫性。** 閉世界の聖書。ソフトフィルタは直すだけで、呼び直さない |
 | 毎日同じ挨拶 | **今夜が違う。** 時刻・曜日・季節・連続日・不在を、LLM なしの台詞で出す（`shared/presence/`） |
 
-実装の入口: プロンプト契約は毎回 `productBehaviorFor(chatMode)` を足します（SFW は `COMPANION_NOT_NSFW`、NSFW は `COMPANION_ADULT_OK`）。記憶の書き込みは `MEMORY_WRITE_POLICY`。ランディングの文言は `src/lib/product-copy.ts` で、上の表と同じ約束です。SFW/NSFW の骨格（年齢確認・広告停止・サーバー強制）は [docs/dual-mode.md](docs/dual-mode.md)。
+実装の入口: プロンプト契約は毎回 `productBehaviorFor(chatMode)` を足します（SFW は `COMPANION_NOT_NSFW`、NSFW は `COMPANION_ADULT_OK`）。記憶の書き込みは `MEMORY_WRITE_POLICY`。ランディングの文言は `src/lib/product-copy.ts` で、上の表と同じ約束です。SFW/NSFW の骨格（年齢確認・広告停止・サーバー強制）は [docs/dual-mode.md](docs/dual-mode.md)。発見 UI は状況カード棚（[docs/OZ_COMPETE_ROADMAP.md](docs/OZ_COMPETE_ROADMAP.md)）。
 
 ## リポジトリ構成（モノレポ）
 

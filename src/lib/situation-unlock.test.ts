@@ -23,6 +23,15 @@ test("halloween opens in October even on the first visit", () => {
   assert.equal(daysUntilUnlock(daily, 1, september), null);
 });
 
+test("nsfwOnly stays locked until affinity 特別 and nsfwAllowed", () => {
+  const intimate = { id: "after-hours", title: "夜更け", nsfwOnly: true, minLevel: 2 };
+  const september = new Date("2026-09-12T12:00:00+09:00");
+  assert.equal(isSituationUnlocked(intimate, 10, september, 1, false), false);
+  assert.equal(isSituationUnlocked(intimate, 10, september, 2, false), false);
+  assert.equal(isSituationUnlocked(intimate, 0, september, 2, true), true);
+  assert.equal(daysUntilUnlock(intimate, 10, september, 1, false), null);
+});
+
 test("minLevel gates costumes even when days or halloween season would open them", () => {
   const september = new Date("2026-09-12T12:00:00+09:00");
   const october = new Date("2026-10-03T12:00:00+09:00");

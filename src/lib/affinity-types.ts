@@ -16,6 +16,9 @@ export type AffinityPublic = {
 
 export const AFFINITY_LEVELS: AffinityLevelRow[] = thresholds.levels;
 
+/** Intimate / nsfwOnly cards open at 特別. Chat NSFW gate (PR #7) is separate. */
+export const NSFW_MIN_AFFINITY_LEVEL = 2;
+
 export const EMPTY_AFFINITY: AffinityPublic = levelFromCount(0);
 
 export function levelFromCount(count: number): AffinityPublic {
