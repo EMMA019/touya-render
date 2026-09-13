@@ -74,7 +74,7 @@ test("toAffinityEvent reports a drop without a level-up banner", () => {
   assert.equal(drop.name, "知り合い");
   assert.equal(drop.levelUpMessage, null);
   assert.equal(drop.bandEvent, null);
-  assert.equal(drop.affinityToast, null);
+  assert.equal(drop.affinityToast, "少し距離ができた");
 });
 
 test("clampAffinityDelta allows -1 / +1 / +2 only", () => {

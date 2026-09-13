@@ -212,7 +212,7 @@ class TouyaViewModel(
         val toast = affinity.affinityToast?.takeIf { banner == null && it.isNotBlank() }
         _state.update {
             it.copy(
-                levelUpMessage = banner ?: it.levelUpMessage,
+                levelUpMessage = banner,
                 affinityToast = toast,
             )
         }

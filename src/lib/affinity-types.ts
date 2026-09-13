@@ -119,7 +119,7 @@ export function toAffinityEvent(
     previousName: previous.name,
     previousCount: previous.count,
     levelUpMessage: band ? `${band.title}。${band.blurb}` : null,
-    affinityToast: leveledUp || leveledDown ? null : affinityToastMessage(delta),
+    affinityToast: leveledUp ? null : affinityToastMessage(delta),
     bandEvent: band,
   };
 }

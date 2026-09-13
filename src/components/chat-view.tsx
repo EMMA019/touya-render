@@ -356,6 +356,7 @@ export function ChatView({
               setLevelUpMessage(payload.levelUpMessage);
               setAffinityToast(null);
             } else if (payload.affinityToast) {
+              setLevelUpMessage(null);
               setAffinityToast(payload.affinityToast);
             }
           }
