@@ -81,3 +81,7 @@ POST /api/chat           # SSE: quota / bond / delta / replace / done / error
 ```
 # Android Studio の Gradle :app:testDebugUnitTest
 ```
+
+## Live2D（任意）
+
+チャットの絵は既定で Coil の静止画です。公式 **Cubism SDK for Java** を置いて `TOUYA_LIVE2D=1` にしたときだけ、固定名簿のモデルを `GLSurfaceView` で出します。Core の `.aar` はコミットしません。手順は [LIVE2D.md](LIVE2D.md)。

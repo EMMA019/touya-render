@@ -57,3 +57,13 @@ android/build/
 android/app/build/
 android/local.properties
 android/.idea/
+
+# Live2D Cubism Core is proprietary — do not commit the AAR or dropped-in SDK.
+android/app/libs/*.aar
+android/live2d/Core/
+android/live2d/Framework/
+android/live2d/Sample/
+android/live2d/samples/
+android/app/src/main/assets/live2d/**
+!android/app/src/main/assets/live2d/
+!android/app/src/main/assets/live2d/README.md
