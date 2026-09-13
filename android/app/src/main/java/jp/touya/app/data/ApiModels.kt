@@ -108,7 +108,13 @@ data class CompanionSnapshot(
     val bond: Bond = EMPTY_BOND,
     val memory: List<MemoryRow> = emptyList(),
     val unlocked: List<String> = emptyList(),
+    /** scene id → lock reason ("band" / "chapter" / "flag" / "season" / "mode"). */
+    val locks: Map<String, String> = emptyMap(),
     val affinity: AffinityPublic = EMPTY_AFFINITY,
+    /** Null only when the API predates the story runner. */
+    val story: StoryPublic? = null,
+    /** The chapter in progress, or null. */
+    val script: StoryScriptPublic? = null,
 )
 
 data class CharacterBwh(
@@ -165,8 +171,66 @@ data class SituationPublic(
     val costume: String? = null,
     val greeting: String? = null,
     val lines: List<SituationLine> = emptyList(),
+    /** Server already resolves this to the band the scene needs (see situationRequiredLevel). */
     val minLevel: Int = 0,
+    /** True when the API carried `minLevel` (it always does); false for locally built fixtures. */
+    val minLevelExplicit: Boolean = false,
+    /** Intimate scene: needs NSFW mode and at least 特別. */
+    val nsfwOnly: Boolean = false,
+    /** Extra story flags on top of the band (rare). */
+    val requires: List<String> = emptyList(),
 )
+
+/** Mirror of StoryPublic (src/lib/story-types.ts). */
+data class StoryPublic(
+    val chapterId: String? = null,
+    val beat: String? = null,
+    val flags: List<String> = emptyList(),
+    val metVia: String? = null,
+    /** -1 before Ch0, else 0..3 */
+    val effectiveLevel: Int = -1,
+    val effectiveName: String = "はじめて",
+    val pendingChapter: Int? = null,
+    val warmth: String = "warm",
+    val nsfwEligible: Boolean = false,
+)
+
+data class StoryChoice(
+    val id: String,
+    val label: String,
+    val next: String,
+    val userText: String? = null,
+    val metVia: String? = null,
+)
+
+data class StoryBeat(
+    val id: String,
+    val kind: String,
+    val text: List<String>,
+    val narration: String? = null,
+    val next: String? = null,
+    val choices: List<StoryChoice> = emptyList(),
+    val hook: String? = null,
+)
+
+data class StoryChapterPublic(
+    val id: String,
+    val chapter: Int,
+    val situationId: String,
+    val entry: String,
+    val beats: List<StoryBeat>,
+)
+
+data class StoryScriptPublic(
+    val characterId: String,
+    val version: Int,
+    val chapters: List<StoryChapterPublic>,
+) {
+    fun chapter(id: String?): StoryChapterPublic? = chapters.firstOrNull { it.id == id }
+
+    fun beat(chapterId: String?, beatId: String?): StoryBeat? =
+        chapter(chapterId)?.beats?.firstOrNull { it.id == beatId }
+}
 
 fun situationGreeting(situation: SituationPublic?, fallback: String): String {
     val line = situation?.greeting?.trim().orEmpty()
@@ -221,4 +285,6 @@ data class ChatMessage(
     val content: String,
     val pending: Boolean = false,
     val id: String = "",
+    /** Story stage direction: drawn as a caption, not a speech bubble. */
+    val narration: Boolean = false,
 )
