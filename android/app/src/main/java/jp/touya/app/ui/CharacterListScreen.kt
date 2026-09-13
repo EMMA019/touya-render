@@ -67,7 +67,7 @@ fun CharacterListScreen(
                 Text("燈夜", style = MaterialTheme.typography.headlineMedium)
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                ModeChip(mode, onClick = onToggleMode)
+                ModeChip(mode, onClick = onToggleMode, locked = true)
                 QuotaPill(quota)
             }
         }

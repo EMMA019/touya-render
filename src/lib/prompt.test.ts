@@ -124,7 +124,10 @@ test("prompt injects affinity name only, not counts or history", () => {
     affinityName: "仲良し",
   });
   const affinityLine = prompt.split("\n").find((line) => line.startsWith("【親密度】"));
-  assert.equal(affinityLine, "【親密度】仲良し。名前だけ持つ。数値や履歴は言わない。");
+  assert.equal(
+    affinityLine,
+    "【親密度】仲良し。名前だけ持つ。数値や履歴は言わない。仲良し。気軽で優しい。淡い好意は出してよい。性的にはしない。",
+  );
   assert.doesNotMatch(affinityLine ?? "", /\d/);
   assert.equal(prompt.split("【親密度】").length, 2);
 });

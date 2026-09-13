@@ -1,9 +1,11 @@
 import { VISITOR_STORE_FILENAME } from "./config";
 import {
   DEFAULT_CHAT_MODE,
+  NSFW_AFFINITY_REQUIRED,
   NSFW_AGE_REQUIRED,
   coerceChatMode,
   effectiveStoredMode,
+  nsfwDenial,
   parseChatMode,
   type ChatMode,
 } from "./chat-mode";
@@ -55,15 +57,22 @@ export async function readVisitorProfile(visitorId: string): Promise<VisitorProf
 export type ModeChangeInput = {
   confirmAge?: boolean;
   chatMode?: unknown;
+  /** Required when switching that character's chat to NSFW. */
+  affinityLevel?: number | null;
 };
 
 export type ModeChangeResult =
   | { ok: true; profile: VisitorProfile }
-  | { ok: false; error: typeof NSFW_AGE_REQUIRED; profile: VisitorProfile };
+  | {
+      ok: false;
+      error: typeof NSFW_AGE_REQUIRED | typeof NSFW_AFFINITY_REQUIRED;
+      profile: VisitorProfile;
+    };
 
 /**
  * Persist age self-attestation and/or chat mode.
- * NSFW is stored only after the visitor is age-confirmed on the server.
+ * NSFW is stored only after age confirm AND this character is 特別.
+ * Debug unlimited never bypasses that pair of gates.
  */
 export async function applyVisitorModeChange(
   visitorId: string,
@@ -85,10 +94,16 @@ export async function applyVisitorModeChange(
 
     if (input.chatMode !== undefined) {
       const mode = parseChatMode(input.chatMode);
-      if (mode === "nsfw" && !next.ageConfirmed) {
-        data.visitors[visitorId] = current;
-        await store.persist(data);
-        return { ok: false, error: NSFW_AGE_REQUIRED, profile: current };
+      if (mode === "nsfw") {
+        const denied = nsfwDenial({
+          affinityLevel: input.affinityLevel ?? 0,
+          ageConfirmed: next.ageConfirmed,
+        });
+        if (denied) {
+          data.visitors[visitorId] = next;
+          await store.persist(data);
+          return { ok: false, error: denied, profile: next };
+        }
       }
       if (mode) next = { ...next, chatMode: mode };
     }

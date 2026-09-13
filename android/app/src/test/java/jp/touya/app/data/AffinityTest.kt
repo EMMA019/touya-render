@@ -12,6 +12,7 @@ class AffinityTest {
         assertEquals("知り合い", zero.name)
         assertEquals(10, zero.nextAt)
         assertEquals(0f, zero.progress, 0.0001f)
+        assertEquals(10, zero.remainingToNext)
 
         val nine = levelFromCount(9)
         assertEquals(0, nine.level)

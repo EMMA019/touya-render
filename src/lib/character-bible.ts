@@ -18,7 +18,9 @@ export function bibleContract(
   situations: CharacterSituation[] = [],
   mode: ChatMode = DEFAULT_CHAT_MODE
 ): string {
-  const scenes = situations.length > 0 ? situationTitles(situations) : bible.setting;
+  const visible =
+    mode === "nsfw" ? situations : situations.filter((scene) => scene.nsfwOnly !== true);
+  const scenes = visible.length > 0 ? situationTitles(visible) : bible.setting;
   const measure =
     mode === "nsfw"
       ? `${bwhLine(bible)}体型の数値は、聞かれたらキャラの口調で短く答えてよい。自分からは並べない。説教や夜空などへの話題そらしはしない。`

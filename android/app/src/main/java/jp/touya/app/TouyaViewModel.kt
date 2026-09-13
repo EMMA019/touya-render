@@ -52,6 +52,7 @@ data class UiState(
     val situationCard: Boolean = true,
     val mode: ModePublic = EMPTY_MODE,
     val ageGateOpen: Boolean = false,
+    val levelUpMessage: String? = null,
 )
 
 sealed interface Screen {
@@ -121,13 +122,26 @@ class TouyaViewModel(
             val lastDay = store.loadLastVisitDay(character.id)
             val today = jstDayKey()
             val hook = if (lastDay != null && lastDay != today) store.loadHook(character.id) else null
+            val characterForChat = if (companion?.situations?.isNotEmpty() == true) {
+                character.copy(situations = companion.situations, nsfwUnlocked = companion.nsfwUnlocked)
+            } else {
+                character
+            }
+            val nsfwAllowed = _state.value.mode.nsfw &&
+                jp.touya.app.domain.canAccessNsfw(affinity.level, _state.value.mode.ageConfirmed)
             val unlocked = companion?.unlocked?.ifEmpty { null }
-                ?: unlockedSituationIds(character.situations, bond.daysMet, Instant.now(), affinity.level)
-            val situationId = character.situations.firstOrNull { unlocked.contains(it.id) }?.id
-                ?: character.situations.firstOrNull()?.id.orEmpty()
-            val scene = character.situations.firstOrNull { it.id == situationId }
+                ?: unlockedSituationIds(
+                    characterForChat.situations,
+                    bond.daysMet,
+                    Instant.now(),
+                    affinity.level,
+                    nsfwAllowed,
+                )
+            val situationId = characterForChat.situations.firstOrNull { unlocked.contains(it.id) }?.id
+                ?: characterForChat.situations.firstOrNull()?.id.orEmpty()
+            val scene = characterForChat.situations.firstOrNull { it.id == situationId }
             val opening = composeOpening(
-                id = character.id,
+                id = characterForChat.id,
                 greeting = situationGreeting(scene, character.greeting),
                 welcomeBack = character.welcomeBack.ifBlank { character.greeting },
                 presence = character.presence,
@@ -152,7 +166,7 @@ class TouyaViewModel(
             store.saveChat(character.id, messages)
             _state.update {
                 it.copy(
-                    screen = Screen.Chat(character),
+                    screen = Screen.Chat(characterForChat),
                     messages = messages,
                     input = "",
                     error = null,
@@ -189,6 +203,10 @@ class TouyaViewModel(
 
     fun dismissSituationCard() {
         _state.update { it.copy(situationCard = false) }
+    }
+
+    fun dismissLevelUp() {
+        _state.update { it.copy(levelUpMessage = null) }
     }
 
     fun showList() {
@@ -264,6 +282,8 @@ class TouyaViewModel(
                         onBond = { bond ->
                             _state.update { s ->
                                 val screenState = s.screen as? Screen.Chat
+                                val nsfwAllowed = s.mode.nsfw &&
+                                    jp.touya.app.domain.canAccessNsfw(s.affinity.level, s.mode.ageConfirmed)
                                 s.copy(
                                     bond = bond,
                                     unlocked = screenState?.let {
@@ -272,6 +292,7 @@ class TouyaViewModel(
                                             bond.daysMet,
                                             Instant.now(),
                                             s.affinity.level,
+                                            nsfwAllowed,
                                         )
                                     } ?: s.unlocked,
                                 )
@@ -280,14 +301,18 @@ class TouyaViewModel(
                         onAffinity = { affinity ->
                             _state.update { s ->
                                 val screenState = s.screen as? Screen.Chat
+                                val nsfwAllowed = s.mode.nsfw &&
+                                    jp.touya.app.domain.canAccessNsfw(affinity.level, s.mode.ageConfirmed)
                                 s.copy(
                                     affinity = affinity,
+                                    levelUpMessage = affinity.levelUpMessage ?: s.levelUpMessage,
                                     unlocked = screenState?.let {
                                         unlockedSituationIds(
                                             it.character.situations,
                                             s.bond.daysMet,
                                             Instant.now(),
                                             affinity.level,
+                                            nsfwAllowed,
                                         )
                                     } ?: s.unlocked,
                                 )
@@ -364,6 +389,12 @@ class TouyaViewModel(
     }
 
     fun requestNsfw() {
+        val affinityLevel = _state.value.affinity.level
+        val characterId = (_state.value.screen as? Screen.Chat)?.character?.id
+        if (characterId.isNullOrBlank() || affinityLevel < jp.touya.app.domain.NSFW_MIN_AFFINITY_LEVEL) {
+            _state.update { it.copy(error = jp.touya.app.domain.NSFW_AFFINITY_REQUIRED_JA) }
+            return
+        }
         if (_state.value.mode.ageConfirmed) {
             setMode(chatMode = "nsfw")
         } else {
@@ -390,7 +421,8 @@ class TouyaViewModel(
     private fun setMode(confirmAge: Boolean = false, chatMode: String? = null, closeGate: Boolean = false) {
         viewModelScope.launch {
             runCatching {
-                withContext(Dispatchers.IO) { client.setMode(confirmAge, chatMode) }
+                val characterId = (_state.value.screen as? Screen.Chat)?.character?.id
+                withContext(Dispatchers.IO) { client.setMode(confirmAge, chatMode, characterId) }
             }.onSuccess { mode ->
                 cacheMode(mode)
                 _state.update {

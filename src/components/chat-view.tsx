@@ -36,7 +36,11 @@ import type { Quota } from "@/lib/quota-types";
 import { isMobileChatInput, resizeComposer } from "@/lib/chat-composer";
 import { seedSituationGreeting } from "@/lib/situation-greeting";
 import { situationIcon } from "@/lib/situation-icons";
-import { LOCKED_SITUATION_HINT, unlockedSituationIds } from "@/lib/situation-unlock";
+import {
+  situationChipTitle,
+  situationLockHint,
+  unlockedSituationIds,
+} from "@/lib/situation-unlock";
 import { cn } from "@/lib/utils";
 
 export function ChatView({
@@ -54,10 +58,11 @@ export function ChatView({
   initialUnlocked: string[];
   initialAffinity: AffinityPublic;
 }) {
-  const { chatMode, adsEnabled } = useChatMode();
-  const firstOpen = character.situations.find((scene) => initialUnlocked.includes(scene.id))?.id;
+  const { chatMode, adsEnabled, nsfwLockMessage } = useChatMode();
+  const [situations, setSituations] = useState(character.situations);
+  const firstOpen = situations.find((scene) => initialUnlocked.includes(scene.id))?.id;
   const initialSituation =
-    character.situations.find((scene) => scene.id === firstOpen) ?? character.situations[0];
+    situations.find((scene) => scene.id === firstOpen) ?? situations[0];
   const opening = composeOpening({
     id: character.id,
     greeting: situationGreeting(initialSituation, character.greeting),
@@ -79,6 +84,7 @@ export function ChatView({
   const [memory, setMemory] = useState<MemoryRow[]>(initialMemory);
   const [unlocked, setUnlocked] = useState<string[]>(initialUnlocked);
   const [affinity, setAffinity] = useState<AffinityPublic>(initialAffinity ?? EMPTY_AFFINITY);
+  const [levelUpMessage, setLevelUpMessage] = useState<string | null>(null);
   const [memoryOpen, setMemoryOpen] = useState(false);
   const [feedbackSent, setFeedbackSent] = useState(false);
   const [hydrated, setHydrated] = useState(false);
@@ -89,7 +95,7 @@ export function ChatView({
   const seq = useRef(0);
 
   const limited = !quota.debugUnlimited && quota.remaining <= 0;
-  const situation = character.situations.find((row) => row.id === situationId);
+  const situation = situations.find((row) => row.id === situationId);
   const recent = messages.slice(-5);
   const lastAssistant = [...messages].reverse().find((row) => row.role === "assistant" && row.content);
   const expression = classifyExpression(lastAssistant?.content ?? character.greeting);
@@ -97,6 +103,16 @@ export function ChatView({
   useEffect(() => {
     scroller.current?.scrollTo({ top: scroller.current.scrollHeight, behavior: "smooth" });
   }, [messages]);
+
+  useEffect(() => {
+    if (!levelUpMessage) return;
+    const timer = window.setTimeout(() => setLevelUpMessage(null), 6000);
+    return () => window.clearTimeout(timer);
+  }, [levelUpMessage]);
+
+  useEffect(() => {
+    setSituations(character.situations);
+  }, [character]);
 
   useEffect(() => {
     resizeComposer(boxRef.current);
@@ -138,8 +154,16 @@ export function ChatView({
   }, [character.id, hydrated, messages]);
 
   useEffect(() => {
-    setUnlocked(unlockedSituationIds(character.situations, bond.daysMet, new Date(), affinity.level));
-  }, [character.situations, bond.daysMet, affinity.level]);
+    setUnlocked(
+      unlockedSituationIds(
+        situations,
+        bond.daysMet,
+        new Date(),
+        affinity.level,
+        chatMode === "nsfw",
+      ),
+    );
+  }, [situations, bond.daysMet, affinity.level, chatMode]);
 
   useEffect(() => {
     void fetch(apiUrl("/api/session"), { headers: anonymousHeaders() })
@@ -150,14 +174,21 @@ export function ChatView({
       .catch(() => undefined);
     void fetch(apiUrl(`/api/companion?characterId=${character.id}`), { headers: anonymousHeaders() })
       .then((response) => response.json())
-      .then((body: { bond?: Bond; memory?: MemoryRow[]; unlocked?: string[]; affinity?: AffinityPublic }) => {
+      .then((body: {
+        bond?: Bond;
+        memory?: MemoryRow[];
+        unlocked?: string[];
+        affinity?: AffinityPublic;
+        situations?: CharacterPublic["situations"];
+      }) => {
         if (body.bond) setBond(body.bond);
         if (body.memory) setMemory(body.memory);
         if (body.unlocked) setUnlocked(body.unlocked);
         if (body.affinity) setAffinity(body.affinity);
+        if (body.situations) setSituations(body.situations);
       })
       .catch(() => undefined);
-  }, [character.id]);
+  }, [character.id, chatMode]);
 
   const historyPayload = useMemo(
     () => messages.map(({ role, content }) => ({ role, content })),
@@ -165,7 +196,7 @@ export function ChatView({
   );
 
   function selectSituation(id: string) {
-    const scene = character.situations.find((row) => row.id === id);
+    const scene = situations.find((row) => row.id === id);
     if (!scene || !unlocked.includes(id)) return;
     if (id === situationId) {
       setCardOpen(true);
@@ -244,7 +275,7 @@ export function ChatView({
 
       if (response.status === 403) {
         const body = (await response.json().catch(() => ({}))) as { message?: string };
-        throw new Error(body.message ?? "18歳以上の確認が必要です。");
+        throw new Error(body.message ?? "もっと仲良くなったら、特別な話ができるよ。");
       }
 
       if (!response.ok || !response.body) {
@@ -290,6 +321,9 @@ export function ChatView({
             name?: string;
             nextAt?: number | null;
             progress?: number;
+            remainingToNext?: number | null;
+            leveledUp?: boolean;
+            levelUpMessage?: string | null;
             level?: number | string;
           };
           if (payload.type === "quota" && typeof payload.remaining === "number") {
@@ -322,13 +356,19 @@ export function ChatView({
             });
           }
           if (payload.type === "affinity" && typeof payload.name === "string") {
-            setAffinity({
+            const nextAffinity = {
               count: typeof payload.count === "number" ? payload.count : 0,
               level: typeof payload.level === "number" ? payload.level : 0,
               name: payload.name,
               nextAt: typeof payload.nextAt === "number" ? payload.nextAt : null,
               progress: typeof payload.progress === "number" ? payload.progress : 0,
-            });
+              remainingToNext:
+                typeof payload.remainingToNext === "number" ? payload.remainingToNext : null,
+            };
+            setAffinity(nextAffinity);
+            if (payload.leveledUp && payload.levelUpMessage) {
+              setLevelUpMessage(payload.levelUpMessage);
+            }
           }
           if (payload.type === "delta" && payload.text) {
             assembled += payload.text;
@@ -438,7 +478,7 @@ export function ChatView({
             >
               <Bookmark className="size-4" />
             </button>
-            <ModeToggle compact />
+            <ModeToggle compact characterId={character.id} affinityLevel={affinity.level} />
             <div
               className="flex items-center gap-1.5 rounded-full bg-black/40 px-3 py-1.5 text-white backdrop-blur-md"
               title="今日の残り"
@@ -452,8 +492,29 @@ export function ChatView({
           </div>
         </header>
 
+        {levelUpMessage ? (
+          <div
+            className="mx-3 mt-2 rounded-full bg-rose-400/20 px-3 py-1.5 text-center text-[12px] text-rose-50 backdrop-blur-md"
+            role="status"
+          >
+            {levelUpMessage}
+            <button
+              type="button"
+              className="ml-2 text-[10px] text-rose-100/70 underline-offset-2 hover:underline"
+              onClick={() => setLevelUpMessage(null)}
+            >
+              閉じる
+            </button>
+          </div>
+        ) : null}
+        {nsfwLockMessage ? (
+          <p className="px-4 pt-1 text-center text-[11px] text-rose-100/80" role="status">
+            {nsfwLockMessage}
+          </p>
+        ) : null}
+
         <div className="mt-3 flex gap-1.5 overflow-x-auto px-3 [scrollbar-width:none]">
-          {character.situations.map((scene) => {
+          {situations.map((scene) => {
             const Icon = situationIcon(scene.id, scene.season, scene.costume);
             const open = unlocked.includes(scene.id);
             return (
@@ -471,8 +532,10 @@ export function ChatView({
                 )}
               >
                 {open ? <Icon className="size-3" /> : <Lock className="size-3" />}
-                {scene.title}
-                {!open ? <span className="text-[10px] opacity-80">{LOCKED_SITUATION_HINT}</span> : null}
+                {situationChipTitle(scene, open)}
+                {!open ? (
+                  <span className="text-[10px] opacity-80">{situationLockHint(scene, affinity.level)}</span>
+                ) : null}
               </button>
             );
           })}

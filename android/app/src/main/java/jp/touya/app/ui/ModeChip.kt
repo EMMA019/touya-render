@@ -12,19 +12,32 @@ import androidx.compose.ui.unit.dp
 import jp.touya.app.domain.ModePublic
 
 @Composable
-fun ModeChip(mode: ModePublic, onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun ModeChip(
+    mode: ModePublic,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    locked: Boolean = false,
+    lockHint: String = jp.touya.app.domain.NSFW_LOCK_HINT,
+) {
     val nsfw = mode.nsfw
     Surface(
-        onClick = onClick,
+        onClick = { if (nsfw || !locked) onClick() },
+        enabled = nsfw || !locked,
         modifier = modifier,
         shape = CircleShape,
         color = if (nsfw) Color(0x33FB7185) else MaterialTheme.colorScheme.surfaceVariant,
     ) {
         Text(
-            if (nsfw) "NSFW" else "SFW",
+            when {
+                nsfw -> "NSFW"
+                locked -> lockHint
+                else -> "SFW"
+            },
             modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
             style = MaterialTheme.typography.labelSmall,
-            color = if (nsfw) Color(0xFFFFE4E6) else MaterialTheme.colorScheme.onSurfaceVariant,
+            color = if (nsfw) Color(0xFFFFE4E6) else MaterialTheme.colorScheme.onSurfaceVariant.copy(
+                alpha = if (locked) 0.55f else 1f,
+            ),
         )
     }
 }

@@ -1,6 +1,14 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { daysUntilUnlock, isSituationUnlocked, unlockedSituationIds } from "./situation-unlock";
+import {
+  LOCKED_INTIMATE_HINT,
+  LOCKED_INTIMATE_TITLE,
+  daysUntilUnlock,
+  isSituationUnlocked,
+  situationChipTitle,
+  situationLockHint,
+  unlockedSituationIds,
+} from "./situation-unlock";
 
 const daily = { id: "cafe-rain", title: "雨のカフェ", season: undefined, costume: undefined };
 const maid = { id: "maid", title: "メイド", costume: "maid" as const };
@@ -35,4 +43,30 @@ test("minLevel gates costumes even when days or halloween season would open them
   assert.equal(isSituationUnlocked(halloweenLv1, 1, october, 1), true);
   assert.equal(daysUntilUnlock(maidLv1, 3, september, 0), null);
   assert.equal(daysUntilUnlock(maidLv1, 1, september, 1), 2);
+});
+
+test("nsfwOnly stays locked until 特別 + NSFW, even if already in NSFW", () => {
+  const intimate = {
+    id: "late-night",
+    title: "夜更け",
+    nsfwOnly: true,
+    minLevel: 2,
+  };
+  const september = new Date("2026-09-12T12:00:00+09:00");
+  assert.equal(isSituationUnlocked(intimate, 10, september, 0, false), false);
+  assert.equal(isSituationUnlocked(intimate, 10, september, 1, true), false);
+  assert.equal(isSituationUnlocked(intimate, 10, september, 2, false), false);
+  assert.equal(isSituationUnlocked(intimate, 1, september, 2, true), true);
+  assert.deepEqual(
+    unlockedSituationIds([daily, intimate], 3, september, 2, false),
+    ["cafe-rain"],
+  );
+  assert.deepEqual(
+    unlockedSituationIds([daily, intimate], 3, september, 2, true),
+    ["cafe-rain", "late-night"],
+  );
+  assert.equal(situationChipTitle(intimate, false), LOCKED_INTIMATE_TITLE);
+  assert.equal(situationChipTitle(intimate, true), "夜更け");
+  assert.equal(situationLockHint(intimate, 0), LOCKED_INTIMATE_HINT);
+  assert.equal(daysUntilUnlock(intimate, 1, september, 0, false), null);
 });
