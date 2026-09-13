@@ -1,5 +1,6 @@
 import type { CharacterPresence } from "./presence-types";
-import type { AffinityPublic } from "./affinity-types";
+import { NSFW_MIN_AFFINITY_LEVEL, type AffinityPublic } from "./affinity-types";
+import type { StoryFlag } from "./story-types";
 
 export type CharacterId = string;
 
@@ -35,12 +36,51 @@ export type SituationPublic = {
   greeting?: string;
   lines?: SituationLine[];
   minLevel?: number;
+  /** Intimate scene: needs NSFW mode and at least 特別 (see NSFW_MIN_AFFINITY_LEVEL). */
+  nsfwOnly?: boolean;
+  /** Explicit story flags on top of the band (rare). Costumes implicitly need the band's entry flag. */
+  requires?: StoryFlag[];
 };
 
 export type CharacterSituation = SituationPublic & {
   setting: string;
   look: string;
 };
+
+/**
+ * Unlock bands by costume when a scene does not spell out `minLevel`.
+ *   0 知り合い: daily SFW scenes (no costume / season) — open once the meeting script is cleared
+ *   1 仲良し:   maid / nurse / halloween
+ *   2 特別:     miko / idol, and every `nsfwOnly` scene by default
+ *   3 絆:       `nsfwOnly` scenes that write `minLevel: 3`
+ * Mirror: android/.../domain/Unlock.kt (COSTUME_BAND).
+ */
+export const COSTUME_BAND: Record<string, number> = {
+  maid: 1,
+  nurse: 1,
+  halloween: 1,
+  miko: 2,
+  idol: 2,
+};
+
+export function situationNsfwOnly(scene?: { nsfwOnly?: boolean } | null): boolean {
+  return scene?.nsfwOnly === true;
+}
+
+/** Affinity level a scene needs. JSON `minLevel` overrides the costume band; nsfwOnly floors at 特別. */
+export function situationRequiredLevel(
+  scene?: Pick<SituationPublic, "minLevel" | "costume" | "season" | "nsfwOnly"> | null,
+): number {
+  if (!scene) return 0;
+  const explicit = Number.isInteger(scene.minLevel) ? situationMinLevel(scene) : null;
+  const band = scene.costume
+    ? COSTUME_BAND[scene.costume] ?? 1
+    : scene.season
+      ? 1
+      : 0;
+  const base = explicit ?? band;
+  return situationNsfwOnly(scene) ? Math.max(base, NSFW_MIN_AFFINITY_LEVEL) : base;
+}
 
 export function situationLineText(line: SituationLine | undefined): string {
   if (typeof line === "string") return line.trim();
@@ -77,7 +117,9 @@ export function toPublicSituation(scene: CharacterSituation): SituationPublic {
     season: scene.season,
     costume: scene.costume,
     greeting: scene.greeting,
-    minLevel: situationMinLevel(scene),
+    minLevel: situationRequiredLevel(scene),
+    ...(situationNsfwOnly(scene) ? { nsfwOnly: true } : {}),
+    ...(Array.isArray(scene.requires) && scene.requires.length > 0 ? { requires: [...scene.requires] } : {}),
     lines: Array.isArray(scene.lines)
       ? scene.lines.filter((line) => situationLineText(line).length > 0).slice(0, 3)
       : undefined,

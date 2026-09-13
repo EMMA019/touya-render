@@ -4,7 +4,7 @@ import { EMPTY_AFFINITY } from "@/lib/affinity-types";
 import { EMPTY_BOND } from "@/lib/bond-types";
 import { getPublicCharacter, listPublicCharacters } from "@/lib/characters";
 import { EMPTY_QUOTA } from "@/lib/quota-types";
-import { unlockedSituationIds } from "@/lib/situation-unlock";
+import { OPTIMISTIC_UNLOCK, unlockedSituationIds } from "@/lib/situation-unlock";
 
 export function generateStaticParams() {
   return listPublicCharacters().map((character) => ({ slug: character.id }));
@@ -26,7 +26,7 @@ export default async function ChatPage({
         initialQuota={EMPTY_QUOTA}
         initialBond={EMPTY_BOND}
         initialMemory={[]}
-        initialUnlocked={unlockedSituationIds(character.situations, 0)}
+        initialUnlocked={unlockedSituationIds(character.situations, OPTIMISTIC_UNLOCK)}
         initialAffinity={EMPTY_AFFINITY}
       />
     </div>
