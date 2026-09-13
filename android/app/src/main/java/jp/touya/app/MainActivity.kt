@@ -30,11 +30,13 @@ class MainActivity : ComponentActivity() {
                 when (val screen = state.screen) {
                     Screen.Shelf -> SituationCardShelf(
                         characters = state.characters,
+                        daily = state.daily,
                         quota = state.quota,
                         loading = state.loading,
                         error = state.error,
                         opening = state.opening,
                         onOpenCard = { character, situationId -> viewModel.open(character, situationId) },
+                        onOpenDaily = viewModel::openDaily,
                         onRetry = viewModel::refresh,
                         onRoster = viewModel::showRoster,
                         onDiagnosis = viewModel::showDiagnosis,

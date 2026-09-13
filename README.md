@@ -89,6 +89,7 @@ npm start
 | `TOUYA_CORS_ORIGINS` | Render API が許可する追加 Origin（カンマ区切り）。`*.pages.dev` はコード側で許可済み。 |
 | `NEXT_PUBLIC_ADS_ENABLED` | `0` で広告枠を隠す。NSFW モード中はこれと別に広告を止める。 |
 | `VISITOR_STORE_PATH` | 年齢確認と `chatMode`。既定 `./data/visitors.json`。 |
+| `DAILY_STORE_PATH` | 日次チェックイン（通貨なし）。既定 `./data/daily.json`。 |
 | `TOUYA_ANON_PEPPER` | インストール UUID をハッシュする胡椒。変えるとカウンタが別物になります。 |
 | `ENTITLEMENTS_STORE_PATH` | Play Billing スタブの JSON。既定 `./data/entitlements.json`。 |
 | `BOND_STORE_PATH` | 会った日数。既定 `./data/bonds.json`。 |
@@ -315,6 +316,7 @@ docker run --env-file .env.local -p 43127:43127 -v touya-data:/app/data touya
 ```
 src/app/api/chat          ゲートのあとでのみ DeepSeek / デモ
 src/app/api/session       残通数のみ（ID は返さない）
+src/app/api/daily         今日の相手 / 今日のシチュ（JST。通貨なし）
 src/app/api/reward        AdMob リワード完了スタブ
 shared/characters/*.json  キャラ正本（1人1ファイル。サーバー専用）
 scripts/new-character.mjs テンプレ複製。パイプラインは触らない

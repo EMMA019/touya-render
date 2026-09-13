@@ -62,7 +62,8 @@ GET  /api/health
 GET  /api/session        # 残通数 + chatMode / adsEnabled。ID は返さない
 GET  /api/mode           # モードと年齢確認
 POST /api/mode           # { confirmAge, chatMode }  NSFW は年齢確認後だけ
-GET  /api/characters     # 公開情報 + presence。prompt / bible は含まない
+GET  /api/characters     # 公開情報 + presence + 今日の daily。prompt / bible は含まない
+GET  /api/daily          # 今日の相手 / 今日のシチュ（JST。nsfwOnly は出さない）
 GET  /api/companion      # ?characterId=  絆・記憶・解放済み場面
 GET  /api/memory         # 覚えていること
 DELETE /api/memory       # { characterId, text }

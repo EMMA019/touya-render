@@ -222,6 +222,11 @@ data class SessionSnapshot(
     val mode: ModePublic = EMPTY_MODE,
 )
 
+data class HomeSnapshot(
+    val characters: List<CharacterPublic>,
+    val daily: jp.touya.app.domain.DailyPick? = null,
+)
+
 data class ChatMessage(
     val role: String,
     val content: String,

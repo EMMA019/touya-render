@@ -1,6 +1,7 @@
 package jp.touya.app.data
 
 import jp.touya.app.BuildConfig
+import jp.touya.app.domain.DailyPick
 import jp.touya.app.domain.ModePublic
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -46,14 +47,25 @@ class TouyaClient(
         return parseMode(root)
     }
 
-    fun characters(): List<CharacterPublic> {
+    fun characters(): List<CharacterPublic> = home().characters
+
+    fun home(): HomeSnapshot {
         val root = JSONObject(get("/api/characters"))
         val list = root.getJSONArray("characters")
-        return buildList {
+        val characters = buildList {
             for (i in 0 until list.length()) {
                 add(parseCharacter(list.getJSONObject(i)))
             }
         }
+        return HomeSnapshot(
+            characters = characters,
+            daily = root.optJSONObject("daily")?.let { parseDaily(it) },
+        )
+    }
+
+    fun daily(): DailyPick? {
+        val root = JSONObject(get("/api/daily"))
+        return parseDaily(root)
     }
 
     fun usage(): Quota {
@@ -358,6 +370,26 @@ class TouyaClient(
             streak = obj.optInt("streak"),
             daysAway = obj.optInt("daysAway"),
         )
+
+    private fun parseDaily(obj: JSONObject): DailyPick? {
+        val characterId = obj.optString("characterId")
+        val situationId = obj.optString("situationId")
+        if (characterId.isBlank() || situationId.isBlank()) return null
+        return DailyPick(
+            date = obj.optString("date"),
+            characterId = characterId,
+            situationId = situationId,
+            title = obj.optString("title"),
+            blurb = obj.optString("blurb"),
+            characterName = obj.optString("characterName"),
+            givenName = obj.optString("givenName"),
+            image = obj.optNullString("image"),
+            untilNext = if (obj.has("untilNext") && !obj.isNull("untilNext")) obj.optInt("untilNext") else null,
+            untilNextName = obj.optNullString("untilNextName"),
+            checkedIn = obj.optBoolean("checkedIn"),
+            firstToday = obj.optBoolean("firstToday"),
+        )
+    }
 
     private fun parseAffinity(obj: JSONObject?): AffinityPublic {
         if (obj == null) return EMPTY_AFFINITY
