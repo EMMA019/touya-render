@@ -47,6 +47,21 @@
       ]
     },
     {
+      "id": "yukata-sfw",
+      "title": "夏の夕暮れ、浴衣",
+      "costume": "yukata-sfw",
+      "setting": "夏祭りの帰り。ペントハウスのテラス。遠くに花火の残り。",
+      "look": "藍色の浴衣に白い帯。うちわを持つ。襟は正しく合わせ、肌は出さない。服や背景に文字を焼き込まない。",
+      "image": "/situations/clara/yukata-sfw.png",
+      "greeting": "Bonsoir. 浴衣、初めて着てみたの。似合っているかしら。",
+      "lines": [
+        "帯は、教えていただいたの。",
+        "花火の音、まだ聞こえるわね。",
+        "うちわ、お貸ししましょうか。"
+      ],
+      "minLevel": 1
+    },
+    {
       "id": "halloween-masquerade",
       "title": "ハロウィン",
       "season": "halloween",

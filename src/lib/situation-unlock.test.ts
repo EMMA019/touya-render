@@ -118,10 +118,11 @@ test("shipped JSON matches the band table (unlock table == code)", () => {
   for (const character of loadRoster()) {
     for (const scene of character.situations) {
       const pub = toPublicSituation(scene);
+      // Outfit ids outside the table (knit-cafe, evening-dress, winter-parka, yukata-sfw) are 仲良し.
       const expected = scene.nsfwOnly
         ? Math.max(scene.minLevel ?? 0, NSFW_MIN_AFFINITY_LEVEL)
         : scene.costume
-          ? COSTUME_BAND[scene.costume]
+          ? COSTUME_BAND[scene.costume] ?? 1
           : 0;
       assert.equal(pub.minLevel, expected, `${character.id}/${scene.id}`);
       assert.equal(situationRequiredLevel(scene), expected, `${character.id}/${scene.id}`);

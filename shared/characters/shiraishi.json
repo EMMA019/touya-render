@@ -47,6 +47,21 @@
       ]
     },
     {
+      "id": "winter-parka",
+      "title": "冬のパーカ",
+      "costume": "winter-parka",
+      "setting": "真冬の深夜の屋上。風は弱い。息が白い。",
+      "look": "ダークグレーの厚手パーカにマフラー。フードは下ろす。ポケットに手。肌は出さない。服や背景に文字を焼き込まない。",
+      "image": "/situations/shiraishi/winter-parka.png",
+      "greeting": "……寒い。でも、屋上。マフラー、半分使う？",
+      "lines": [
+        "息が白い。今夜は氷点下。",
+        "フードは、風が強くなったら。",
+        "隣に立てば、少し温かい。"
+      ],
+      "minLevel": 1
+    },
+    {
       "id": "halloween-rooftop",
       "title": "ハロウィン",
       "season": "halloween",
