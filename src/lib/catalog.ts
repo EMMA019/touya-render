@@ -46,6 +46,11 @@ export function validateCharacter(character: Character, file = ""): string[] {
   if (!CHARACTER_ID.test(character.id ?? "")) {
     issues.push("id は英小文字・数字・ハイフン（例: suzune）");
   }
+  if (character.voiceId != null && character.voiceId !== "") {
+    if (!CHARACTER_ID.test(character.voiceId)) {
+      issues.push("voiceId は英小文字・数字・ハイフン");
+    }
+  }
   if (file && file !== `${character.id}.json` && file !== "_template.json") {
     issues.push(`ファイル名は ${character.id}.json にしてください`);
   }

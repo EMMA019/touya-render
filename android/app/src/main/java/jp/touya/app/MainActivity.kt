@@ -17,7 +17,7 @@ import jp.touya.app.ui.theme.TouyaTheme
 class MainActivity : ComponentActivity() {
     private val viewModel: TouyaViewModel by viewModels {
         val app = application as TouyaApp
-        TouyaViewModel.factory(app.client, app.chatStore, app.visitorStore)
+        TouyaViewModel.factory(app.client, app.chatStore, app.visitorStore, app.ttsPlayer)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -76,6 +76,9 @@ class MainActivity : ComponentActivity() {
                         onToggleMode = viewModel::toggleMode,
                         onConfirmAge = viewModel::confirmAgeAndEnableNsfw,
                         onCloseAgeGate = viewModel::closeAgeGate,
+                        ttsAvailable = state.ttsAvailable,
+                        speakingId = state.speakingId,
+                        onSpeak = viewModel::speakLine,
                     )
                     Screen.Diagnosis -> DiagnosisScreen(
                         characters = state.characters,

@@ -70,7 +70,11 @@ POST /api/feedback       # { characterId, situationId, assistantText }
 GET  /api/usage
 POST /api/reward         # AdMob リワード完了のスタブ。+3通
 POST /api/chat           # SSE: quota / bond / delta / replace / done / error
+GET  /api/tts            # { configured }. Irodori 未設定なら false。チャットは使える
+POST /api/tts            # { characterId, text } → 音声バイト。未設定は 503
 ```
+
+キー台詞のスピーカーは `ttsConfigured`（または一度の失敗）で出します。Irodori の起動手順と Pixel を同じ Wi‑Fi にする話は [docs/IRODORI_TTS.md](../docs/IRODORI_TTS.md)。
 
 チャットはポートレート全面（パレットの夜空）。残通数は数字だけ。場面チップで衣装／背景を切り替えます。服は着たまま（AdMob）。衣装は会った日が重なると開きます（ハロウィンは10月）。年齢は出しません。MVP の名簿はアニメ4人です。
 

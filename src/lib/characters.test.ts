@@ -66,6 +66,7 @@ test("shipped characters stay adult-coded without ages", () => {
     assert.ok(character.welcomeBack.length > 4, character.id);
     assert.ok(character.farewell.length > 4, character.id);
     assert.ok(character.offline.length > 4, character.id);
+    assert.equal(character.voiceId, character.id, character.id);
     const portraitImage = character.portraitImage;
     assert.ok(portraitImage?.startsWith("/portraits/"), character.id);
     assert.ok(portraitImage?.endsWith(".png"), character.id);

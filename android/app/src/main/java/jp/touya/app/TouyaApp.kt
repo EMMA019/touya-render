@@ -3,6 +3,7 @@ package jp.touya.app
 import android.app.Application
 import jp.touya.app.data.ChatStore
 import jp.touya.app.data.TouyaClient
+import jp.touya.app.data.TtsPlayer
 import jp.touya.app.data.VisitorStore
 
 class TouyaApp : Application() {
@@ -12,6 +13,8 @@ class TouyaApp : Application() {
         private set
     lateinit var visitorStore: VisitorStore
         private set
+    lateinit var ttsPlayer: TtsPlayer
+        private set
 
     override fun onCreate() {
         super.onCreate()
@@ -19,5 +22,6 @@ class TouyaApp : Application() {
         val installId = visitorStore.anonymousInstallId()
         client = TouyaClient(installId)
         chatStore = ChatStore(this)
+        ttsPlayer = TtsPlayer(cacheDir)
     }
 }

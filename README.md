@@ -94,6 +94,9 @@ npm start
 | `BOND_STORE_PATH` | 会った日数。既定 `./data/bonds.json`。 |
 | `AFFINITY_STORE_PATH` | 親密度カウンタ。既定 `./data/affinity.json`。日次リセットしない。 |
 | `FEEDBACK_STORE_PATH` | 「違ったと感じた」の匿名ログ。既定 `./data/feedback.json`。 |
+| `IRODORI_TTS_BASE_URL` | ローカル Irodori-TTS（例 `http://127.0.0.1:8088`）。空なら音声オフ。チャットはそのまま。 |
+| `IRODORI_TTS_API_KEY` | Irodori が bearer を要求するときだけ。 |
+| `TTS_CACHE_DIR` | キー台詞の音声キャッシュ。既定 `./data/tts-cache`。 |
 | `NEXT_PUBLIC_ADMOB_APP_ID` | AdMob アプリ ID。未設定のままプレースホルダ。**仮の ID を書かない。** |
 | `NEXT_PUBLIC_ADMOB_BANNER_UNIT` | バナーユニット。空でよい。 |
 | `NEXT_PUBLIC_ADMOB_REWARDED_UNIT` | リワードユニット。空でよい。 |
@@ -314,9 +317,11 @@ docker run --env-file .env.local -p 43127:43127 -v touya-data:/app/data touya
 
 ```
 src/app/api/chat          ゲートのあとでのみ DeepSeek / デモ
+src/app/api/tts           キー台詞。Irodori `/v1/audio/speech` へ任意プロキシ
 src/app/api/session       残通数のみ（ID は返さない）
 src/app/api/reward        AdMob リワード完了スタブ
 shared/characters/*.json  キャラ正本（1人1ファイル。サーバー専用）
+shared/voices.json        閉じた4人の Irodori voice id
 scripts/new-character.mjs テンプレ複製。パイプラインは触らない
 scripts/build-cf-pages.mjs Cloudflare 向け静的書き出し（API は含めない）
 docs/cloudflare.md        Pages の build / 出力 / 環境変数

@@ -158,6 +158,8 @@ export type Character = Omit<CharacterPublic, "situations" | "bwh" | "affinity">
   bible: CharacterBible;
   demoReplies?: string[];
   order?: number;
+  /** Irodori-TTS voice id. Falls back to shared/voices.json. */
+  voiceId?: string;
 };
 
 export const CHARACTER_ID = /^[a-z][a-z0-9-]{1,24}$/;
