@@ -49,18 +49,31 @@ export async function readAffinityMap(visitorId: string): Promise<Record<string,
   });
 }
 
-export async function incrementAffinity(
+/**
+ * Apply a signed integer delta (floor 0). Chat scoring may clamp before calling.
+ * Gifts pass the catalog value (+2..+4, plus an optional favorite bonus).
+ */
+export async function applyAffinityDelta(
   visitorId: string,
   characterId: CharacterId,
+  delta: number,
 ): Promise<AffinityPublic> {
+  const applied = Number.isFinite(delta) ? Math.trunc(delta) : 0;
   return store.enqueue(async () => {
     const data = await store.read();
     const key = pairKey(visitorId, characterId);
-    const count = (data.pairs[key]?.count ?? 0) + 1;
+    const count = Math.max(0, (data.pairs[key]?.count ?? 0) + applied);
     data.pairs[key] = { count };
     await store.persist(data);
     return levelFromCount(count);
   });
+}
+
+export async function incrementAffinity(
+  visitorId: string,
+  characterId: CharacterId,
+): Promise<AffinityPublic> {
+  return applyAffinityDelta(visitorId, characterId, 1);
 }
 
 export function resetAffinityStore() {

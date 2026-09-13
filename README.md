@@ -93,6 +93,7 @@ npm start
 | `ENTITLEMENTS_STORE_PATH` | Play Billing スタブの JSON。既定 `./data/entitlements.json`。 |
 | `BOND_STORE_PATH` | 会った日数。既定 `./data/bonds.json`。 |
 | `AFFINITY_STORE_PATH` | 親密度カウンタ。既定 `./data/affinity.json`。日次リセットしない。 |
+| `GIFT_STORE_PATH` | 贈り物の日次キャップ。既定 `./data/gifts.json`。キャラごと JST 1日1つ。 |
 | `FEEDBACK_STORE_PATH` | 「違ったと感じた」の匿名ログ。既定 `./data/feedback.json`。 |
 | `NEXT_PUBLIC_ADMOB_APP_ID` | AdMob アプリ ID。未設定のままプレースホルダ。**仮の ID を書かない。** |
 | `NEXT_PUBLIC_ADMOB_BANNER_UNIT` | バナーユニット。空でよい。 |
@@ -313,6 +314,7 @@ docker run --env-file .env.local -p 43127:43127 -v touya-data:/app/data touya
 ## 構成
 
 ```
+src/app/api/gifts         閉じた贈り物。定型お礼。LLM なし。1キャラ/JST日1つ
 src/app/api/chat          ゲートのあとでのみ DeepSeek / デモ
 src/app/api/session       残通数のみ（ID は返さない）
 src/app/api/reward        AdMob リワード完了スタブ

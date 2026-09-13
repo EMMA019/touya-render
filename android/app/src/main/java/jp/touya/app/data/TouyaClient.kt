@@ -78,6 +78,51 @@ class TouyaClient(
         )
     }
 
+    fun gifts(characterId: String): GiftList {
+        val root = JSONObject(get("/api/gifts?characterId=$characterId"))
+        val list = root.optJSONArray("gifts")
+        return GiftList(
+            gifts = parseGifts(list),
+            day = root.optString("day"),
+            giftedToday = root.optBoolean("giftedToday"),
+        )
+    }
+
+    fun giveGift(characterId: String, giftId: String): GiftGiveResult {
+        val payload = JSONObject()
+            .put("characterId", characterId)
+            .put("giftId", giftId)
+        val response = http.newCall(
+            request("/api/gifts").post(payload.toString().toRequestBody(jsonType)).build(),
+        ).execute()
+        val body = response.body?.string().orEmpty()
+        val root = runCatching { JSONObject(body) }.getOrNull() ?: JSONObject()
+        if (response.code == 429 && root.optString("error") == "gift_cooldown") {
+            return GiftGiveResult(
+                ok = false,
+                giftedToday = true,
+                message = root.optString("message").ifBlank { "今日はもう贈ったよ。また明日ね。" },
+            )
+        }
+        if (!response.isSuccessful || !root.optBoolean("ok")) {
+            throw ApiException(
+                root.optString("message").ifBlank { "贈れませんでした。" },
+                response.code,
+            )
+        }
+        return GiftGiveResult(
+            ok = true,
+            giftId = root.optString("giftId"),
+            giftName = root.optString("giftName"),
+            thanks = root.optString("thanks"),
+            favorite = root.optBoolean("favorite"),
+            affinityDelta = root.optInt("affinityDelta"),
+            affinity = parseAffinity(root.optJSONObject("affinity")),
+            affinityToast = root.optString("affinityToast"),
+            giftedToday = root.optBoolean("giftedToday", true),
+        )
+    }
+
     fun memory(characterId: String): List<MemoryRow> {
         val root = JSONObject(get("/api/memory?characterId=$characterId"))
         return parseFacts(root.optJSONArray("facts"))
@@ -388,6 +433,25 @@ class TouyaClient(
                         if (text.isNotBlank() && text != "null") add(SituationLine(text))
                     }
                 }
+            }
+        }
+    }
+
+    private fun parseGifts(arr: JSONArray?): List<GiftPublic> {
+        if (arr == null) return emptyList()
+        return buildList {
+            for (i in 0 until arr.length()) {
+                val row = arr.getJSONObject(i)
+                add(
+                    GiftPublic(
+                        id = row.optString("id"),
+                        name = row.optString("name"),
+                        hint = row.optString("hint"),
+                        affinityDelta = row.optInt("affinityDelta"),
+                        premium = row.optBoolean("premium"),
+                        favorite = row.optBoolean("favorite"),
+                    ),
+                )
             }
         }
     }

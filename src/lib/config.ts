@@ -42,6 +42,7 @@ export const MEMORY_MAX_FACTS = 10;
 export const MEMORY_SUMMARY_MAX_CHARS = 240;
 export const BOND_STORE_FILENAME = "bonds.json";
 export const AFFINITY_STORE_FILENAME = "affinity.json";
+export const GIFT_STORE_FILENAME = "gifts.json";
 export const FEEDBACK_STORE_FILENAME = "feedback.json";
 export const VISITOR_STORE_FILENAME = "visitors.json";
 

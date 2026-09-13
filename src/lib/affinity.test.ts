@@ -73,3 +73,22 @@ test("incrementAffinity is permanent per visitor×character and does not reset d
 
   await rm(dir, { recursive: true, force: true });
 });
+
+test("applyAffinityDelta adds a signed integer and floors at 0", async () => {
+  const dir = await mkdtemp(path.join(os.tmpdir(), "touya-affinity-delta-"));
+  process.env.AFFINITY_STORE_PATH = path.join(dir, "affinity.json");
+  const { applyAffinityDelta, incrementAffinity, readAffinity, resetAffinityStore } = await import("./affinity");
+  resetAffinityStore();
+
+  const plus = await applyAffinityDelta("v1", "hiyori", 4);
+  assert.equal(plus.count, 4);
+  const more = await incrementAffinity("v1", "hiyori");
+  assert.equal(more.count, 5);
+  const down = await applyAffinityDelta("v1", "hiyori", -2);
+  assert.equal(down.count, 3);
+  const floor = await applyAffinityDelta("v1", "hiyori", -99);
+  assert.equal(floor.count, 0);
+  assert.equal((await readAffinity("v1", "hiyori")).count, 0);
+
+  await rm(dir, { recursive: true, force: true });
+});

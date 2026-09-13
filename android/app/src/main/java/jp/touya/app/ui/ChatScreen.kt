@@ -44,6 +44,7 @@ import jp.touya.app.data.ChatMessage
 import jp.touya.app.data.EMPTY_AFFINITY
 import jp.touya.app.data.MemoryRow
 import jp.touya.app.data.EMPTY_MODE
+import jp.touya.app.data.GiftPublic
 import jp.touya.app.data.Quota
 import jp.touya.app.data.situationCardLines
 import jp.touya.app.domain.ModePublic
@@ -65,6 +66,12 @@ fun ChatScreen(
     memory: List<MemoryRow>,
     unlocked: List<String>,
     memoryOpen: Boolean,
+    gifts: List<GiftPublic> = emptyList(),
+    giftedToday: Boolean = false,
+    giftOpen: Boolean = false,
+    giftSending: Boolean = false,
+    giftError: String? = null,
+    giftToast: String? = null,
     feedbackSent: Boolean,
     rewarding: Boolean,
     rewardMessage: String?,
@@ -75,6 +82,8 @@ fun ChatScreen(
     onSend: (String) -> Unit,
     onBack: () -> Unit,
     onToggleMemory: (Boolean) -> Unit,
+    onToggleGift: (Boolean) -> Unit = {},
+    onGiveGift: (String) -> Unit = {},
     onForget: (String) -> Unit,
     onReportWrong: () -> Unit,
     onReward: () -> Unit,
@@ -178,6 +187,17 @@ fun ChatScreen(
                         )
                     }
                 }
+            }
+
+            if (!giftToast.isNullOrBlank()) {
+                Text(
+                    giftToast,
+                    modifier = Modifier
+                        .padding(horizontal = 12.dp, vertical = 8.dp)
+                        .background(Color.Black.copy(alpha = 0.55f), RoundedCornerShape(20.dp))
+                        .padding(horizontal = 12.dp, vertical = 6.dp),
+                    color = Color(0xFFF6EDE0),
+                )
             }
 
             if (situationCard && situation != null) {
@@ -286,6 +306,18 @@ fun ChatScreen(
                     .padding(horizontal = 12.dp, vertical = 6.dp),
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
             ) {
+                Surface(
+                    onClick = { onToggleGift(true) },
+                    enabled = !giftedToday,
+                    shape = CircleShape,
+                    color = Color(0x33F4C4C8),
+                ) {
+                    Text(
+                        if (giftedToday) "今日は贈済み" else "贈る",
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                        color = Color(0xFFF6EDE0),
+                    )
+                }
                 hints.forEach { hint ->
                     Surface(
                         onClick = { onSend(hint) },
@@ -337,6 +369,15 @@ fun ChatScreen(
             facts = memory,
             onClose = { onToggleMemory(false) },
             onForget = onForget,
+        )
+        GiftSheet(
+            open = giftOpen,
+            gifts = gifts,
+            giftedToday = giftedToday,
+            sending = giftSending,
+            error = giftError,
+            onClose = { onToggleGift(false) },
+            onGive = onGiveGift,
         )
         AgeGateDialog(open = ageGateOpen, onConfirm = onConfirmAge, onCancel = onCloseAgeGate)
     }
