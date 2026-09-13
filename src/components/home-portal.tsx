@@ -66,11 +66,11 @@ export function HomePortal({ initialCharacters }: { initialCharacters: Character
           </div>
         </header>
 
-        <main className="flex-1 px-4 sm:px-6 py-6 max-w-6xl w-full mx-auto space-y-7 pb-24">
+        <main className="flex-1 px-4 sm:px-6 py-6 max-w-6xl w-full mx-auto space-y-7 pb-36">
+          <SituationCardGrid roster={characters} />
+
           <AdSlot placement="banner" />
           <PortalBannerHero />
-
-          <SituationCardGrid roster={characters} />
 
           <PortalUpsellBanner />
 

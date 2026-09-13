@@ -34,7 +34,7 @@ class MainActivity : ComponentActivity() {
                         loading = state.loading,
                         error = state.error,
                         opening = state.opening,
-                        onOpenCard = viewModel::open,
+                        onOpenCard = { character, situationId -> viewModel.open(character, situationId) },
                         onRetry = viewModel::refresh,
                         onRoster = viewModel::showRoster,
                         onDiagnosis = viewModel::showDiagnosis,
@@ -52,7 +52,7 @@ class MainActivity : ComponentActivity() {
                         loading = state.loading,
                         error = state.error,
                         opening = state.opening,
-                        onSelect = viewModel::open,
+                        onSelect = { viewModel.open(it) },
                         onRetry = viewModel::refresh,
                         onDiagnosis = viewModel::showDiagnosis,
                         onPremium = viewModel::showPremium,
@@ -99,7 +99,7 @@ class MainActivity : ComponentActivity() {
                     )
                     Screen.Diagnosis -> DiagnosisScreen(
                         characters = state.characters,
-                        onSelect = viewModel::open,
+                        onSelect = { viewModel.open(it) },
                         onBack = viewModel::showList,
                     )
                     Screen.Premium -> PremiumScreen(onBack = viewModel::showList)
