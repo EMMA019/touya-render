@@ -1,5 +1,5 @@
 import { incrementAffinity, readAffinity, shouldIncrementAffinity } from "@/lib/affinity";
-import { touchBond } from "@/lib/bond";
+import { readBond, touchBond } from "@/lib/bond";
 import { applyBibleFilter } from "@/lib/character-bible";
 import { getCharacter } from "@/lib/characters";
 import { resolveChatBackend } from "@/lib/chat-backend";
@@ -7,8 +7,25 @@ import { evaluateChatGate } from "@/lib/chat-gate";
 import {
   NSFW_AGE_REQUIRED,
   NSFW_AGE_REQUIRED_JA,
+  NSFW_RELATIONSHIP_REQUIRED,
+  NSFW_RELATIONSHIP_REQUIRED_JA,
   resolveChatMode,
 } from "@/lib/chat-mode";
+import {
+  advanceFreeBeat,
+  bumpTodayTurns,
+  currentFreeBeat,
+  effectiveLevel,
+  effectiveName,
+  isThawed,
+  nsfwEligible,
+  promptStory,
+  rollToday,
+  settleOnOpen,
+  toStoryPublic,
+  updateStory,
+} from "@/lib/story";
+import { getStoryScript } from "@/lib/story-script";
 import {
   OPENROUTER_MISSING_JA,
   demoFallbackEnabled,
@@ -43,6 +60,9 @@ type Body = {
   situationId?: string;
   messages?: ChatTurn[];
   mode?: unknown;
+  /** Story `free` beat this send answers (optional). Wrong ids are ignored, never 400. */
+  chapterId?: string;
+  beatId?: string;
 };
 
 function sse(data: unknown): Uint8Array {
@@ -95,6 +115,23 @@ export async function POST(request: Request) {
       { status: 403 }
     );
   }
+  // Relationship half of the NSFW gate: judged on the count *before* this turn increments it.
+  // settleOnOpen here too, so a client that never called /api/companion (older Android) is
+  // still migrated (legacy flags) before being judged.
+  const script = getStoryScript(character.id);
+  const affinityBefore = await readAffinity(visitorId, character.id);
+  const bondBefore = await readBond(visitorId, character.id);
+  const storyBefore = await updateStory(visitorId, character.id, (record) =>
+    settleOnOpen(record, script, affinityBefore.count, bondBefore),
+  );
+  if (resolved.mode === "nsfw" && !nsfwEligible(effectiveLevel(affinityBefore.count, storyBefore.flags))) {
+    const mode = publicModeFromProfile(profile);
+    return jsonApi(
+      request,
+      { error: NSFW_RELATIONSHIP_REQUIRED, message: NSFW_RELATIONSHIP_REQUIRED_JA, ...mode, mode },
+      { status: 403 }
+    );
+  }
   if (body.mode !== undefined && resolved.mode !== profile.chatMode) {
     await applyVisitorModeChange(visitorId, { chatMode: resolved.mode });
   }
@@ -130,6 +167,8 @@ export async function POST(request: Request) {
           controller.enqueue(sse({ type: "quota", ...quota }));
           controller.enqueue(sse({ type: "affinity", ...affinity }));
           controller.enqueue(sse({ type: "mode", ...modePublic }));
+          // Gate refusals leave the beat where it is.
+          controller.enqueue(sse({ type: "story", ...toStoryPublic(storyBefore, affinity.count) }));
           controller.enqueue(
             sse({
               type: "gate",
@@ -189,15 +228,40 @@ export async function POST(request: Request) {
   const facts = await rememberFacts(visitorId, character.id, extracted);
   const bond = await touchBond(visitorId, character.id, facts.length);
   const affinity = await incrementAffinity(visitorId, character.id);
-  const situation = character.situations.find((row) => row.id === body.situationId);
+  // nsfwOnly scenes never colour an SFW prompt, whatever the client sends.
+  const situation = character.situations.find(
+    (row) => row.id === body.situationId && (chatMode === "nsfw" || !row.nsfwOnly),
+  );
+
+  // Story context for this one LLM call. `free` beat hint only when the client names the
+  // beat the visitor is parked on; anything else is plain chat (no 400).
+  const freeBeat = currentFreeBeat(storyBefore, script, body.chapterId, body.beatId);
+  let storyNow = rollToday(storyBefore, bondBefore.daysAway);
+  const warmth = { level: storyNow.today.warmth, thawed: isThawed(storyNow.today) };
+  storyNow = bumpTodayTurns(storyNow);
+  const storyPrompt = promptStory(storyNow, affinity.count, script);
+  const bandName = storyPrompt ? effectiveName(storyPrompt.effectiveLevel) : affinity.name;
+  await updateStory(visitorId, character.id, () => storyNow);
+
   const systemPrompt = buildSystemPrompt(character, summarizeMemory(facts), situation, bond.stage, {
     clock: readClock(),
     daysAway: bond.daysAway,
     streak: bond.streak,
     remaining: quota.remaining,
-    affinityName: affinity.name,
+    affinityName: bandName,
     chatMode,
+    story: storyPrompt,
+    warmth,
+    beatHint: freeBeat?.promptHint,
   });
+
+  /** After the reply: a `free` beat moves on. Emitted once as the `story` SSE event. */
+  const finishStory = async (): Promise<Uint8Array> => {
+    const next = freeBeat && script
+      ? await updateStory(visitorId, character.id, (record) => advanceFreeBeat(record, script, affinity.count))
+      : storyNow;
+    return sse({ type: "story", ...toStoryPublic(next, affinity.count) });
+  };
 
   const stream = new ReadableStream({
     async start(controller) {
@@ -223,6 +287,7 @@ export async function POST(request: Request) {
             }
             controller.enqueue(sse({ type: "delta", text: chunk }));
           }
+          controller.enqueue(await finishStory());
           controller.enqueue(sse({ type: "done", demo: true }));
           controller.close();
           return;
@@ -272,6 +337,7 @@ export async function POST(request: Request) {
           controller.enqueue(sse({ type: "replace", text: filtered }));
         }
 
+        controller.enqueue(await finishStory());
         controller.enqueue(sse({ type: "done" }));
         controller.close();
       } catch (error) {
