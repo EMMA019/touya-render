@@ -1,17 +1,37 @@
 import type { CharacterId } from "./character-types";
 import { AFFINITY_STORE_FILENAME } from "./config";
 import { createJsonStore } from "./json-store";
-import { levelFromCount, type AffinityPublic } from "./affinity-types";
-
-export {
-  AFFINITY_LEVELS,
-  EMPTY_AFFINITY,
+import {
+  clampAffinityDelta,
   levelFromCount,
-  shouldIncrementAffinity,
+  toAffinityEvent,
+  type AffinityDelta,
+  type AffinityEvent,
   type AffinityPublic,
 } from "./affinity-types";
 
-type PairRecord = { count: number };
+export {
+  AFFINITY_BAND_COPY,
+  AFFINITY_LEVELS,
+  EMPTY_AFFINITY,
+  NSFW_MIN_AFFINITY_LEVEL,
+  affinityBandEvent,
+  affinityLevelName,
+  affinityLevelUpMessage,
+  affinityToastMessage,
+  affinityUnlockBlurb,
+  clampAffinityDelta,
+  levelFromCount,
+  shouldAdjustAffinity,
+  shouldIncrementAffinity,
+  toAffinityEvent,
+  type AffinityBandEvent,
+  type AffinityDelta,
+  type AffinityEvent,
+  type AffinityPublic,
+} from "./affinity-types";
+
+type PairRecord = { count: number; seenBands?: number[] };
 type StoreShape = { pairs: Record<string, PairRecord> };
 
 const store = createJsonStore<StoreShape>({
@@ -49,18 +69,38 @@ export async function readAffinityMap(visitorId: string): Promise<Record<string,
   });
 }
 
-export async function incrementAffinity(
+export async function applyAffinityDelta(
   visitorId: string,
   characterId: CharacterId,
-): Promise<AffinityPublic> {
+  delta: number,
+): Promise<AffinityEvent> {
+  const clamped = clampAffinityDelta(delta);
   return store.enqueue(async () => {
     const data = await store.read();
     const key = pairKey(visitorId, characterId);
-    const count = (data.pairs[key]?.count ?? 0) + 1;
-    data.pairs[key] = { count };
+    const record = data.pairs[key];
+    const previous = toPublic(record);
+    const nextCount = Math.max(0, previous.count + clamped);
+    const applied = (nextCount - previous.count) as AffinityDelta;
+    const next = levelFromCount(nextCount);
+    const seen = new Set(record?.seenBands ?? []);
+    const firstBand = next.level > previous.level && !seen.has(next.level);
+    if (firstBand) seen.add(next.level);
+    data.pairs[key] = { count: nextCount, seenBands: [...seen] };
     await store.persist(data);
-    return levelFromCount(count);
+    const event = toAffinityEvent(previous, next, applied);
+    if (!firstBand && event.leveledUp) {
+      return { ...event, leveledUp: false, levelUpMessage: null, bandEvent: null, affinityToast: null };
+    }
+    return event;
   });
+}
+
+export async function incrementAffinity(
+  visitorId: string,
+  characterId: CharacterId,
+): Promise<AffinityEvent> {
+  return applyAffinityDelta(visitorId, characterId, 1);
 }
 
 export function resetAffinityStore() {

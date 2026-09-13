@@ -81,9 +81,12 @@ fun ChatScreen(
     onPremium: () -> Unit,
     mode: ModePublic = EMPTY_MODE,
     ageGateOpen: Boolean = false,
+    levelUpMessage: String? = null,
+    affinityToast: String? = null,
     onToggleMode: () -> Unit = {},
     onConfirmAge: () -> Unit = {},
     onCloseAgeGate: () -> Unit = {},
+    onDismissLevelUp: () -> Unit = {},
 ) {
     val limited = quota?.debugUnlimited != true && (quota?.remaining ?: 1) <= 0
     val situation = character.situations.firstOrNull { it.id == situationId }
@@ -142,6 +145,35 @@ fun ChatScreen(
                     }
                     ModeChip(mode, onClick = onToggleMode)
                     QuotaPill(quota, compact = true)
+                }
+            }
+
+            if (levelUpMessage != null) {
+                Surface(
+                    onClick = onDismissLevelUp,
+                    shape = RoundedCornerShape(16.dp),
+                    color = Color(0x55FB7185),
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                ) {
+                    Text(
+                        levelUpMessage,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                        color = Color(0xFFFFE4E6),
+                    )
+                }
+            } else if (affinityToast != null) {
+                Surface(
+                    shape = RoundedCornerShape(16.dp),
+                    color = Color.Black.copy(alpha = 0.55f),
+                    modifier = Modifier
+                        .padding(horizontal = 12.dp, vertical = 6.dp)
+                        .align(Alignment.CenterHorizontally),
+                ) {
+                    Text(
+                        affinityToast,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                        color = Color(0xFFF4C4C8),
+                    )
                 }
             }
 

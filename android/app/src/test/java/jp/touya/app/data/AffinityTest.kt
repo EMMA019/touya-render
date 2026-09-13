@@ -30,6 +30,7 @@ class AffinityTest {
         assertEquals("絆", sixty.name)
         assertNull(sixty.nextAt)
         assertEquals(1f, sixty.progress, 0.0001f)
+        assertNull(sixty.remainingToNext)
     }
 
     @Test

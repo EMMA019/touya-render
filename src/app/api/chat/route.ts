@@ -1,4 +1,7 @@
-import { incrementAffinity, readAffinity, shouldIncrementAffinity } from "@/lib/affinity";
+import { applyAffinityDelta, readAffinity, shouldAdjustAffinity, toAffinityEvent } from "@/lib/affinity";
+import { scoredAffinityDelta } from "@/lib/affinity-score";
+import type { AffinityEvent } from "@/lib/affinity-types";
+import type { CharacterId } from "@/lib/character-types";
 import { touchBond } from "@/lib/bond";
 import { applyBibleFilter } from "@/lib/character-bible";
 import { getCharacter } from "@/lib/characters";
@@ -8,6 +11,7 @@ import {
   NSFW_AGE_REQUIRED,
   NSFW_AGE_REQUIRED_JA,
   resolveChatMode,
+  type ChatMode,
 } from "@/lib/chat-mode";
 import {
   OPENROUTER_MISSING_JA,
@@ -47,6 +51,25 @@ type Body = {
 
 function sse(data: unknown): Uint8Array {
   return new TextEncoder().encode(`data: ${JSON.stringify(data)}\n\n`);
+}
+
+async function resolveTurnAffinity(args: {
+  visitorId: string;
+  characterId: CharacterId;
+  text: string;
+  mode: ChatMode;
+  consumedTurn: boolean;
+}): Promise<AffinityEvent> {
+  const delta = scoredAffinityDelta({
+    text: args.text,
+    mode: args.mode,
+    consumedTurn: args.consumedTurn,
+  });
+  if (delta === 0) {
+    const current = await readAffinity(args.visitorId, args.characterId);
+    return toAffinityEvent(current, current, 0);
+  }
+  return applyAffinityDelta(args.visitorId, args.characterId, delta);
 }
 
 export async function POST(request: Request) {
@@ -120,9 +143,13 @@ export async function POST(request: Request) {
         : await consumeTurn(visitorId);
     const consumedTurn =
       gate.reason !== "sexual_block" && "allowed" in quota && quota.allowed === true;
-    const affinity = shouldIncrementAffinity({ consumedTurn })
-      ? await incrementAffinity(visitorId, character.id)
-      : await readAffinity(visitorId, character.id);
+    const affinity = await resolveTurnAffinity({
+      visitorId,
+      characterId: character.id,
+      text: userText,
+      mode: chatMode,
+      consumedTurn: shouldAdjustAffinity({ consumedTurn }),
+    });
 
     return new Response(
       new ReadableStream({
@@ -188,7 +215,13 @@ export async function POST(request: Request) {
   const extracted = extractMemoryFacts(userText);
   const facts = await rememberFacts(visitorId, character.id, extracted);
   const bond = await touchBond(visitorId, character.id, facts.length);
-  const affinity = await incrementAffinity(visitorId, character.id);
+  const affinity = await resolveTurnAffinity({
+    visitorId,
+    characterId: character.id,
+    text: userText,
+    mode: chatMode,
+    consumedTurn: true,
+  });
   const situation = character.situations.find((row) => row.id === body.situationId);
   const systemPrompt = buildSystemPrompt(character, summarizeMemory(facts), situation, bond.stage, {
     clock: readClock(),

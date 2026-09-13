@@ -23,6 +23,8 @@ import jp.touya.app.domain.jstDayKey
 import jp.touya.app.domain.readClock
 import jp.touya.app.domain.unlockedSituationIds
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
@@ -52,6 +54,8 @@ data class UiState(
     val situationCard: Boolean = true,
     val mode: ModePublic = EMPTY_MODE,
     val ageGateOpen: Boolean = false,
+    val levelUpMessage: String? = null,
+    val affinityToast: String? = null,
 )
 
 sealed interface Screen {
@@ -78,6 +82,8 @@ class TouyaViewModel(
     )
     val state: StateFlow<UiState> = _state
     private var seq = 0
+    private var affinityToastJob: Job? = null
+    private var levelUpJob: Job? = null
 
     init {
         refresh()
@@ -191,6 +197,41 @@ class TouyaViewModel(
         _state.update { it.copy(situationCard = false) }
     }
 
+    fun dismissLevelUp() {
+        levelUpJob?.cancel()
+        _state.update { it.copy(levelUpMessage = null) }
+    }
+
+    fun dismissAffinityToast() {
+        affinityToastJob?.cancel()
+        _state.update { it.copy(affinityToast = null) }
+    }
+
+    private fun applyAffinityFeedback(affinity: AffinityPublic) {
+        val banner = affinity.levelUpMessage?.takeIf { affinity.leveledUp && it.isNotBlank() }
+        val toast = affinity.affinityToast?.takeIf { banner == null && it.isNotBlank() }
+        _state.update {
+            it.copy(
+                levelUpMessage = banner ?: it.levelUpMessage,
+                affinityToast = toast,
+            )
+        }
+        if (banner != null) {
+            levelUpJob?.cancel()
+            levelUpJob = viewModelScope.launch {
+                delay(6_000)
+                _state.update { it.copy(levelUpMessage = null) }
+            }
+        }
+        if (toast != null) {
+            affinityToastJob?.cancel()
+            affinityToastJob = viewModelScope.launch {
+                delay(2_800)
+                _state.update { it.copy(affinityToast = null) }
+            }
+        }
+    }
+
     fun showList() {
         _state.update {
             it.copy(screen = Screen.List, messages = emptyList(), error = null, memoryOpen = false)
@@ -292,6 +333,7 @@ class TouyaViewModel(
                                     } ?: s.unlocked,
                                 )
                             }
+                            applyAffinityFeedback(affinity)
                         },
                         onDelta = { chunk ->
                             assembled.append(chunk)

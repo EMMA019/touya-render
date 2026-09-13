@@ -76,6 +76,9 @@ class MainActivity : ComponentActivity() {
                         onToggleMode = viewModel::toggleMode,
                         onConfirmAge = viewModel::confirmAgeAndEnableNsfw,
                         onCloseAgeGate = viewModel::closeAgeGate,
+                        levelUpMessage = state.levelUpMessage,
+                        affinityToast = state.affinityToast,
+                        onDismissLevelUp = viewModel::dismissLevelUp,
                     )
                     Screen.Diagnosis -> DiagnosisScreen(
                         characters = state.characters,

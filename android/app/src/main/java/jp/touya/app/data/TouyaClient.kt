@@ -366,6 +366,16 @@ class TouyaClient(
                 name = name,
                 nextAt = if (obj.has("nextAt") && !obj.isNull("nextAt")) obj.optInt("nextAt") else null,
                 progress = obj.optDouble("progress", 0.0).toFloat(),
+                remainingToNext = if (obj.has("remainingToNext") && !obj.isNull("remainingToNext")) {
+                    obj.optInt("remainingToNext")
+                } else {
+                    null
+                },
+                affinityDelta = obj.optInt("affinityDelta"),
+                leveledUp = obj.optBoolean("leveledUp"),
+                leveledDown = obj.optBoolean("leveledDown"),
+                levelUpMessage = obj.optNullString("levelUpMessage"),
+                affinityToast = obj.optNullString("affinityToast"),
             )
         }
         return levelFromCount(obj.optInt("count"))
