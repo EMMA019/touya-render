@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readdirSync, readFileSync } from "node:fs";
+import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { test } from "node:test";
 import { loadRoster } from "./catalog";
@@ -16,6 +16,7 @@ test("situation art is character-only: no baked names or clothing/sign text", ()
   const files: string[] = [];
   for (const character of readdirSync(ART_DIR)) {
     const dir = join(ART_DIR, character);
+    if (!statSync(dir).isDirectory()) continue;
     for (const name of readdirSync(dir)) {
       if (name.endsWith(".svg")) files.push(join(dir, name));
     }
