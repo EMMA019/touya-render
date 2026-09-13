@@ -20,7 +20,7 @@ test("situation art is character-only: no baked names or clothing/sign text", ()
       if (name.endsWith(".svg")) files.push(join(dir, name));
     }
   }
-  assert.ok(files.length >= 20, "expected generated portraits");
+  assert.ok(files.length >= 8, "expected generated daily portraits");
 
   for (const file of files) {
     const svg = readFileSync(file, "utf8");

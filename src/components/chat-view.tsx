@@ -37,6 +37,7 @@ import type { Quota } from "@/lib/quota-types";
 import { isMobileChatInput, resizeComposer } from "@/lib/chat-composer";
 import { seedSituationGreeting } from "@/lib/situation-greeting";
 import { situationIcon } from "@/lib/situation-icons";
+import { hasFinishedSituationArt } from "@/lib/situation-shelf";
 import { LOCKED_SITUATION_HINT, unlockedSituationIds } from "@/lib/situation-unlock";
 import { cn } from "@/lib/utils";
 
@@ -61,8 +62,14 @@ export function ChatView({
   const search = useSearchParams();
   const wanted = (initialSituationId ?? search.get("s") ?? "").trim();
   const firstOpen =
-    (wanted && initialUnlocked.includes(wanted) ? wanted : undefined) ??
-    character.situations.find((scene) => initialUnlocked.includes(scene.id))?.id;
+    (wanted &&
+    initialUnlocked.includes(wanted) &&
+    hasFinishedSituationArt(character.situations.find((scene) => scene.id === wanted) ?? {})
+      ? wanted
+      : undefined) ??
+    character.situations.find(
+      (scene) => initialUnlocked.includes(scene.id) && hasFinishedSituationArt(scene),
+    )?.id;
   const initialSituation =
     character.situations.find((scene) => scene.id === firstOpen) ?? character.situations[0];
   const opening = composeOpening({
@@ -471,7 +478,7 @@ export function ChatView({
         </header>
 
         <div className="mt-3 flex gap-1.5 overflow-x-auto px-3 [scrollbar-width:none]">
-          {character.situations.map((scene) => {
+          {character.situations.filter((scene) => hasFinishedSituationArt(scene)).map((scene) => {
             const Icon = situationIcon(scene.id, scene.season, scene.costume);
             const open = unlocked.includes(scene.id);
             return (

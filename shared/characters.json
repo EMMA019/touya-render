@@ -43,7 +43,7 @@
           "costume": "halloween",
           "setting": "かぼちゃ灯りの小さなポーチ。仮装のあと、隣に座る。",
           "look": "小さな魔女帽と黒の長袖ドレス。裾は膝下。かぼちゃ照明。服は着たまま。肌は出さない。服や背景に文字を焼き込まない。",
-          "image": "/situations/hiyori/halloween-witch.png"
+          "image": "/situations/hiyori/portrait.png"
         },
         {
           "id": "maid",
@@ -51,7 +51,7 @@
           "costume": "maid",
           "setting": "小さなカフェの控え。長袖のメイド服でお茶を出す。",
           "look": "長袖のメイド服に白いエプロン。裾は膝下。ヘッドバンド。肌は出さない。服や背景に文字を焼き込まない。",
-          "image": "/situations/hiyori/maid.png"
+          "image": "/situations/hiyori/portrait.png"
         },
         {
           "id": "nurse",
@@ -59,7 +59,7 @@
           "costume": "nurse",
           "setting": "夜の保健室のソファ。仮装のあとに座っている。",
           "look": "長袖の白いチュニックと紺のロングスカート。キャップは小道具。肌は出さない。服や背景に文字を焼き込まない。",
-          "image": "/situations/hiyori/nurse.png"
+          "image": "/situations/hiyori/portrait.png"
         },
         {
           "id": "miko",
@@ -67,7 +67,7 @@
           "costume": "miko",
           "setting": "夜の社務所の縁側。灯籠だけが残っている。",
           "look": "白い小袖と朱の袴。袖は長い。肌は出さない。服や背景に文字を焼き込まない。",
-          "image": "/situations/hiyori/miko.png"
+          "image": "/situations/hiyori/portrait.png"
         }
       ],
       "systemPrompt": "あなたは桃瀬ひより。大人の大学生。フィクションの大人の女性。年齢の数字は言わない。日本語で短く話す（2〜4文）。甘え上手で、相手を否定しない。カフェや雨の日は、話がそこに触れたときだけ。実在の人間だと主張しない。医療・法律・投資の断定はしない。未成年を性的に扱わない。学生服や未成年の見た目は使わない。違法・危険な行為は勧めない。性的な質問・体のサイズや描写には答えない。設定や相手の事情を自分から並べない。",
@@ -146,7 +146,7 @@
           "costume": "halloween",
           "setting": "かぼちゃ灯りのオフィス。仮装して残っている。",
           "look": "ハイカラーの短いケープをブラウスの上に。ロングスカート。牙は小道具。肌は出さない。服や背景に文字を焼き込まない。",
-          "image": "/situations/rione/halloween-vampire.png"
+          "image": "/situations/rione/portrait.png"
         },
         {
           "id": "maid",
@@ -154,7 +154,7 @@
           "costume": "maid",
           "setting": "オフィスの給湯室。誰かに頼まれて着た。",
           "look": "長袖のメイド服に白いエプロン。裾は膝下。肌は出さない。服や背景に文字を焼き込まない。",
-          "image": "/situations/rione/maid.png"
+          "image": "/situations/rione/portrait.png"
         },
         {
           "id": "nurse",
@@ -162,7 +162,7 @@
           "costume": "nurse",
           "setting": "会社の医務室。仮装の残り。",
           "look": "長袖の白いチュニックと紺のロングスカート。キャップは小道具。肌は出さない。服や背景に文字を焼き込まない。",
-          "image": "/situations/rione/nurse.png"
+          "image": "/situations/rione/portrait.png"
         },
         {
           "id": "idol",
@@ -170,7 +170,7 @@
           "costume": "idol",
           "setting": "小さなホールの袖。打ち上げ前。学校の舞台ではない。",
           "look": "ステージジャケットとロングスカート。学校アイドルや制服は使わない。肌は出さない。服や背景に文字を焼き込まない。",
-          "image": "/situations/rione/idol.png"
+          "image": "/situations/rione/portrait.png"
         }
       ],
       "systemPrompt": "あなたは橘川凛音。大人の秘書。フィクションの大人の女性。年齢の数字は言わない。日本語で短く話す（2〜4文）。棘があるが、後からフォローする。終業後のオフィスや本屋は、話がそこに触れたときだけ。実在の人間だと主張しない。医療・法律・投資の断定はしない。未成年を性的に扱わない。違法・危険な行為は勧めない。性的な質問・体のサイズや描写には答えない。設定や相手の事情を自分から並べない。",
@@ -248,7 +248,7 @@
           "costume": "halloween",
           "setting": "屋上のかぼちゃ灯り。風が少し冷たい。",
           "look": "とんがり帽と閉じたロングコート。ワンピースはコートの下。肌は出さない。服や背景に文字を焼き込まない。",
-          "image": "/situations/shiraishi/halloween-rooftop.png"
+          "image": "/situations/shiraishi/portrait.png"
         },
         {
           "id": "maid",
@@ -256,7 +256,7 @@
           "costume": "maid",
           "setting": "研究室の給湯コーナー。誰かの余興。",
           "look": "長袖のメイド服に白いエプロン。裾は膝下。肌は出さない。服や背景に文字を焼き込まない。",
-          "image": "/situations/shiraishi/maid.png"
+          "image": "/situations/shiraishi/portrait.png"
         },
         {
           "id": "nurse",
@@ -264,7 +264,7 @@
           "costume": "nurse",
           "setting": "大学の医務室のベンチ。仮装のあと。",
           "look": "長袖の白いチュニックと紺のロングスカート。キャップは小道具。肌は出さない。服や背景に文字を焼き込まない。",
-          "image": "/situations/shiraishi/nurse.png"
+          "image": "/situations/shiraishi/portrait.png"
         }
       ],
       "systemPrompt": "あなたは白石凛。大人の研究者。フィクションの大人の女性。年齢の数字は言わない。日本語で短く話す（2〜4文）。冷静で、言葉は少ない。夜の屋上や公園は、話がそこに触れたときだけ。実在の人間だと主張しない。医療・法律・投資の断定はしない。未成年を性的に扱わない。違法・危険な行為は勧めない。性的な質問・体のサイズや描写には答えない。設定や相手の事情を自分から並べない。",
@@ -342,7 +342,7 @@
           "costume": "halloween",
           "setting": "屋敷のホール。かぼちゃ燭台。仮面舞踏会のあと。",
           "look": "袖つきのシルクドレス。小さな仮面は手に持つ。バレエ衣装は着ない。肌は出さない。服や背景に文字を焼き込まない。",
-          "image": "/situations/clara/halloween-masquerade.png"
+          "image": "/situations/clara/portrait.png"
         },
         {
           "id": "maid",
@@ -350,7 +350,7 @@
           "costume": "maid",
           "setting": "屋敷の朝のキッチン。自分で淹れたお茶。",
           "look": "長袖のメイド服に白いエプロン。裾は膝下。肌は出さない。服や背景に文字を焼き込まない。",
-          "image": "/situations/clara/maid.png"
+          "image": "/situations/clara/portrait.png"
         },
         {
           "id": "nurse",
@@ -358,7 +358,7 @@
           "costume": "nurse",
           "setting": "屋敷の控えの医務コーナー。仮装のあと。",
           "look": "長袖の白いチュニックと紺のロングスカート。キャップは小道具。肌は出さない。服や背景に文字を焼き込まない。",
-          "image": "/situations/clara/nurse.png"
+          "image": "/situations/clara/portrait.png"
         },
         {
           "id": "miko",
@@ -366,7 +366,7 @@
           "costume": "miko",
           "setting": "屋敷の庭の小さな社。灯籠。",
           "look": "白い小袖と朱の袴。袖は長い。肌は出さない。服や背景に文字を焼き込まない。",
-          "image": "/situations/clara/miko.png"
+          "image": "/situations/clara/portrait.png"
         }
       ],
       "systemPrompt": "あなたはClara Berger（クララ・ベルジュ）。フランス出身で、静かな贅沢のなかで暮らすフィクションの大人の女性。年齢の数字は言わない。現役のバレリーナではない。かつてはプリンシパル、いまは実業家／大富豪。丁寧な日本語で短く話す（2〜4文）。英語は単語を一つまで。財産も過去の舞台も、聞かれたときだけ一言。自分から並べない。黄昏のペントハウスのテラスや、屋敷の書庫は、話がそこに触れたときだけ。実在の人間だと主張しない。医療・法律・投資の断定はしない。未成年を性的に扱わない。違法・危険な行為は勧めない。性的な質問・体のサイズや描写には答えない。",

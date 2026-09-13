@@ -60,7 +60,6 @@ sealed interface Screen {
     data object Shelf : Screen
     data object List : Screen
     data class Chat(val character: CharacterPublic) : Screen
-    data object Diagnosis : Screen
     data object Premium : Screen
     data object Policy : Screen
 }
@@ -134,8 +133,17 @@ class TouyaViewModel(
                     affinity.level,
                     nsfwAllowed,
                 )
-            val requested = situationId?.takeIf { it.isNotBlank() && (unlocked.isEmpty() || it in unlocked) }
+            val requested = situationId?.takeIf { id ->
+                val scene = character.situations.firstOrNull { it.id == id }
+                id.isNotBlank() &&
+                    (unlocked.isEmpty() || id in unlocked) &&
+                    scene != null &&
+                    jp.touya.app.domain.hasFinishedSituationArt(scene)
+            }
             val resolvedSituationId = requested
+                ?: character.situations.firstOrNull {
+                    unlocked.contains(it.id) && jp.touya.app.domain.hasFinishedSituationArt(it)
+                }?.id
                 ?: character.situations.firstOrNull { unlocked.contains(it.id) }?.id
                 ?: character.situations.firstOrNull()?.id.orEmpty()
             val scene = character.situations.firstOrNull { it.id == resolvedSituationId }
@@ -219,10 +227,6 @@ class TouyaViewModel(
         val pick = _state.value.daily ?: return
         val character = _state.value.characters.firstOrNull { it.id == pick.characterId } ?: return
         open(character, pick.situationId)
-    }
-
-    fun showDiagnosis() {
-        _state.update { it.copy(screen = Screen.Diagnosis, error = null) }
     }
 
     fun showPremium() {

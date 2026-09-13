@@ -476,6 +476,7 @@ export function writePortraits(roster = loadRoster()) {
   let pngSkipped = 0;
   for (const character of roster) {
     for (const scene of character.situations ?? []) {
+      if (scene.costume || scene.season) continue;
       const look = lookFor(scene, character);
       const dir = join(root, "public/situations", character.id);
       mkdirSync(dir, { recursive: true });

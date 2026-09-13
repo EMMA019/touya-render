@@ -39,6 +39,12 @@ fun canRevealIntimate(affinityLevel: Int): Boolean = affinityLevel >= NSFW_MIN_A
 fun isDailySituation(scene: SituationPublic): Boolean =
     scene.costume.isNullOrBlank() && scene.season.isNullOrBlank() && !scene.nsfwOnly
 
+/** Costume/season rows only have generated 390×844 stub rasters. Hide those from the shelf. */
+fun hasFinishedSituationArt(scene: SituationPublic): Boolean {
+    if (!scene.costume.isNullOrBlank() || !scene.season.isNullOrBlank()) return false
+    return !scene.image.isNullOrBlank() || !scene.video.isNullOrBlank()
+}
+
 fun matchesShelfTab(scene: SituationPublic, tab: ShelfTab): Boolean = when (tab) {
     ShelfTab.ALL -> true
     ShelfTab.SFW -> !scene.nsfwOnly
@@ -53,7 +59,9 @@ fun matchesShelfTab(scene: SituationPublic, tab: ShelfTab): Boolean = when (tab)
 fun visibleShelfTabs(roster: List<CharacterPublic>): List<ShelfTab> =
     ShelfTab.entries.filter { tab ->
         tab == ShelfTab.ALL || tab == ShelfTab.SFW ||
-            roster.any { character -> character.situations.any { matchesShelfTab(it, tab) } }
+            roster.any { character ->
+                character.situations.any { matchesShelfTab(it, tab) && hasFinishedSituationArt(it) }
+            }
     }
 
 fun collectShelfCards(
@@ -70,6 +78,7 @@ fun collectShelfCards(
         val unlockedIds = character.unlocked
         for (scene in character.situations) {
             if (!matchesShelfTab(scene, tab)) continue
+            if (!hasFinishedSituationArt(scene) && !scene.nsfwOnly) continue
             val unlocked = if (unlockedIds.isNotEmpty()) {
                 scene.id in unlockedIds
             } else {

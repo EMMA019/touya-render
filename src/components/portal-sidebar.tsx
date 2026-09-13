@@ -4,10 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Home,
-  MessageSquare,
-  Sparkles,
   ShieldCheck,
-  Compass,
   Crown,
   Moon,
   Info,
@@ -21,7 +18,6 @@ export function PortalSidebar({ className }: { className?: string }) {
 
   const NAV_ITEMS = [
     { href: "/", label: "ホーム", icon: Home, active: pathname === "/" },
-    { href: "/diag", label: "相手診断", icon: Compass, active: pathname === "/diag" },
     { href: "/premium", label: "広告なし", icon: Crown, active: pathname === "/premium" },
     { href: "/policy", label: "約束と安心", icon: ShieldCheck, active: pathname === "/policy" },
   ];

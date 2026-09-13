@@ -2,7 +2,7 @@ import { AFFINITY_LEVELS, NSFW_MIN_AFFINITY_LEVEL, type AffinityPublic } from ".
 import { situationNsfwOnly, type CharacterPublic, type SituationPublic } from "./character-types";
 import { daysBetween, hashPick } from "./clock";
 import { jstDayKey } from "./config";
-import { givenName } from "./situation-shelf";
+import { givenName, hasFinishedSituationArt } from "./situation-shelf";
 import { isSituationUnlocked } from "./situation-unlock";
 
 /** Fixed JST epoch so character rotation advances one roster slot per calendar day. */
@@ -54,6 +54,7 @@ export function isDailyEligible(
   now = new Date(),
 ): boolean {
   if (situationNsfwOnly(scene)) return false;
+  if (!hasFinishedSituationArt(scene)) return false;
   const affinityLevel = character.affinity?.level ?? 0;
   const nsfwAllowed = affinityLevel >= NSFW_MIN_AFFINITY_LEVEL;
   const unlockedIds = character.unlocked;
@@ -126,7 +127,7 @@ function fallbackRow(
   roster: CharacterPublic[],
 ): { character: CharacterPublic; scene: SituationPublic } | null {
   for (const character of roster) {
-    const scene = character.situations.find((row) => !situationNsfwOnly(row));
+    const scene = character.situations.find((row) => !situationNsfwOnly(row) && hasFinishedSituationArt(row));
     if (scene) return { character, scene };
   }
   return null;

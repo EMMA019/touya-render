@@ -15,7 +15,7 @@ import { anonymousHeaders } from "@/lib/anonymous-client";
 import type { CharacterPublic } from "@/lib/character-types";
 import type { DailyPick, DailyPublic } from "@/lib/daily";
 import Link from "next/link";
-import { Compass, Moon } from "lucide-react";
+import { Moon } from "lucide-react";
 import { useEffect, useState } from "react";
 
 export function HomePortal({
@@ -61,10 +61,6 @@ export function HomePortal({
             <span className="font-semibold text-amber-200 border-b-2 border-amber-300 pb-1">
               ホーム
             </span>
-            <Link href="/diag" className="hover:text-amber-100 transition flex items-center gap-1">
-              <Compass className="size-3 text-amber-300" />
-              <span>今夜の相手診断</span>
-            </Link>
             <Link href="/premium" className="hover:text-amber-100 transition">
               プラン案内
             </Link>
@@ -88,21 +84,13 @@ export function HomePortal({
           <PortalUpsellBanner />
 
           <section className="space-y-3" id="roster">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-base font-bold tracking-tight text-amber-50">
-                  名簿
-                </h3>
-                <p className="text-xs text-amber-100/50">
-                  相手のプロフィールから入るとき。
-                </p>
-              </div>
-              <Link
-                href="/diag"
-                className="text-xs text-rose-300 hover:text-rose-200 underline-offset-4 hover:underline"
-              >
-                迷ったら診断する →
-              </Link>
+            <div>
+              <h3 className="text-base font-bold tracking-tight text-amber-50">
+                名簿
+              </h3>
+              <p className="text-xs text-amber-100/50">
+                相手のプロフィールから入るとき。
+              </p>
             </div>
 
             <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-2 lg:grid-cols-4">

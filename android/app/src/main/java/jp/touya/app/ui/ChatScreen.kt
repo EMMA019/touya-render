@@ -48,6 +48,7 @@ import jp.touya.app.data.Quota
 import jp.touya.app.data.situationCardLines
 import jp.touya.app.domain.ModePublic
 import jp.touya.app.domain.LOCKED_SITUATION_HINT
+import jp.touya.app.domain.hasFinishedSituationArt
 import jp.touya.app.domain.pickHook
 import jp.touya.app.domain.suggestionsFor
 
@@ -151,7 +152,7 @@ fun ChatScreen(
                     .padding(horizontal = 12.dp),
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                character.situations.forEach { scene ->
+                character.situations.filter { hasFinishedSituationArt(it) }.forEach { scene ->
                     val open = unlocked.isEmpty() || scene.id in unlocked
                     val selected = scene.id == situationId
                     Surface(
