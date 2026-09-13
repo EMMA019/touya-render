@@ -28,4 +28,4 @@ The API the phone talks to must have the same unlimited flag (local `npm run dev
 
 ## Shelf art
 
-Generated SVG silhouettes and missing `.png` files are stubs. The shelf hides those gray placeholders. Drop a real PNG/WebP/JPEG under `public/situations/{id}/` (and Android assets if you want offline) and it will show — SFW or NSFW.
+Generated SVG silhouettes and the tiny (~25KB) rasterized costume placeholders are hidden on the shelf. Real situ rasters (typically 200KB+) still show — SFW or NSFW. Drop a real PNG/WebP/JPEG under `public/situations/{id}/` and it will appear.

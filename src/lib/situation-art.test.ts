@@ -41,17 +41,21 @@ test("situation SVG stubs stay character-only: no baked names or clothing/sign t
   }
 });
 
-test("hasRealSituationArt hides svg stubs and missing rasters", () => {
+test("hasRealSituationArt hides svg stubs and tiny generated rasters", () => {
   assert.equal(hasRealSituationArt(null), false);
   assert.equal(hasRealSituationArt("/situations/hiyori/cafe-rain.svg"), false);
-  assert.equal(hasRealSituationArt("/situations/hiyori/cafe-rain.png"), false);
-  assert.equal(publicArtPath("/situations/hiyori/cafe-rain.png"), null);
+  assert.equal(hasRealSituationArt("/situations/hiyori/missing-scene.png"), false);
+  assert.equal(hasRealSituationArt("/situations/hiyori/maid.png"), false);
+  assert.equal(publicArtPath("/situations/hiyori/maid.png"), null);
+  assert.equal(hasRealSituationArt("/situations/hiyori/cafe-rain.png"), true);
+  assert.equal(publicArtPath("/situations/hiyori/cafe-rain.png"), "/situations/hiyori/cafe-rain.png");
 
   const dir = join(process.cwd(), "public/situations/_art-test");
   mkdirSync(dir, { recursive: true });
-  const png = join(dir, "real.png");
-  writeFileSync(png, Buffer.alloc(1200, 7));
+  writeFileSync(join(dir, "tiny.png"), Buffer.alloc(1200, 7));
+  writeFileSync(join(dir, "real.png"), Buffer.alloc(90_000, 7));
   try {
+    assert.equal(hasRealSituationArt("/situations/_art-test/tiny.png"), false);
     assert.equal(hasRealSituationArt("/situations/_art-test/real.png"), true);
     assert.equal(publicArtPath("/situations/_art-test/real.png"), "/situations/_art-test/real.png");
   } finally {

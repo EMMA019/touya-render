@@ -2,7 +2,8 @@ import { existsSync, statSync } from "node:fs";
 import { join } from "node:path";
 
 const RASTER = /\.(png|webp|jpe?g)$/i;
-const MIN_REAL_BYTES = 1000;
+/** Generated 390px SVG rasters land around 23–28KB. Real situ art is 200KB+. */
+const MIN_REAL_BYTES = 80_000;
 
 /** Generated SVG silhouettes and missing rasters are stubs — do not show on the shelf. */
 export function hasRealSituationArt(path: string | null | undefined): boolean {
