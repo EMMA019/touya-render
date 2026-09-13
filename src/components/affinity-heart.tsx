@@ -5,22 +5,27 @@ import { cn } from "@/lib/utils";
 
 export function AffinityHeart({
   affinity = EMPTY_AFFINITY,
+  pending = false,
   className,
 }: {
   affinity?: AffinityPublic;
+  /** A chapter is waiting (count reached the next band, story has not caught up). */
+  pending?: boolean;
   className?: string;
 }) {
+  const label = pending ? `${affinity.name}（続きがある）` : affinity.name;
   return (
     <div
       className={cn(
         "flex items-center gap-1 rounded-full bg-black/40 px-2.5 py-1.5 text-[11px] text-rose-100/90 backdrop-blur-md",
         className,
       )}
-      title={affinity.name}
-      aria-label={affinity.name}
+      title={label}
+      aria-label={label}
     >
       <Heart className="size-3 fill-rose-300/85 text-rose-300" />
       <span>{affinity.name}</span>
+      {pending ? <span aria-hidden className="ml-0.5 size-1.5 rounded-full bg-amber-200" /> : null}
     </div>
   );
 }

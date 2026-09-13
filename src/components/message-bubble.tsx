@@ -7,6 +7,8 @@ export type UiMessage = {
   role: "user" | "assistant";
   content: string;
   pending?: boolean;
+  /** Story stage direction: rendered as a caption, not a speech bubble. */
+  narration?: boolean;
 };
 
 export function MessageBubble({
