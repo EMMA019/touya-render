@@ -104,6 +104,34 @@ data class MemoryRow(
     val at: String = "",
 )
 
+data class GiftPublic(
+    val id: String,
+    val name: String,
+    val hint: String,
+    val affinityDelta: Int,
+    val premium: Boolean = false,
+    val favorite: Boolean = false,
+)
+
+data class GiftList(
+    val gifts: List<GiftPublic> = emptyList(),
+    val day: String = "",
+    val giftedToday: Boolean = false,
+)
+
+data class GiftGiveResult(
+    val ok: Boolean,
+    val giftId: String = "",
+    val giftName: String = "",
+    val thanks: String = "",
+    val favorite: Boolean = false,
+    val affinityDelta: Int = 0,
+    val affinity: AffinityPublic = EMPTY_AFFINITY,
+    val affinityToast: String = "",
+    val giftedToday: Boolean = false,
+    val message: String = "",
+)
+
 data class CompanionSnapshot(
     val bond: Bond = EMPTY_BOND,
     val memory: List<MemoryRow> = emptyList(),

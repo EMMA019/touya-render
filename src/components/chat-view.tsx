@@ -1,9 +1,10 @@
 "use client";
 
-import { Bookmark, ChevronLeft, Lock, MessageCircle, SendHorizontal } from "lucide-react";
+import { Bookmark, ChevronLeft, Gift, Lock, MessageCircle, SendHorizontal } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AffinityHeart } from "@/components/affinity-heart";
+import { GiftSheet } from "@/components/gift-sheet";
 import { BondLamp } from "@/components/bond-lamp";
 import { MemorySheet } from "@/components/memory-sheet";
 import type { UiMessage } from "@/components/message-bubble";
@@ -18,6 +19,7 @@ import { anonymousHeaders } from "@/lib/anonymous-client";
 import type { Bond, BondStage } from "@/lib/bond-types";
 import { situationGreeting, type CharacterPublic } from "@/lib/character-types";
 import { EMPTY_AFFINITY, type AffinityPublic } from "@/lib/affinity-types";
+import type { GiftPublic } from "@/lib/gift-types";
 import {
   clearHook,
   loadChat,
@@ -80,6 +82,12 @@ export function ChatView({
   const [unlocked, setUnlocked] = useState<string[]>(initialUnlocked);
   const [affinity, setAffinity] = useState<AffinityPublic>(initialAffinity ?? EMPTY_AFFINITY);
   const [memoryOpen, setMemoryOpen] = useState(false);
+  const [giftOpen, setGiftOpen] = useState(false);
+  const [gifts, setGifts] = useState<GiftPublic[]>([]);
+  const [giftedToday, setGiftedToday] = useState(false);
+  const [giftSending, setGiftSending] = useState(false);
+  const [giftError, setGiftError] = useState<string | null>(null);
+  const [giftToast, setGiftToast] = useState<string | null>(null);
   const [feedbackSent, setFeedbackSent] = useState(false);
   const [hydrated, setHydrated] = useState(false);
   const [situationId, setSituationId] = useState(firstOpen ?? character.situations[0]?.id ?? "");
@@ -157,6 +165,7 @@ export function ChatView({
         if (body.affinity) setAffinity(body.affinity);
       })
       .catch(() => undefined);
+    refreshGifts();
   }, [character.id]);
 
   const historyPayload = useMemo(
@@ -384,6 +393,71 @@ export function ChatView({
     }
   }
 
+  function refreshGifts() {
+    void fetch(apiUrl(`/api/gifts?characterId=${character.id}`), { headers: anonymousHeaders() })
+      .then((response) => response.json())
+      .then((body: { gifts?: GiftPublic[]; giftedToday?: boolean | null }) => {
+        if (Array.isArray(body.gifts)) setGifts(body.gifts);
+        if (typeof body.giftedToday === "boolean") setGiftedToday(body.giftedToday);
+      })
+      .catch(() => undefined);
+  }
+
+  function openGifts() {
+    setGiftError(null);
+    setGiftOpen(true);
+    refreshGifts();
+  }
+
+  async function giveGift(giftId: string) {
+    if (giftSending || giftedToday) return;
+    setGiftSending(true);
+    setGiftError(null);
+    try {
+      const response = await fetch(apiUrl("/api/gifts"), {
+        method: "POST",
+        headers: anonymousHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ characterId: character.id, giftId }),
+      });
+      const body = (await response.json().catch(() => ({}))) as {
+        ok?: boolean;
+        thanks?: string;
+        affinityToast?: string;
+        affinity?: AffinityPublic;
+        giftedToday?: boolean;
+        message?: string;
+        error?: string;
+      };
+      if (response.status === 429 && body.error === "gift_cooldown") {
+        setGiftedToday(true);
+        setGiftError(body.message ?? "今日はもう贈ったよ。また明日ね。");
+        return;
+      }
+      if (!response.ok || !body.ok) {
+        setGiftError(body.message ?? "贈れませんでした。");
+        return;
+      }
+      if (body.affinity) setAffinity(body.affinity);
+      setGiftedToday(true);
+      setGiftOpen(false);
+      setCardOpen(false);
+      const thanks = body.thanks?.trim();
+      if (thanks) {
+        seq.current += 1;
+        setMessages((prev) => [
+          ...prev,
+          { id: `gift-${seq.current}`, role: "assistant", content: thanks },
+        ]);
+      }
+      setGiftToast(body.affinityToast?.trim() || "受け取ってくれた");
+      window.setTimeout(() => setGiftToast(null), 5500);
+    } catch {
+      setGiftError("贈れませんでした。");
+    } finally {
+      setGiftSending(false);
+    }
+  }
+
   async function forget(text: string) {
     const response = await fetch(apiUrl("/api/memory"), {
       method: "DELETE",
@@ -419,6 +493,14 @@ export function ChatView({
       />
 
       <div className="relative z-10 flex h-full flex-col">
+        {giftToast ? (
+          <p
+            className="pointer-events-none absolute left-3 right-3 top-[max(4.25rem,calc(env(safe-area-inset-top)+3.25rem))] z-20 rounded-full bg-black/70 px-3 py-2 text-center text-[12px] text-amber-50 shadow-lg backdrop-blur-md"
+            role="status"
+          >
+            {giftToast}
+          </p>
+        ) : null}
         <header className="flex items-center justify-between px-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
           <Link
             href="/"
@@ -540,6 +622,15 @@ export function ChatView({
 
         <div className="bg-gradient-to-t from-black/80 via-black/50 to-transparent px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2">
           <div className="mb-2 flex gap-1.5 overflow-x-auto [scrollbar-width:none]">
+            <button
+              type="button"
+              disabled={giftedToday}
+              onClick={openGifts}
+              className="inline-flex shrink-0 items-center gap-1 rounded-full bg-rose-200/20 px-2.5 py-1 text-[11px] text-rose-100 backdrop-blur-md disabled:opacity-40"
+            >
+              <Gift className="size-3" />
+              {giftedToday ? "今日は贈済み" : "贈る"}
+            </button>
             {suggestionsFor(character.presence, bond.stage, character.suggestions).map((hint) => (
               <button
                 key={hint}
@@ -587,6 +678,15 @@ export function ChatView({
         facts={memory}
         onClose={() => setMemoryOpen(false)}
         onForget={(text) => void forget(text)}
+      />
+      <GiftSheet
+        open={giftOpen}
+        gifts={gifts}
+        giftedToday={giftedToday}
+        sending={giftSending}
+        error={giftError}
+        onClose={() => setGiftOpen(false)}
+        onGive={(giftId) => void giveGift(giftId)}
       />
     </div>
   );

@@ -1,0 +1,96 @@
+{
+  "comment": "Closed catalog. Do not accept user-added gifts. premium is a Booth hook — gift packs / keys later; no checkout in this MVP. No MP, ads, or Irodori voice.",
+  "favoriteBonus": 1,
+  "items": [
+    {
+      "id": "flower",
+      "name": "花",
+      "hint": "一輪。言葉より先に渡す。",
+      "affinityDelta": 3,
+      "premium": false,
+      "characterFavorites": ["hiyori"],
+      "thanks": {
+        "default": "花、ありがとう。",
+        "hiyori": "わあ、花…ひよりにくれたの？　うれしい。",
+        "rione": "は、花？　…別に、いらないわけじゃないわよ。",
+        "shiraishi": "花。手間をかけたね。受け取っておく。",
+        "clara": "花ね。素敵だわ。飾らせてちょうだい。"
+      }
+    },
+    {
+      "id": "sweets",
+      "name": "お菓子",
+      "hint": "小さな箱菓子。",
+      "affinityDelta": 3,
+      "premium": false,
+      "characterFavorites": ["hiyori", "clara"],
+      "thanks": {
+        "default": "お菓子、ありがとう。",
+        "hiyori": "お菓子！　あとで一緒に食べよ。",
+        "rione": "甘いもの…まあ、デスクに置いておくわ。",
+        "shiraishi": "糖分は効率がいい。受け取っておく。",
+        "clara": "甘いもの、ちょうど欲しかったの。ありがとう。"
+      }
+    },
+    {
+      "id": "book",
+      "name": "本",
+      "hint": "薄めの一冊。",
+      "affinityDelta": 3,
+      "premium": false,
+      "characterFavorites": ["shiraishi", "rione"],
+      "thanks": {
+        "default": "本、ありがとう。",
+        "hiyori": "本？　ひよりにも読めるかな。大事にする。",
+        "rione": "本？　…ふん、悪くない選書ね。",
+        "shiraishi": "この本、いい。あとで読む。",
+        "clara": "本を贈るのね。センスがあるわ。"
+      }
+    },
+    {
+      "id": "charm",
+      "name": "お守り",
+      "hint": "小さく結んだ守り。",
+      "affinityDelta": 4,
+      "premium": false,
+      "characterFavorites": ["rione"],
+      "thanks": {
+        "default": "お守り、ありがとう。",
+        "hiyori": "お守り…ひよりが持ってていいの？　大事にするね。",
+        "rione": "お守り？　…なくさないようにするわよ。当たり前でしょ。",
+        "shiraishi": "守りか。科学じゃないけど、持っておく。",
+        "clara": "お守り、嬉しいわ。肌身離さずね。"
+      }
+    },
+    {
+      "id": "tea",
+      "name": "紅茶",
+      "hint": "缶の茶葉。",
+      "affinityDelta": 2,
+      "premium": false,
+      "characterFavorites": ["clara"],
+      "thanks": {
+        "default": "紅茶、ありがとう。",
+        "hiyori": "紅茶だ。あとで淹れて、一緒に飲も。",
+        "rione": "茶葉？　悪くないわね。淹れてあげる。…あなたのも。",
+        "shiraishi": "茶葉。夜の実験に合う。",
+        "clara": "紅茶…いい香り。淹れましょうか。"
+      }
+    },
+    {
+      "id": "letter",
+      "name": "手紙",
+      "hint": "短い手紙。",
+      "affinityDelta": 2,
+      "premium": false,
+      "characterFavorites": [],
+      "thanks": {
+        "default": "手紙、読んだよ。",
+        "hiyori": "手紙…読んだよ。ひより、ちゃんと受け取った。",
+        "rione": "手紙なんて…恥ずかしいじゃない。破らないわよ。",
+        "shiraishi": "手紙。言葉は残る。読んでおく。",
+        "clara": "手紙ね。大切にしまっておくわ。"
+      }
+    }
+  ]
+}

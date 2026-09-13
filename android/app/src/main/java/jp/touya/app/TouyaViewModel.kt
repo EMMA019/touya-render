@@ -12,6 +12,7 @@ import jp.touya.app.data.EMPTY_BOND
 import jp.touya.app.data.AffinityPublic
 import jp.touya.app.data.MemoryRow
 import jp.touya.app.data.EMPTY_MODE
+import jp.touya.app.data.GiftPublic
 import jp.touya.app.data.Quota
 import jp.touya.app.data.TouyaClient
 import jp.touya.app.data.VisitorStore
@@ -45,6 +46,12 @@ data class UiState(
     val affinity: AffinityPublic = EMPTY_AFFINITY,
     val memory: List<MemoryRow> = emptyList(),
     val unlocked: List<String> = emptyList(),
+    val gifts: List<GiftPublic> = emptyList(),
+    val giftedToday: Boolean = false,
+    val giftOpen: Boolean = false,
+    val giftSending: Boolean = false,
+    val giftError: String? = null,
+    val giftToast: String? = null,
     val memoryOpen: Boolean = false,
     val feedbackSent: Boolean = false,
     val rewarding: Boolean = false,
@@ -167,8 +174,15 @@ class TouyaViewModel(
                     rewarding = false,
                     rewardMessage = null,
                     situationCard = true,
+                    gifts = emptyList(),
+                    giftedToday = false,
+                    giftOpen = false,
+                    giftSending = false,
+                    giftError = null,
+                    giftToast = null,
                 )
             }
+            refreshGifts(character.id)
         }
     }
 
@@ -220,6 +234,64 @@ class TouyaViewModel(
 
     fun toggleMemory(open: Boolean) {
         _state.update { it.copy(memoryOpen = open) }
+    }
+
+    fun toggleGift(open: Boolean) {
+        _state.update { it.copy(giftOpen = open, giftError = null) }
+        if (open) {
+            val screen = _state.value.screen as? Screen.Chat ?: return
+            refreshGifts(screen.character.id)
+        }
+    }
+
+    fun giveGift(giftId: String) {
+        val screen = _state.value.screen as? Screen.Chat ?: return
+        if (_state.value.giftSending || _state.value.giftedToday) return
+        viewModelScope.launch {
+            _state.update { it.copy(giftSending = true, giftError = null) }
+            runCatching {
+                withContext(Dispatchers.IO) { client.giveGift(screen.character.id, giftId) }
+            }.onSuccess { result ->
+                if (!result.ok) {
+                    _state.update {
+                        it.copy(
+                            giftSending = false,
+                            giftedToday = result.giftedToday || it.giftedToday,
+                            giftError = result.message.ifBlank { "今日はもう贈ったよ。また明日ね。" },
+                        )
+                    }
+                    return@onSuccess
+                }
+                val thanks = result.thanks.trim()
+                val messages = if (thanks.isNotEmpty()) {
+                    _state.value.messages + ChatMessage("assistant", thanks, id = nextId("gift"))
+                } else {
+                    _state.value.messages
+                }
+                store.saveChat(screen.character.id, messages)
+                val toast = listOf(result.affinityToast, thanks).filter { it.isNotBlank() }.joinToString(" · ")
+                _state.update {
+                    it.copy(
+                        giftSending = false,
+                        giftOpen = false,
+                        giftedToday = true,
+                        affinity = result.affinity,
+                        messages = messages,
+                        giftToast = toast.ifBlank { "受け取ってくれた" },
+                        unlocked = unlockedSituationIds(
+                            screen.character.situations,
+                            it.bond.daysMet,
+                            Instant.now(),
+                            result.affinity.level,
+                        ),
+                    )
+                }
+            }.onFailure { err ->
+                _state.update {
+                    it.copy(giftSending = false, giftError = err.message ?: "贈れませんでした。")
+                }
+            }
+        }
     }
 
     fun send(raw: String) {
@@ -438,6 +510,18 @@ class TouyaViewModel(
                         rewarding = false,
                         rewardMessage = err.message ?: "リワードを受け取れませんでした。",
                     )
+                }
+            }
+        }
+    }
+
+    private fun refreshGifts(characterId: String) {
+        viewModelScope.launch {
+            runCatching {
+                withContext(Dispatchers.IO) { client.gifts(characterId) }
+            }.onSuccess { list ->
+                _state.update {
+                    it.copy(gifts = list.gifts, giftedToday = list.giftedToday)
                 }
             }
         }
