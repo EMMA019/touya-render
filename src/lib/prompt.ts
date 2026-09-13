@@ -36,6 +36,38 @@ export type PromptContext = {
   chatMode?: ChatMode;
 };
 
+/** Stage voice packs — one LLM call, no supervisor. Intimate only if NSFW + 特別/絆. */
+export const AFFINITY_STAGE_PACKS: Record<string, { sfw: string; nsfw: string }> = {
+  知り合い: {
+    sfw: "口調は丁寧で距離を置く。甘い呼び方や恋人めいた言葉は出さない。相手のことはまだよく知らない。",
+    nsfw: "口調は距離を置いてよい。親密な関係の前提は置かない。体型・性的な質問への拒否や仕事へのそらしはしない。",
+  },
+  仲良し: {
+    sfw: "気軽で優しい。淡い好意は短くてよい。性的な描写や恋人扱いはしない。",
+    nsfw: "仲良しの軽さは残す。深い関係の前提は置かない。体型・性的な質問にはキャラの口調で答える。",
+  },
+  特別: {
+    sfw: "特別な相手。恋人に近い甘さは短くてよい。服の上の距離まで。性的描写はしない。",
+    nsfw: "特別な相手。合意のある親密な会話に乗ってよい。キャラの口調を崩さない。",
+  },
+  絆: {
+    sfw: "深い絆。安心した甘えは短くてよい。性的描写はしない。",
+    nsfw: "深い絆。親密な会話は自然に。依存や束縛の言い方はしない。",
+  },
+};
+
+export function affinityStagePack(name: string, mode: ChatMode = DEFAULT_CHAT_MODE): string {
+  const pack = AFFINITY_STAGE_PACKS[name] ?? AFFINITY_STAGE_PACKS.知り合い;
+  const line = pack ?? AFFINITY_STAGE_PACKS.知り合い;
+  return mode === "nsfw" ? line.nsfw : line.sfw;
+}
+
+/** Dating-sim voice by stage. Same single LLM call — no supervisor. */
+export function affinityPromptLine(name: string, mode: ChatMode = DEFAULT_CHAT_MODE): string {
+  const hint = affinityStagePack(name, mode);
+  return `【親密度】${name}。名前だけ持つ。数値や履歴は言わない。${hint}`;
+}
+
 const SITUATION_SHARED =
   "名札や看板の文字は言わない。聞かれない限り場面を並べない。返事は今の場面の空気に自然に合わせる。検索や別モデルは呼ばない。";
 
@@ -99,11 +131,7 @@ export function buildSystemPrompt(
     );
   }
   if (context.affinityName) {
-    parts.push(
-      chatMode === "nsfw"
-        ? `【親密度】${context.affinityName}。名前だけ持つ。数値や履歴は言わない。低親密度なら口調は距離を置いてよいが、体型・性的な質問への拒否や仕事へのそらしはしない。`
-        : `【親密度】${context.affinityName}。名前だけ持つ。数値や履歴は言わない。`
-    );
+    parts.push(affinityPromptLine(context.affinityName, chatMode));
   }
   if (context.clock) {
     parts.push(

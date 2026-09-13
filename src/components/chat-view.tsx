@@ -3,6 +3,7 @@
 import { Bookmark, ChevronLeft, Lock, MessageCircle, SendHorizontal } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { AffinityLevelBanner, AffinityToast } from "@/components/affinity-feedback";
 import { AffinityHeart } from "@/components/affinity-heart";
 import { BondLamp } from "@/components/bond-lamp";
 import { MemorySheet } from "@/components/memory-sheet";
@@ -79,6 +80,8 @@ export function ChatView({
   const [memory, setMemory] = useState<MemoryRow[]>(initialMemory);
   const [unlocked, setUnlocked] = useState<string[]>(initialUnlocked);
   const [affinity, setAffinity] = useState<AffinityPublic>(initialAffinity ?? EMPTY_AFFINITY);
+  const [levelUpMessage, setLevelUpMessage] = useState<string | null>(null);
+  const [affinityToast, setAffinityToast] = useState<string | null>(null);
   const [memoryOpen, setMemoryOpen] = useState(false);
   const [feedbackSent, setFeedbackSent] = useState(false);
   const [hydrated, setHydrated] = useState(false);
@@ -97,6 +100,18 @@ export function ChatView({
   useEffect(() => {
     scroller.current?.scrollTo({ top: scroller.current.scrollHeight, behavior: "smooth" });
   }, [messages]);
+
+  useEffect(() => {
+    if (!levelUpMessage) return;
+    const timer = window.setTimeout(() => setLevelUpMessage(null), 6000);
+    return () => window.clearTimeout(timer);
+  }, [levelUpMessage]);
+
+  useEffect(() => {
+    if (!affinityToast) return;
+    const timer = window.setTimeout(() => setAffinityToast(null), 2800);
+    return () => window.clearTimeout(timer);
+  }, [affinityToast]);
 
   useEffect(() => {
     resizeComposer(boxRef.current);
@@ -290,6 +305,12 @@ export function ChatView({
             name?: string;
             nextAt?: number | null;
             progress?: number;
+            remainingToNext?: number | null;
+            affinityDelta?: number;
+            leveledUp?: boolean;
+            levelUpMessage?: string | null;
+            affinityToast?: string | null;
+            bandEvent?: { title?: string; blurb?: string } | null;
             level?: number | string;
           };
           if (payload.type === "quota" && typeof payload.remaining === "number") {
@@ -328,7 +349,16 @@ export function ChatView({
               name: payload.name,
               nextAt: typeof payload.nextAt === "number" ? payload.nextAt : null,
               progress: typeof payload.progress === "number" ? payload.progress : 0,
+              remainingToNext:
+                typeof payload.remainingToNext === "number" ? payload.remainingToNext : null,
             });
+            if (payload.leveledUp && payload.levelUpMessage) {
+              setLevelUpMessage(payload.levelUpMessage);
+              setAffinityToast(null);
+            } else if (payload.affinityToast) {
+              setLevelUpMessage(null);
+              setAffinityToast(payload.affinityToast);
+            }
           }
           if (payload.type === "delta" && payload.text) {
             assembled += payload.text;
@@ -451,6 +481,12 @@ export function ChatView({
             </div>
           </div>
         </header>
+
+        {levelUpMessage ? (
+          <AffinityLevelBanner message={levelUpMessage} onDismiss={() => setLevelUpMessage(null)} />
+        ) : affinityToast ? (
+          <AffinityToast message={affinityToast} />
+        ) : null}
 
         <div className="mt-3 flex gap-1.5 overflow-x-auto px-3 [scrollbar-width:none]">
           {character.situations.map((scene) => {

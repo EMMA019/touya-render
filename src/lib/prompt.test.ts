@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import type { Character } from "./character-types";
 import {
+  affinityPromptLine,
+  affinityStagePack,
   buildSystemPrompt,
   COMPANION_ADULT_OK,
   COMPANION_NOT_NSFW,
@@ -124,7 +126,10 @@ test("prompt injects affinity name only, not counts or history", () => {
     affinityName: "仲良し",
   });
   const affinityLine = prompt.split("\n").find((line) => line.startsWith("【親密度】"));
-  assert.equal(affinityLine, "【親密度】仲良し。名前だけ持つ。数値や履歴は言わない。");
+  assert.equal(
+    affinityLine,
+    "【親密度】仲良し。名前だけ持つ。数値や履歴は言わない。気軽で優しい。淡い好意は短くてよい。性的な描写や恋人扱いはしない。",
+  );
   assert.doesNotMatch(affinityLine ?? "", /\d/);
   assert.equal(prompt.split("【親密度】").length, 2);
 });
@@ -196,3 +201,29 @@ test("nsfw prompt uses adult-allowed companion rules and relaxes clothing", () =
   assert.match(prompt, /一回で返す/);
   assert.match(prompt, /会話の続き/);
 });
+
+test("stage packs change distance; intimate voice only when NSFW and 特別+", () => {
+  const acquaintance = affinityPromptLine("知り合い", "sfw");
+  assert.match(acquaintance, /距離を置く/);
+  assert.doesNotMatch(acquaintance, /親密な会話に乗って/);
+
+  const friend = affinityStagePack("仲良し", "sfw");
+  assert.match(friend, /気軽で優しい/);
+  assert.doesNotMatch(friend, /親密な会話/);
+
+  const specialSfw = affinityPromptLine("特別", "sfw");
+  assert.match(specialSfw, /服の上の距離/);
+  assert.doesNotMatch(specialSfw, /親密な会話に乗って/);
+
+  const specialNsfw = affinityPromptLine("特別", "nsfw");
+  assert.match(specialNsfw, /合意のある親密な会話に乗ってよい/);
+
+  const bondNsfw = affinityPromptLine("絆", "nsfw");
+  assert.match(bondNsfw, /親密な会話は自然に/);
+
+  const lowNsfw = affinityPromptLine("知り合い", "nsfw");
+  assert.match(lowNsfw, /親密な関係の前提は置かない/);
+  assert.doesNotMatch(lowNsfw, /親密な会話に乗って/);
+  assert.match(lowNsfw, /そらしはしない/);
+});
+

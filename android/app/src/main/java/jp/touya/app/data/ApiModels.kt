@@ -66,6 +66,12 @@ data class AffinityPublic(
     val name: String = "知り合い",
     val nextAt: Int? = 10,
     val progress: Float = 0f,
+    val remainingToNext: Int? = 10,
+    val affinityDelta: Int = 0,
+    val leveledUp: Boolean = false,
+    val leveledDown: Boolean = false,
+    val levelUpMessage: String? = null,
+    val affinityToast: String? = null,
 )
 
 private data class AffinityLevel(val level: Int, val name: String, val at: Int)
@@ -84,7 +90,14 @@ fun levelFromCount(count: Int): AffinityPublic {
         if (n >= row.at) current = row
     }
     val next = AFFINITY_LEVELS.firstOrNull { it.level == current.level + 1 }
-        ?: return AffinityPublic(count = n, level = current.level, name = current.name, nextAt = null, progress = 1f)
+        ?: return AffinityPublic(
+            count = n,
+            level = current.level,
+            name = current.name,
+            nextAt = null,
+            progress = 1f,
+            remainingToNext = null,
+        )
     val span = maxOf(1, next.at - current.at)
     val into = minOf(span, maxOf(0, n - current.at))
     return AffinityPublic(
@@ -93,6 +106,7 @@ fun levelFromCount(count: Int): AffinityPublic {
         name = current.name,
         nextAt = next.at,
         progress = into.toFloat() / span.toFloat(),
+        remainingToNext = maxOf(0, next.at - n),
     )
 }
 
