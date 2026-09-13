@@ -13,14 +13,26 @@ import jp.touya.app.data.AffinityPublic
 import jp.touya.app.data.MemoryRow
 import jp.touya.app.data.EMPTY_MODE
 import jp.touya.app.data.Quota
+import jp.touya.app.data.StoryBeat
+import jp.touya.app.data.StoryPublic
+import jp.touya.app.data.StoryScriptPublic
+import jp.touya.app.data.StoryStepResponse
 import jp.touya.app.data.TouyaClient
 import jp.touya.app.data.VisitorStore
 import jp.touya.app.data.seedSituationGreeting
 import jp.touya.app.data.situationGreeting
 import jp.touya.app.domain.ModePublic
+import jp.touya.app.domain.NSFW_RELATIONSHIP_REQUIRED_JA
+import jp.touya.app.domain.OPTIMISTIC_UNLOCK
+import jp.touya.app.domain.UnlockContext
+import jp.touya.app.domain.appendUnique
 import jp.touya.app.domain.composeOpening
 import jp.touya.app.domain.jstDayKey
 import jp.touya.app.domain.readClock
+import jp.touya.app.domain.situationLocks
+import jp.touya.app.domain.storyBeatBubbles
+import jp.touya.app.domain.choiceBubble
+import jp.touya.app.domain.stripOpening
 import jp.touya.app.domain.unlockedSituationIds
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -28,7 +40,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.time.Instant
 
 data class UiState(
     val screen: Screen = Screen.List,
@@ -52,7 +63,24 @@ data class UiState(
     val situationCard: Boolean = true,
     val mode: ModePublic = EMPTY_MODE,
     val ageGateOpen: Boolean = false,
-)
+    /** scene id → lock reason from the server (display). */
+    val locks: Map<String, String> = emptyMap(),
+    val story: StoryPublic? = null,
+    val script: StoryScriptPublic? = null,
+    val storyBusy: Boolean = false,
+) {
+    /** The beat the visitor is parked on, if the script for it is loaded. */
+    val currentBeat: StoryBeat? get() = script?.beat(story?.chapterId, story?.beat)
+
+    val unlockContext: UnlockContext? get() = story?.let {
+        UnlockContext(
+            flags = it.flags,
+            effectiveLevel = it.effectiveLevel,
+            pendingChapter = it.pendingChapter,
+            nsfwAllowed = mode.chatMode == "nsfw",
+        )
+    }
+}
 
 sealed interface Screen {
     data object List : Screen
@@ -117,35 +145,50 @@ class TouyaViewModel(
             }.getOrNull()
             val bond = companion?.bond ?: EMPTY_BOND
             val affinity = companion?.affinity ?: character.affinity
+            val story = companion?.story
+            val script = companion?.script
             val saved = store.loadChat(character.id)
             val lastDay = store.loadLastVisitDay(character.id)
             val today = jstDayKey()
             val hook = if (lastDay != null && lastDay != today) store.loadHook(character.id) else null
+            // Server unlocked/locks are the truth; Unlock.kt only fills in when the API is unreachable.
+            val fallbackCtx = story?.let {
+                UnlockContext(it.flags, it.effectiveLevel, it.pendingChapter, _state.value.mode.chatMode == "nsfw")
+            } ?: OPTIMISTIC_UNLOCK
             val unlocked = companion?.unlocked?.ifEmpty { null }
-                ?: unlockedSituationIds(character.situations, bond.daysMet, Instant.now(), affinity.level)
-            val situationId = character.situations.firstOrNull { unlocked.contains(it.id) }?.id
+                ?: unlockedSituationIds(character.situations, fallbackCtx)
+            val locks = companion?.locks?.ifEmpty { null } ?: situationLocks(character.situations, fallbackCtx)
+            val chapter = script?.chapter(story?.chapterId)
+            val beat = script?.beat(story?.chapterId, story?.beat)
+            val situationId = chapter?.situationId
+                ?: character.situations.firstOrNull { unlocked.contains(it.id) }?.id
                 ?: character.situations.firstOrNull()?.id.orEmpty()
             val scene = character.situations.firstOrNull { it.id == situationId }
-            val opening = composeOpening(
-                id = character.id,
-                greeting = situationGreeting(scene, character.greeting),
-                welcomeBack = character.welcomeBack.ifBlank { character.greeting },
-                presence = character.presence,
-                clock = readClock(),
-                stage = bond.stage,
-                daysAway = if (lastDay != null && lastDay != today) maxOf(bond.daysAway, 1) else 0,
-                streak = bond.streak,
-                hook = hook,
-                firstVisit = saved.isEmpty() && lastDay == null,
-            )
-            val messages = if (saved.isNotEmpty()) {
-                if (lastDay != null && lastDay != today) {
-                    saved + ChatMessage("assistant", opening.text, id = nextId("welcome"))
-                } else {
-                    saved
-                }
+            val messages = if (chapter != null && beat != null) {
+                // A chapter beat is waiting: the script speaks instead of the greeting.
+                appendUnique(stripOpening(saved), storyBeatBubbles(chapter.id, beat))
             } else {
-                listOf(ChatMessage("assistant", opening.text, id = nextId("greeting")))
+                val opening = composeOpening(
+                    id = character.id,
+                    greeting = situationGreeting(scene, character.greeting),
+                    welcomeBack = character.welcomeBack.ifBlank { character.greeting },
+                    presence = character.presence,
+                    clock = readClock(),
+                    stage = bond.stage,
+                    daysAway = if (lastDay != null && lastDay != today) maxOf(bond.daysAway, 1) else 0,
+                    streak = bond.streak,
+                    hook = hook,
+                    firstVisit = saved.isEmpty() && lastDay == null,
+                )
+                if (saved.isNotEmpty()) {
+                    if (lastDay != null && lastDay != today) {
+                        saved + ChatMessage("assistant", opening.text, id = nextId("welcome"))
+                    } else {
+                        saved
+                    }
+                } else {
+                    listOf(ChatMessage("assistant", opening.text, id = nextId("greeting")))
+                }
             }
             if (lastDay != null && lastDay != today) store.clearHook(character.id)
             store.markVisit(character.id)
@@ -161,12 +204,16 @@ class TouyaViewModel(
                     affinity = affinity,
                     memory = companion?.memory.orEmpty(),
                     unlocked = unlocked,
+                    locks = locks,
+                    story = story,
+                    script = script,
+                    storyBusy = false,
                     memoryOpen = false,
                     feedbackSent = false,
                     opening = false,
                     rewarding = false,
                     rewardMessage = null,
-                    situationCard = true,
+                    situationCard = beat == null,
                 )
             }
         }
@@ -189,6 +236,72 @@ class TouyaViewModel(
 
     fun dismissSituationCard() {
         _state.update { it.copy(situationCard = false) }
+    }
+
+    /** Tap a story choice: user bubble now, next beat when the server answers. No LLM. */
+    fun storyChoose(choiceId: String) {
+        val s = _state.value
+        val screen = s.screen as? Screen.Chat ?: return
+        val story = s.story ?: return
+        val beat = s.currentBeat ?: return
+        val chapterId = story.chapterId ?: return
+        val choice = beat.choices.firstOrNull { it.id == choiceId } ?: return
+        if (s.storyBusy) return
+        val withUser = appendUnique(s.messages, listOf(choiceBubble(chapterId, beat.id, choice)))
+        store.saveChat(screen.character.id, withUser)
+        _state.update { it.copy(messages = withUser, storyBusy = true, error = null) }
+        storyStep(screen.character.id) { client.storyChoice(screen.character.id, chapterId, beat.id, choiceId) }
+    }
+
+    /** 「つづける」 on a line / retry beat. */
+    fun storyAdvance() {
+        val s = _state.value
+        val screen = s.screen as? Screen.Chat ?: return
+        val story = s.story ?: return
+        val beat = s.currentBeat ?: return
+        val chapterId = story.chapterId ?: return
+        if (s.storyBusy) return
+        _state.update { it.copy(storyBusy = true, error = null) }
+        storyStep(screen.character.id) { client.storyAdvance(screen.character.id, chapterId, beat.id) }
+    }
+
+    private fun storyStep(characterId: String, call: () -> StoryStepResponse) {
+        viewModelScope.launch {
+            runCatching { withContext(Dispatchers.IO) { call() } }
+                .onSuccess { response -> applyStoryResponse(characterId, response) }
+                .onFailure { err ->
+                    if (err is jp.touya.app.data.ApiException && err.message == "story_out_of_step") {
+                        // Client and server disagree on the beat: reload the truth.
+                        (_state.value.screen as? Screen.Chat)?.let { open(it.character) }
+                    } else {
+                        _state.update { it.copy(storyBusy = false, error = err.message ?: "進められませんでした。") }
+                    }
+                }
+        }
+    }
+
+    private fun applyStoryResponse(characterId: String, response: StoryStepResponse) {
+        val beat = response.beat
+        if (beat?.kind == "end" && !beat.hook.isNullOrBlank()) store.saveHook(characterId, beat.hook)
+        _state.update { s ->
+            val chapterId = s.story?.chapterId ?: response.story.chapterId
+            val messages = if (beat != null && chapterId != null) {
+                appendUnique(s.messages, storyBeatBubbles(chapterId, beat))
+            } else {
+                s.messages
+            }
+            store.saveChat(characterId, messages)
+            s.copy(
+                messages = messages,
+                story = response.story,
+                script = response.script ?: s.script,
+                unlocked = response.unlocked.ifEmpty { s.unlocked },
+                locks = if (response.unlocked.isEmpty()) s.locks else response.locks,
+                memory = response.memory ?: s.memory,
+                storyBusy = false,
+                situationCard = false,
+            )
+        }
     }
 
     fun showList() {
@@ -233,6 +346,14 @@ class TouyaViewModel(
             _state.update { it.copy(error = screen.character.farewell.ifBlank { "本日の無料枠を使い切りました。" }) }
             return
         }
+        val storyNow = _state.value.story
+        if (_state.value.mode.chatMode == "nsfw" && storyNow != null && !storyNow.nsfwEligible) {
+            _state.update { it.copy(error = NSFW_RELATIONSHIP_REQUIRED_JA) }
+            return
+        }
+        // A `free` beat: tag the send so the server injects the beat's hint and moves on after.
+        val freeBeat = _state.value.currentBeat?.takeIf { it.kind == "free" }
+        val freeChapterId = if (freeBeat != null) storyNow?.chapterId else null
 
         val history = _state.value.messages + ChatMessage("user", text, id = nextId("u"))
         val assistantId = nextId("a")
@@ -256,40 +377,42 @@ class TouyaViewModel(
                         situationId = _state.value.situationId.ifBlank { null },
                         mode = _state.value.mode.chatMode,
                         messages = history,
+                        chapterId = freeChapterId,
+                        beatId = freeBeat?.id,
                         onQuota = { quota -> _state.update { s -> s.copy(quota = quota) } },
                         onMode = { mode ->
                             cacheMode(mode)
                             _state.update { s -> s.copy(mode = mode) }
                         },
-                        onBond = { bond ->
-                            _state.update { s ->
-                                val screenState = s.screen as? Screen.Chat
-                                s.copy(
-                                    bond = bond,
-                                    unlocked = screenState?.let {
-                                        unlockedSituationIds(
-                                            it.character.situations,
-                                            bond.daysMet,
-                                            Instant.now(),
-                                            s.affinity.level,
-                                        )
-                                    } ?: s.unlocked,
-                                )
+                        onBond = { bond -> _state.update { s -> s.copy(bond = bond) } },
+                        onAffinity = { affinity -> _state.update { s -> s.copy(affinity = affinity) } },
+                        onStory = { story ->
+                            // The free beat was answered: the script's next beat (usually `end`) speaks after the reply.
+                            val after = if (freeBeat != null && story.beat != freeBeat.id) {
+                                _state.value.script?.beat(freeChapterId, freeBeat.next)
+                            } else {
+                                null
                             }
-                        },
-                        onAffinity = { affinity ->
+                            if (after?.kind == "end" && !after.hook.isNullOrBlank()) {
+                                store.saveHook(screen.character.id, after.hook)
+                            }
                             _state.update { s ->
                                 val screenState = s.screen as? Screen.Chat
+                                val ctx = UnlockContext(
+                                    flags = story.flags,
+                                    effectiveLevel = story.effectiveLevel,
+                                    pendingChapter = story.pendingChapter,
+                                    nsfwAllowed = s.mode.chatMode == "nsfw",
+                                )
                                 s.copy(
-                                    affinity = affinity,
-                                    unlocked = screenState?.let {
-                                        unlockedSituationIds(
-                                            it.character.situations,
-                                            s.bond.daysMet,
-                                            Instant.now(),
-                                            affinity.level,
-                                        )
-                                    } ?: s.unlocked,
+                                    story = story,
+                                    messages = if (after != null && freeChapterId != null) {
+                                        appendUnique(s.messages, storyBeatBubbles(freeChapterId, after))
+                                    } else {
+                                        s.messages
+                                    },
+                                    unlocked = screenState?.let { unlockedSituationIds(it.character.situations, ctx) } ?: s.unlocked,
+                                    locks = screenState?.let { situationLocks(it.character.situations, ctx) } ?: s.locks,
                                 )
                             }
                         },
@@ -364,6 +487,12 @@ class TouyaViewModel(
     }
 
     fun requestNsfw() {
+        val story = _state.value.story
+        if (story != null && !story.nsfwEligible) {
+            // Relationship below 特別: no age gate, no /api/mode call.
+            _state.update { it.copy(error = NSFW_RELATIONSHIP_REQUIRED_JA) }
+            return
+        }
         if (_state.value.mode.ageConfirmed) {
             setMode(chatMode = "nsfw")
         } else {

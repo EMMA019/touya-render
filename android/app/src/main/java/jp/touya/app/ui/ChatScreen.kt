@@ -45,11 +45,16 @@ import jp.touya.app.data.EMPTY_AFFINITY
 import jp.touya.app.data.MemoryRow
 import jp.touya.app.data.EMPTY_MODE
 import jp.touya.app.data.Quota
+import jp.touya.app.data.StoryBeat
+import jp.touya.app.data.StoryPublic
 import jp.touya.app.data.situationCardLines
 import jp.touya.app.domain.ModePublic
-import jp.touya.app.domain.LOCKED_SITUATION_HINT
+import jp.touya.app.domain.UnlockContext
+import jp.touya.app.domain.composerHidden
+import jp.touya.app.domain.lockHintFor
 import jp.touya.app.domain.pickHook
 import jp.touya.app.domain.suggestionsFor
+import androidx.compose.ui.text.font.FontStyle
 
 @Composable
 fun ChatScreen(
@@ -84,10 +89,21 @@ fun ChatScreen(
     onToggleMode: () -> Unit = {},
     onConfirmAge: () -> Unit = {},
     onCloseAgeGate: () -> Unit = {},
+    locks: Map<String, String> = emptyMap(),
+    story: StoryPublic? = null,
+    currentBeat: StoryBeat? = null,
+    storyBusy: Boolean = false,
+    onStoryChoose: (String) -> Unit = {},
+    onStoryAdvance: () -> Unit = {},
 ) {
     val limited = quota?.debugUnlimited != true && (quota?.remaining ?: 1) <= 0
     val situation = character.situations.firstOrNull { it.id == situationId }
         ?: character.situations.firstOrNull()
+    val storyActive = composerHidden(currentBeat)
+    val unlockCtx = story?.let {
+        UnlockContext(it.flags, it.effectiveLevel, it.pendingChapter, mode.chatMode == "nsfw")
+    }
+    val nsfwBlocked = mode.chatMode == "nsfw" && story != null && !story.nsfwEligible
     val halloween = situation?.season == "halloween"
     val recent = messages.takeLast(5)
     val lastAssistant = messages.asReversed().firstOrNull { it.role == "assistant" && it.content.isNotBlank() }
@@ -132,7 +148,10 @@ fun ChatScreen(
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    AffinityHeart(affinity)
+                    AffinityHeart(
+                        if (story != null) affinity.copy(name = story.effectiveName) else affinity,
+                        pending = story?.pendingChapter != null,
+                    )
                     BondLamp(bond.stage)
                     IconButton(
                         onClick = { onToggleMemory(true) },
@@ -167,7 +186,7 @@ fun ChatScreen(
                         Text(
                             buildString {
                                 append(if (open) scene.title else "🔒 ${scene.title}")
-                                if (!open) append(" $LOCKED_SITUATION_HINT")
+                                if (!open) append(" ${lockHintFor(locks[scene.id], scene, unlockCtx)}")
                             },
                             modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
                             color = when {
@@ -214,6 +233,15 @@ fun ChatScreen(
                 verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.Bottom),
             ) {
                 recent.forEach { message ->
+                    if (message.narration) {
+                        Text(
+                            message.content,
+                            modifier = Modifier.fillMaxWidth(0.92f).padding(horizontal = 4.dp),
+                            color = Color.White.copy(alpha = 0.65f),
+                            fontStyle = FontStyle.Italic,
+                        )
+                        return@forEach
+                    }
                     val mine = message.role == "user"
                     Row(
                         Modifier.fillMaxWidth(),
@@ -280,6 +308,26 @@ fun ChatScreen(
                 Text(error, modifier = Modifier.padding(horizontal = 16.dp), color = Color(0xFFFFC9C9))
             }
 
+            if (storyActive && currentBeat != null) {
+                StoryChoiceRow(
+                    beat = currentBeat,
+                    busy = storyBusy,
+                    onChoose = onStoryChoose,
+                    onAdvance = onStoryAdvance,
+                )
+            } else if (nsfwBlocked) {
+                Column(
+                    Modifier
+                        .padding(horizontal = 12.dp, vertical = 6.dp)
+                        .background(Color.Black.copy(alpha = 0.55f), RoundedCornerShape(16.dp))
+                        .padding(12.dp)
+                        .fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Text(jp.touya.app.domain.NSFW_RELATIONSHIP_REQUIRED_JA, color = Color.White)
+                    Button(onToggleMode, modifier = Modifier.fillMaxWidth()) { Text("SFWに戻して話す") }
+                }
+            } else {
             Row(
                 Modifier
                     .horizontalScroll(rememberScrollState())
@@ -331,6 +379,7 @@ fun ChatScreen(
                     Text("➤", color = Color(0xFF1C1917))
                 }
             }
+            }
         }
         MemorySheet(
             open = memoryOpen,
@@ -339,6 +388,52 @@ fun ChatScreen(
             onForget = onForget,
         )
         AgeGateDialog(open = ageGateOpen, onConfirm = onConfirmAge, onCancel = onCloseAgeGate)
+    }
+}
+
+/** Choice buttons / 「つづける」 for the waiting story beat. Sits where the composer normally is. */
+@Composable
+private fun StoryChoiceRow(
+    beat: StoryBeat,
+    busy: Boolean,
+    onChoose: (String) -> Unit,
+    onAdvance: () -> Unit,
+) {
+    Column(
+        Modifier.padding(start = 12.dp, end = 12.dp, top = 6.dp, bottom = 16.dp).fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        if (beat.kind == "choice") {
+            beat.choices.forEach { choice ->
+                Surface(
+                    onClick = { onChoose(choice.id) },
+                    enabled = !busy,
+                    shape = RoundedCornerShape(16.dp),
+                    color = Color.White.copy(alpha = 0.9f),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(
+                        choice.label,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+                        color = Color(0xFF1C1917),
+                    )
+                }
+            }
+        } else {
+            Surface(
+                onClick = onAdvance,
+                enabled = !busy,
+                shape = CircleShape,
+                color = Color.Black.copy(alpha = 0.55f),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(
+                    "つづける ▸",
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+                    color = Color.White,
+                )
+            }
+        }
     }
 }
 

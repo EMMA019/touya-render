@@ -47,6 +47,21 @@
       ]
     },
     {
+      "id": "evening-dress",
+      "title": "イブニングドレス",
+      "costume": "evening-dress",
+      "setting": "会社の祝賀会のあと。ホテルのロビーの端の椅子。",
+      "look": "深い紺のロング丈イブニングドレス。肩は薄いショールで隠す。ヒールは脱いで手に持つ。露出は控えめ。服や背景に文字を焼き込まない。",
+      "image": "/situations/rione/evening-dress.png",
+      "greeting": "……見ないで。こういう格好、慣れてないの。座るなら、隣。",
+      "lines": [
+        "ヒール、もう限界。",
+        "褒めるなら一回だけにして。",
+        "帰りは、タクシー。一緒に。"
+      ],
+      "minLevel": 1
+    },
+    {
       "id": "halloween-vampire",
       "title": "ハロウィン",
       "season": "halloween",

@@ -16,6 +16,17 @@ export type AffinityPublic = {
 
 export const AFFINITY_LEVELS: AffinityLevelRow[] = thresholds.levels;
 
+/**
+ * Intimate / `nsfwOnly` situations never open below 特別 (Lv2), even if a JSON
+ * writes a lower `minLevel`. Write `minLevel: 3` on a scene to hold it for 絆.
+ * Same name and value as the card-shelf branch so the two merge cleanly.
+ */
+export const NSFW_MIN_AFFINITY_LEVEL = 2;
+
+export function affinityLevelName(level: number): string {
+  return AFFINITY_LEVELS.find((row) => row.level === level)?.name ?? AFFINITY_LEVELS[0]?.name ?? "知り合い";
+}
+
 export const EMPTY_AFFINITY: AffinityPublic = levelFromCount(0);
 
 export function levelFromCount(count: number): AffinityPublic {

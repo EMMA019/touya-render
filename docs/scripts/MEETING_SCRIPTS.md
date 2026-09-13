@@ -93,6 +93,8 @@ flags_set:                # クリア時やノード通過時に付与される�
 
 ## 6. 各ヒロイン台本一覧
 
+実装データは `shared/story/{characterId}.json`（形は [MEETING_FLOW_SPEC.md §1](../MEETING_FLOW_SPEC.md)、書き方は [shared/story/README.md](../../shared/story/README.md)）。本書の `meet_01`〜`meet_end_*` は `b0`〜`end-*` のビートに、選択肢の「◯◯（名前）」は `userText: "（名前を伝える）…"` に置き換えています。制服・学生の場面は実装しません。
+
 - **桃瀬ひより**: `docs/scripts/meeting-hiyori.md`（雨のカフェ）
 - **橘川凛音**: `docs/scripts/meeting-rione.md`（終業後オフィス）
 - **白石凛**: `docs/scripts/meeting-shiraishi.md`（夜の屋上）

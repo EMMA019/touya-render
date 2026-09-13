@@ -36,8 +36,36 @@ import type { Quota } from "@/lib/quota-types";
 import { isMobileChatInput, resizeComposer } from "@/lib/chat-composer";
 import { seedSituationGreeting } from "@/lib/situation-greeting";
 import { situationIcon } from "@/lib/situation-icons";
-import { LOCKED_SITUATION_HINT, unlockedSituationIds } from "@/lib/situation-unlock";
+import {
+  LOCKED_SITUATION_HINT,
+  situationLockHint,
+  situationLocks,
+  unlockedSituationIds,
+  type UnlockContext,
+  type UnlockReason,
+} from "@/lib/situation-unlock";
+import { StoryRunner, type StoryStepResponse } from "@/components/story-runner";
+import {
+  appendUnique,
+  composerHidden,
+  findBeatPublic,
+  findChapterPublic,
+  storyBeatBubbles,
+  stripOpening,
+} from "@/lib/story-runner";
+import type { StoryBeatPublic, StoryPublic, StoryScriptPublic } from "@/lib/story-types";
+import { NSFW_RELATIONSHIP_REQUIRED_JA } from "@/lib/chat-mode";
 import { cn } from "@/lib/utils";
+
+type CompanionBody = {
+  bond?: Bond;
+  memory?: MemoryRow[];
+  unlocked?: string[];
+  locks?: Record<string, Exclude<UnlockReason, "open">>;
+  affinity?: AffinityPublic;
+  story?: StoryPublic;
+  script?: StoryScriptPublic | null;
+};
 
 export function ChatView({
   character,
@@ -54,7 +82,7 @@ export function ChatView({
   initialUnlocked: string[];
   initialAffinity: AffinityPublic;
 }) {
-  const { chatMode, adsEnabled } = useChatMode();
+  const { chatMode, adsEnabled, leaveNsfw } = useChatMode();
   const firstOpen = character.situations.find((scene) => initialUnlocked.includes(scene.id))?.id;
   const initialSituation =
     character.situations.find((scene) => scene.id === firstOpen) ?? character.situations[0];
@@ -84,12 +112,27 @@ export function ChatView({
   const [hydrated, setHydrated] = useState(false);
   const [situationId, setSituationId] = useState(firstOpen ?? character.situations[0]?.id ?? "");
   const [cardOpen, setCardOpen] = useState(true);
+  const [story, setStory] = useState<StoryPublic | null>(null);
+  const [script, setScript] = useState<StoryScriptPublic | null>(null);
+  const [locks, setLocks] = useState<Record<string, Exclude<UnlockReason, "open">>>({});
   const boxRef = useRef<HTMLTextAreaElement>(null);
   const scroller = useRef<HTMLDivElement>(null);
   const seq = useRef(0);
+  const hydratedFor = useRef<string | null>(null);
 
   const limited = !quota.debugUnlimited && quota.remaining <= 0;
   const situation = character.situations.find((row) => row.id === situationId);
+  const currentBeat: StoryBeatPublic | null = findBeatPublic(script, story?.chapterId, story?.beat);
+  const storyActive = composerHidden(currentBeat);
+  const nsfwBlocked = chatMode === "nsfw" && story !== null && !story.nsfwEligible;
+  const unlockCtx: UnlockContext | null = story
+    ? {
+        flags: story.flags,
+        effectiveLevel: story.effectiveLevel,
+        pendingChapter: story.pendingChapter,
+        nsfwAllowed: chatMode === "nsfw",
+      }
+    : null;
   const recent = messages.slice(-5);
   const lastAssistant = [...messages].reverse().find((row) => row.role === "assistant" && row.content);
   const expression = classifyExpression(lastAssistant?.content ?? character.greeting);
@@ -103,6 +146,9 @@ export function ChatView({
   }, []);
 
   useEffect(() => {
+    // Hydrate once per character. Re-running later would overwrite story bubbles the runner appended.
+    if (hydratedFor.current === character.id) return;
+    hydratedFor.current = character.id;
     const saved = loadChat(character.id);
     const lastDay = loadLastVisitDay(character.id);
     const today = jstDayKey();
@@ -137,9 +183,50 @@ export function ChatView({
     if (hydrated) saveChat(character.id, messages);
   }, [character.id, hydrated, messages]);
 
+  // Server `unlocked` is the truth; this only follows story / mode changes between fetches
+  // (same role as Unlock.kt on Android: a display fallback).
   useEffect(() => {
-    setUnlocked(unlockedSituationIds(character.situations, bond.daysMet, new Date(), affinity.level));
-  }, [character.situations, bond.daysMet, affinity.level]);
+    if (!unlockCtx) return;
+    setUnlocked(unlockedSituationIds(character.situations, unlockCtx));
+    setLocks(situationLocks(character.situations, unlockCtx));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [character.situations, story, chatMode]);
+
+  /** Apply a /api/companion or /api/story/* body. A waiting beat replaces the greeting. */
+  function applyStoryBody(body: CompanionBody | StoryStepResponse) {
+    if (body.unlocked) setUnlocked(body.unlocked);
+    if (body.locks) setLocks(body.locks);
+    if (body.script !== undefined) setScript(body.script ?? null);
+    if (body.story) {
+      setStory(body.story);
+      const nextScript = body.script !== undefined ? body.script ?? null : script;
+      const chapter = findChapterPublic(nextScript, body.story.chapterId);
+      const beat = findBeatPublic(nextScript, body.story.chapterId, body.story.beat);
+      if (chapter && beat) {
+        setSituationId((prev) => (prev === chapter.situationId ? prev : chapter.situationId));
+        setCardOpen(false);
+        setMessages((prev) => appendUnique(stripOpening(prev), storyBeatBubbles(chapter.id, beat)));
+      }
+    }
+  }
+
+  function handleStoryStep(body: StoryStepResponse) {
+    if (body.memory) setMemory(body.memory);
+    if (body.beat?.kind === "end" && body.beat.hook) saveHook(character.id, body.beat.hook);
+    applyStoryBody(body);
+  }
+
+  function refreshCompanion() {
+    void fetch(apiUrl(`/api/companion?characterId=${character.id}`), { headers: anonymousHeaders() })
+      .then((response) => response.json())
+      .then((body: CompanionBody) => {
+        if (body.bond) setBond(body.bond);
+        if (body.memory) setMemory(body.memory);
+        if (body.affinity) setAffinity(body.affinity);
+        applyStoryBody(body);
+      })
+      .catch(() => undefined);
+  }
 
   useEffect(() => {
     void fetch(apiUrl("/api/session"), { headers: anonymousHeaders() })
@@ -148,15 +235,8 @@ export function ChatView({
         if (body.quota) setQuota(body.quota);
       })
       .catch(() => undefined);
-    void fetch(apiUrl(`/api/companion?characterId=${character.id}`), { headers: anonymousHeaders() })
-      .then((response) => response.json())
-      .then((body: { bond?: Bond; memory?: MemoryRow[]; unlocked?: string[]; affinity?: AffinityPublic }) => {
-        if (body.bond) setBond(body.bond);
-        if (body.memory) setMemory(body.memory);
-        if (body.unlocked) setUnlocked(body.unlocked);
-        if (body.affinity) setAffinity(body.affinity);
-      })
-      .catch(() => undefined);
+    refreshCompanion();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [character.id]);
 
   const historyPayload = useMemo(
@@ -192,10 +272,17 @@ export function ChatView({
       return;
     }
 
+    if (nsfwBlocked) {
+      setError(NSFW_RELATIONSHIP_REQUIRED_JA);
+      return;
+    }
+
     seq.current += 1;
     const userId = `u-${seq.current}`;
     seq.current += 1;
     const assistantId = `a-${seq.current}`;
+    // A `free` beat: tag the send so the server injects the beat's prompt hint and moves on after.
+    const freeBeat = currentBeat?.kind === "free" && story?.chapterId ? { chapterId: story.chapterId, beatId: currentBeat.id } : null;
     setError(null);
     setFeedbackSent(false);
     setCardOpen(false);
@@ -218,6 +305,7 @@ export function ChatView({
           characterId: character.id,
           situationId,
           mode: chatMode,
+          ...(freeBeat ?? {}),
           messages: [...historyPayload, { role: "user", content: trimmed }],
         }),
       });
@@ -291,6 +379,15 @@ export function ChatView({
             nextAt?: number | null;
             progress?: number;
             level?: number | string;
+            chapterId?: string | null;
+            beat?: string | null;
+            flags?: StoryPublic["flags"];
+            metVia?: string | null;
+            effectiveLevel?: number;
+            effectiveName?: string;
+            pendingChapter?: StoryPublic["pendingChapter"];
+            warmth?: StoryPublic["warmth"];
+            nsfwEligible?: boolean;
           };
           if (payload.type === "quota" && typeof payload.remaining === "number") {
             remainingAfter = payload.remaining;
@@ -329,6 +426,28 @@ export function ChatView({
               nextAt: typeof payload.nextAt === "number" ? payload.nextAt : null,
               progress: typeof payload.progress === "number" ? payload.progress : 0,
             });
+          }
+          if (payload.type === "story" && Array.isArray(payload.flags) && typeof payload.effectiveLevel === "number") {
+            const next: StoryPublic = {
+              chapterId: payload.chapterId ?? null,
+              beat: payload.beat ?? null,
+              flags: payload.flags,
+              metVia: payload.metVia ?? null,
+              effectiveLevel: payload.effectiveLevel,
+              effectiveName: payload.effectiveName ?? "",
+              pendingChapter: payload.pendingChapter ?? null,
+              warmth: payload.warmth ?? "warm",
+              nsfwEligible: payload.nsfwEligible === true,
+            };
+            // A free beat answered: the script's next beat (usually `end`) speaks after the reply.
+            if (freeBeat && next.beat !== freeBeat.beatId) {
+              const after = findBeatPublic(script, freeBeat.chapterId, currentBeat?.next);
+              if (after) {
+                setMessages((prev) => appendUnique(prev, storyBeatBubbles(freeBeat.chapterId, after)));
+                if (after.kind === "end" && after.hook) saveHook(character.id, after.hook);
+              }
+            }
+            setStory(next);
           }
           if (payload.type === "delta" && payload.text) {
             assembled += payload.text;
@@ -428,7 +547,10 @@ export function ChatView({
             <ChevronLeft className="size-5" />
           </Link>
           <div className="flex items-center gap-1.5">
-            <AffinityHeart affinity={affinity} />
+            <AffinityHeart
+              affinity={story ? { ...affinity, name: story.effectiveName } : affinity}
+              pending={story?.pendingChapter !== null && story?.pendingChapter !== undefined}
+            />
             <BondLamp stage={bond.stage} />
             <button
               type="button"
@@ -438,7 +560,11 @@ export function ChatView({
             >
               <Bookmark className="size-4" />
             </button>
-            <ModeToggle compact />
+            <ModeToggle
+              compact
+              locked={story !== null && !story.nsfwEligible}
+              onLocked={() => setError(NSFW_RELATIONSHIP_REQUIRED_JA)}
+            />
             <div
               className="flex items-center gap-1.5 rounded-full bg-black/40 px-3 py-1.5 text-white backdrop-blur-md"
               title="今日の残り"
@@ -472,7 +598,12 @@ export function ChatView({
               >
                 {open ? <Icon className="size-3" /> : <Lock className="size-3" />}
                 {scene.title}
-                {!open ? <span className="text-[10px] opacity-80">{LOCKED_SITUATION_HINT}</span> : null}
+                {!open ? (
+                  <span className="text-[10px] opacity-80">
+                    {(unlockCtx ? situationLockHint(scene, unlockCtx) : "") ||
+                      (locks[scene.id] === "season" ? "今は季節じゃない" : LOCKED_SITUATION_HINT)}
+                  </span>
+                ) : null}
               </button>
             );
           })}
@@ -487,20 +618,29 @@ export function ChatView({
         ) : null}
 
         <div ref={scroller} className="mt-auto min-h-0 flex-1 space-y-2 overflow-y-auto px-3 pb-2">
-          {recent.map((message) => (
-            <div
-              key={message.id}
-              className={cn(
-                "max-w-[86%] rounded-2xl px-3 py-2 text-sm leading-relaxed whitespace-pre-wrap backdrop-blur-md",
-                message.role === "user"
-                  ? "ml-auto bg-white/90 text-stone-900"
-                  : "bg-black/45 text-white"
-              )}
-            >
-              {message.content}
-              {message.pending ? <span className="ml-1 animate-pulse">▍</span> : null}
-            </div>
-          ))}
+          {recent.map((message) =>
+            message.narration ? (
+              <p
+                key={message.id}
+                className="max-w-[92%] px-1 text-[11px] italic leading-relaxed text-white/65 [text-shadow:0_1px_2px_rgba(0,0,0,0.8)]"
+              >
+                {message.content}
+              </p>
+            ) : (
+              <div
+                key={message.id}
+                className={cn(
+                  "max-w-[86%] rounded-2xl px-3 py-2 text-sm leading-relaxed whitespace-pre-wrap backdrop-blur-md",
+                  message.role === "user"
+                    ? "ml-auto bg-white/90 text-stone-900"
+                    : "bg-black/45 text-white"
+                )}
+              >
+                {message.content}
+                {message.pending ? <span className="ml-1 animate-pulse">▍</span> : null}
+              </div>
+            ),
+          )}
           {lastAssistant && !lastAssistant.pending ? (
             <button
               type="button"
@@ -538,6 +678,31 @@ export function ChatView({
           </p>
         ) : null}
 
+        {storyActive && currentBeat && story?.chapterId ? (
+          <div className="bg-gradient-to-t from-black/80 via-black/50 to-transparent">
+            <StoryRunner
+              characterId={character.id}
+              chapterId={story.chapterId}
+              beat={currentBeat}
+              onStep={handleStoryStep}
+              onBubbles={(bubbles) => setMessages((prev) => appendUnique(prev, bubbles))}
+              onOutOfStep={refreshCompanion}
+            />
+          </div>
+        ) : nsfwBlocked ? (
+          <div className="bg-gradient-to-t from-black/80 via-black/50 to-transparent px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2">
+            <div className="space-y-2 rounded-2xl bg-black/55 p-3 text-center text-xs text-white backdrop-blur-md">
+              <p>{NSFW_RELATIONSHIP_REQUIRED_JA}</p>
+              <button
+                type="button"
+                onClick={() => void leaveNsfw()}
+                className="rounded-full bg-white/90 px-4 py-1.5 text-[11px] text-stone-900"
+              >
+                SFWに戻して話す
+              </button>
+            </div>
+          </div>
+        ) : (
         <div className="bg-gradient-to-t from-black/80 via-black/50 to-transparent px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2">
           <div className="mb-2 flex gap-1.5 overflow-x-auto [scrollbar-width:none]">
             {suggestionsFor(character.presence, bond.stage, character.suggestions).map((hint) => (
@@ -581,6 +746,7 @@ export function ChatView({
             </button>
           </div>
         </div>
+        )}
       </div>
       <MemorySheet
         open={memoryOpen}

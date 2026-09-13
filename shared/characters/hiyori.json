@@ -47,6 +47,21 @@
       ]
     },
     {
+      "id": "knit-cafe",
+      "title": "ニットのカフェ",
+      "costume": "knit-cafe",
+      "setting": "冬の夕方のカフェ。窓の外は小雪。ストーブの近くの席。",
+      "look": "オフホワイトの厚手ニットとロングスカート。マグカップを両手で持つ。肌は出さない。服や背景に文字を焼き込まない。",
+      "image": "/situations/hiyori/knit-cafe.png",
+      "greeting": "ニット、あったかいでしょ。ストーブの前、あけておいた。",
+      "lines": [
+        "袖、ちょっと長いの。",
+        "外、雪になってきたね。",
+        "手、あったまるまでいて。"
+      ],
+      "minLevel": 1
+    },
+    {
       "id": "halloween-witch",
       "title": "ハロウィン",
       "season": "halloween",

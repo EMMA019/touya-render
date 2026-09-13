@@ -1,7 +1,9 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import type { Character } from "./character-types";
+import type { PromptStory } from "./story-types";
 import {
+  BAND_TONE,
   buildSystemPrompt,
   COMPANION_ADULT_OK,
   COMPANION_NOT_NSFW,
@@ -127,6 +129,86 @@ test("prompt injects affinity name only, not counts or history", () => {
   assert.equal(affinityLine, "【親密度】仲良し。名前だけ持つ。数値や履歴は言わない。");
   assert.doesNotMatch(affinityLine ?? "", /\d/);
   assert.equal(prompt.split("【親密度】").length, 2);
+});
+
+test("story present: 【関係】 replaces 【距離】, carries metVia line and band tone, never a number", () => {
+  const prompt = buildSystemPrompt(fixtureCharacter(), "", undefined, "familiar", {
+    affinityName: "仲良し",
+    story: {
+      metVia: "care",
+      metViaLine: "雨の日のカフェで、濡れた服を気遣ったのがきっかけで知り合った",
+      effectiveLevel: 1,
+      effectiveName: "仲良し",
+      flags: ["B1", "B2", "B3"],
+      revealed: ["milktea"],
+      revealedLines: ["ミルクティーが好きだと話した"],
+    },
+  });
+  const lines = prompt.split("\n");
+  const relation = lines.find((line) => line.startsWith("【関係】")) ?? "";
+  assert.doesNotMatch(prompt, /【距離】/);
+  assert.match(relation, /出会いは雨の日のカフェで、濡れた服を気遣った/);
+  assert.match(relation, /今は仲良し。/);
+  assert.ok(relation.includes(BAND_TONE[1]));
+  assert.match(relation, /呼び名を自然に使う/);
+  assert.doesNotMatch(relation, /恋人/);
+  assert.doesNotMatch(relation, /\d/);
+  const revealed = lines.find((line) => line.startsWith("【すでに話したこと】")) ?? "";
+  assert.match(revealed, /ミルクティーが好きだと話した/);
+  assert.match(revealed, /改めて紹介しない/);
+  // Order: 【親密度】 → 【関係】 → 【すでに話したこと】.
+  const idx = (prefix: string) => lines.findIndex((line) => line.startsWith(prefix));
+  assert.ok(idx("【親密度】") < idx("【関係】"));
+  assert.ok(idx("【関係】") < idx("【すでに話したこと】"));
+  assert.doesNotMatch(prompt, /【温度】|【いま】/);
+});
+
+test("band tone escalates: 知り合い polite → 特別 デレ → 絆 lovers; legacy hides the meeting", () => {
+  const at = (level: 0 | 1 | 2 | 3, flags: PromptStory["flags"], metVia = "seat") =>
+    buildSystemPrompt(fixtureCharacter(), "", undefined, "regular", {
+      story: { metVia, metViaLine: metVia === "legacy" ? undefined : "静かな部屋で知り合った", effectiveLevel: level, effectiveName: ["知り合い", "仲良し", "特別", "絆"][level], flags, revealed: [] },
+    });
+  assert.match(at(0, ["B1"]), /口調は丁寧で、少し距離がある/);
+  assert.match(at(1, ["B1", "B3"]), /口調は柔らかく/);
+  assert.match(at(2, ["B1", "B3", "B4"]), /甘え・デレ・照れ/);
+  assert.match(at(2, ["B1", "B3", "B4"]), /恋人。距離は近い。それでも自分から設定は並べない/);
+  assert.match(at(3, ["B1", "B3", "B4", "B5"]), /長く一緒にいる恋人/);
+  const legacy = at(2, ["B1", "B3", "B4"], "legacy");
+  assert.match(legacy, /出会いの経緯には触れない/);
+  assert.doesNotMatch(legacy, /出会いは/);
+  for (const level of [0, 1, 2, 3] as const) {
+    assert.match(at(level, ["B1", "B3", "B4", "B5"]), /並べない/);
+  }
+});
+
+test("nsfw 【関係】 keeps the adult clause; 【温度】 only while cool/cold and not thawed; 【いま】 precedes 【今の場面】", () => {
+  const story: PromptStory = { metVia: "seat", effectiveLevel: 2, effectiveName: "特別", flags: ["B1", "B3", "B4"], revealed: [] };
+  const nsfw = buildSystemPrompt(fixtureCharacter(), "", undefined, "regular", { chatMode: "nsfw", story });
+  assert.match(nsfw.split("\n").find((line) => line.startsWith("【関係】")) ?? "", /体型・性的な話題にはキャラの口調で乗ってよい/);
+  assert.ok(nsfw.endsWith(NSFW_ANSWER_DIRECT));
+
+  const cold = buildSystemPrompt(fixtureCharacter(), "", halloween, "regular", {
+    story,
+    warmth: { level: "cold", thawed: false },
+    beatHint: "初対面。相手は席を尋ねてきた人。2文で。",
+  });
+  assert.match(cold, /【温度】久しぶり/);
+  assert.match(cold, /自分から性的な話題や場面の誘いは出さない/);
+  const coldLines = cold.split("\n");
+  const idx = (prefix: string) => coldLines.findIndex((line) => line.startsWith(prefix));
+  assert.ok(idx("【いま】") >= 0);
+  assert.ok(idx("【いま】") < idx("【今の場面】"));
+  assert.match(coldLines[idx("【いま】")] ?? "", /初対面。相手は席を尋ねてきた人/);
+
+  const thawed = buildSystemPrompt(fixtureCharacter(), "", undefined, "regular", { story, warmth: { level: "cool", thawed: true } });
+  assert.doesNotMatch(thawed, /【温度】/);
+  const warm = buildSystemPrompt(fixtureCharacter(), "", undefined, "regular", { story, warmth: { level: "warm", thawed: false } });
+  assert.doesNotMatch(warm, /【温度】/);
+  const cool = buildSystemPrompt(fixtureCharacter(), "", undefined, "regular", { story, warmth: { level: "cool", thawed: false } });
+  assert.match(cool, /【温度】少し間が空いた/);
+  // The one-LLM operational rules are untouched by the story layer.
+  assert.match(cold, /一回で返す/);
+  assert.match(cold, /知っていても言わない/);
 });
 
 function fixtureCharacter(): Character {

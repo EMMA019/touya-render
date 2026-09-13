@@ -3,6 +3,7 @@ import { bibleContract } from "./character-bible";
 import type { Character, CharacterSituation } from "./character-types";
 import { DEFAULT_CHAT_MODE, type ChatMode } from "./chat-mode";
 import type { Clock } from "./clock";
+import type { PromptStory, Warmth } from "./story-types";
 import {
   COMPANION_ADULT_OK,
   COMPANION_NOT_NSFW,
@@ -32,9 +33,53 @@ export type PromptContext = {
   daysAway?: number;
   streak?: number;
   remaining?: number;
+  /** Effective band name (not the raw count band) when a story is present. */
   affinityName?: string;
   chatMode?: ChatMode;
+  /** Story-derived relationship. Present ⇒ 【関係】 replaces 【距離】. */
+  story?: PromptStory;
+  warmth?: { level: Warmth; thawed: boolean };
+  /** `free` beat promptHint from the script. Server-side only. */
+  beatHint?: string;
 };
+
+/**
+ * Tone by effective band. Layered on top of `character.systemPrompt`, never
+ * replacing it: the character JSON keeps the voice, this row moves the distance.
+ *   0 知り合い  polite, a little formal, no pet names
+ *   1 仲良し    softer, first names, small jokes
+ *   2 特別      openly fond, leans in, light テレ / デレ
+ *   3 絆        lovers who have been together a while; calm warmth
+ * 【関係】 is not permission to list the setting — 「並べない」 stays in the text.
+ */
+export const BAND_TONE: Record<0 | 1 | 2 | 3, string> = {
+  0: "口調は丁寧で、少し距離がある。呼び名は使わない。踏み込みすぎない。",
+  1: "口調は柔らかく、くだけてよい。名前を自然に使う。軽い冗談を一つ挟んでよい。",
+  2: "好意を隠さない。甘え・デレ・照れをキャラの口調で出してよい。距離は近いが、設定や事情は自分から並べない。",
+  3: "長く一緒にいる恋人の落ち着き。言葉は少なくても伝わる前提で話す。記憶は一文だけ使う。",
+};
+
+export const WARMTH_LINE: Record<Exclude<Warmth, "warm">, string> = {
+  cool: "少し間が空いた。最初は一歩引いた口調。責めない。数字は言わない。",
+  cold: "久しぶり。呼び名は使ってよいが甘さは抑える。自分から性的な話題や場面の誘いは出さない（聞かれたら答える）。責めない。",
+};
+
+const LEGACY_MET_LINE = "出会いの経緯には触れない。";
+
+export function relationLine(story: PromptStory, chatMode: ChatMode): string {
+  const parts: string[] = [];
+  if (story.metVia === "legacy") parts.push(LEGACY_MET_LINE);
+  else if (story.metViaLine) parts.push(`出会いは${story.metViaLine}。`);
+  parts.push(`今は${story.effectiveName}。`);
+  const band = Math.min(3, Math.max(0, story.effectiveLevel)) as 0 | 1 | 2 | 3;
+  parts.push(BAND_TONE[band]);
+  if (story.flags.includes("B2") && band >= 1) parts.push("呼び名を自然に使う。");
+  if (story.flags.includes("B4") && band >= 2) parts.push("恋人。距離は近い。それでも自分から設定は並べない。");
+  if (chatMode === "nsfw") {
+    parts.push("NSFWでは距離が近くなくても、体型・性的な話題にはキャラの口調で乗ってよい。");
+  }
+  return `【関係】${parts.join("")}`;
+}
 
 const SITUATION_SHARED =
   "名札や看板の文字は言わない。聞かれない限り場面を並べない。返事は今の場面の空気に自然に合わせる。検索や別モデルは呼ばない。";
@@ -91,7 +136,8 @@ export function buildSystemPrompt(
     bibleContract(character.bible, character.situations, chatMode),
     productBehaviorFor(chatMode),
   ];
-  if (stage) {
+  // 【距離】 (visit-count stage) only until a story exists; then 【関係】 carries the distance.
+  if (stage && !context.story) {
     parts.push(
       chatMode === "nsfw"
         ? `【距離】${BOND_LINE[stage]} NSFWでは距離が近くなくても、体型・性的な話題にはキャラの口調で乗ってよい。`
@@ -104,6 +150,17 @@ export function buildSystemPrompt(
         ? `【親密度】${context.affinityName}。名前だけ持つ。数値や履歴は言わない。低親密度なら口調は距離を置いてよいが、体型・性的な質問への拒否や仕事へのそらしはしない。`
         : `【親密度】${context.affinityName}。名前だけ持つ。数値や履歴は言わない。`
     );
+  }
+  if (context.story) {
+    parts.push(relationLine(context.story, chatMode));
+    if (context.story.revealedLines && context.story.revealedLines.length > 0) {
+      parts.push(
+        `【すでに話したこと】次は既に相手に話した: ${context.story.revealedLines.join("・")}。改めて紹介しない。触れるなら一言。`
+      );
+    }
+  }
+  if (context.warmth && context.warmth.level !== "warm" && !context.warmth.thawed) {
+    parts.push(`【温度】${WARMTH_LINE[context.warmth.level]}`);
   }
   if (context.clock) {
     parts.push(
@@ -122,6 +179,9 @@ export function buildSystemPrompt(
     parts.push(
       "【終わり際】今日の残りが少ない。返事の最後に、明日への短い引きを一文。束縛や依存は言わない。"
     );
+  }
+  if (context.beatHint?.trim()) {
+    parts.push(`【いま】${context.beatHint.trim().slice(0, 80)}`);
   }
   if (situation) {
     const look = situation.look

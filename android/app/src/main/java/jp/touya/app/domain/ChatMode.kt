@@ -2,6 +2,9 @@ package jp.touya.app.domain
 
 const val DEFAULT_CHAT_MODE = "sfw"
 const val NSFW_AGE_REQUIRED = "nsfw_age_required"
+/** NSFW also needs the relationship (effective band) to reach 特別. Server-enforced; this is the copy. */
+const val NSFW_RELATIONSHIP_REQUIRED = "nsfw_relationship_required"
+const val NSFW_RELATIONSHIP_REQUIRED_JA = "まだ、そこまでじゃない。"
 
 data class ModePublic(
     val chatMode: String = DEFAULT_CHAT_MODE,

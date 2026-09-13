@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -24,9 +25,15 @@ import jp.touya.app.data.AffinityPublic
 import jp.touya.app.data.EMPTY_AFFINITY
 
 @Composable
-fun AffinityHeart(affinity: AffinityPublic = EMPTY_AFFINITY, modifier: Modifier = Modifier) {
+fun AffinityHeart(
+    affinity: AffinityPublic = EMPTY_AFFINITY,
+    modifier: Modifier = Modifier,
+    /** A chapter is waiting (count reached the next band, story has not caught up). */
+    pending: Boolean = false,
+) {
+    val label = if (pending) "${affinity.name}（続きがある）" else affinity.name
     Surface(
-        modifier.semantics { contentDescription = affinity.name },
+        modifier.semantics { contentDescription = label },
         shape = CircleShape,
         color = Color.Black.copy(alpha = 0.4f),
     ) {
@@ -37,6 +44,9 @@ fun AffinityHeart(affinity: AffinityPublic = EMPTY_AFFINITY, modifier: Modifier 
         ) {
             Text("♡", color = Color(0xFFF4C4C8))
             Text(affinity.name, color = Color(0xFFF4C4C8), style = MaterialTheme.typography.labelSmall)
+            if (pending) {
+                Box(Modifier.size(6.dp).background(Color(0xFFF6DDA0), CircleShape))
+            }
         }
     }
 }

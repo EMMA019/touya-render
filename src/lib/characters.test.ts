@@ -7,6 +7,7 @@ import {
   formatBwh,
   situationLineText,
   situationMinLevel,
+  situationRequiredLevel,
   toPublicSituation,
   type Character,
 } from "./character-types";
@@ -107,13 +108,19 @@ test("shipped characters stay adult-coded without ages", () => {
     assert.equal(situationMinLevel(second), 0, `${character.id} second daily scene stays Lv0`);
     for (const scene of character.situations) {
       if (scene.season === "halloween" || scene.costume === "halloween") {
-        assert.equal(situationMinLevel(scene), 1, `${character.id}/${scene.id}`);
+        assert.equal(situationRequiredLevel(scene), 1, `${character.id}/${scene.id}`);
       }
       if (scene.costume === "maid" || scene.costume === "nurse") {
-        assert.equal(situationMinLevel(scene), 1, `${character.id}/${scene.id}`);
+        assert.equal(situationRequiredLevel(scene), 1, `${character.id}/${scene.id}`);
       }
       if (scene.costume === "miko" || scene.costume === "idol") {
-        assert.equal(situationMinLevel(scene), 2, `${character.id}/${scene.id}`);
+        assert.equal(situationRequiredLevel(scene), 2, `${character.id}/${scene.id}`);
+      }
+      if (!scene.costume && !scene.season && !scene.nsfwOnly) {
+        assert.equal(situationRequiredLevel(scene), 0, `${character.id}/${scene.id} daily SFW stays 知り合い`);
+      }
+      if (scene.nsfwOnly) {
+        assert.ok(situationRequiredLevel(scene) >= 2, `${character.id}/${scene.id} nsfwOnly needs 特別+`);
       }
     }
   }

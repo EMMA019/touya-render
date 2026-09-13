@@ -5,6 +5,9 @@ export const CHAT_MODES: readonly ChatMode[] = ["sfw", "nsfw"];
 
 export const NSFW_AGE_REQUIRED = "nsfw_age_required";
 export const NSFW_AGE_REQUIRED_JA = "18歳以上の確認が必要です。";
+/** NSFW also needs the relationship to reach 特別 (Ch2 告白). Age confirmation is not a substitute. */
+export const NSFW_RELATIONSHIP_REQUIRED = "nsfw_relationship_required";
+export const NSFW_RELATIONSHIP_REQUIRED_JA = "まだ、そこまでじゃない。";
 export const ADS_OFF_ERROR = "ads_off";
 export const ADS_OFF_JA = "このモードでは広告は使えません。";
 

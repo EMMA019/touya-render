@@ -42,6 +42,8 @@ export const MEMORY_MAX_FACTS = 10;
 export const MEMORY_SUMMARY_MAX_CHARS = 240;
 export const BOND_STORE_FILENAME = "bonds.json";
 export const AFFINITY_STORE_FILENAME = "affinity.json";
+/** Story progress (chapter beat, flags, metVia, warmth) per visitor × character. */
+export const STORY_STORE_FILENAME = "story.json";
 export const FEEDBACK_STORE_FILENAME = "feedback.json";
 export const VISITOR_STORE_FILENAME = "visitors.json";
 
@@ -96,6 +98,15 @@ export function openRouterNsfwModel(): string {
 export function demoFallbackEnabled(): boolean {
   if (hasDeepseekKey()) return false;
   return process.env.TOUYA_DEMO !== "0";
+}
+
+/**
+ * NSFW mode needs this effective band (default 2 = 特別, after Ch2 告白).
+ * Set TOUYA_NSFW_MIN_LEVEL=0 to ship the prompt/gate change before every client has the story runner.
+ */
+export function nsfwMinLevel(): number {
+  const raw = Number(process.env.TOUYA_NSFW_MIN_LEVEL?.trim());
+  return Number.isInteger(raw) && raw >= 0 && raw <= 3 ? raw : 2;
 }
 
 /** Local-only: ignore the daily free chat cap. Affinity and content gates stay on. */

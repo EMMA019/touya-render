@@ -76,6 +76,12 @@ class MainActivity : ComponentActivity() {
                         onToggleMode = viewModel::toggleMode,
                         onConfirmAge = viewModel::confirmAgeAndEnableNsfw,
                         onCloseAgeGate = viewModel::closeAgeGate,
+                        locks = state.locks,
+                        story = state.story,
+                        currentBeat = state.currentBeat,
+                        storyBusy = state.storyBusy,
+                        onStoryChoose = viewModel::storyChoose,
+                        onStoryAdvance = viewModel::storyAdvance,
                     )
                     Screen.Diagnosis -> DiagnosisScreen(
                         characters = state.characters,

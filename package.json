@@ -10,7 +10,8 @@
     "lint": "eslint",
     "test": "tsx --test src/lib/*.test.ts",
     "portraits": "node scripts/generate-situation-portraits.mjs",
-    "new-character": "node scripts/new-character.mjs"
+    "new-character": "node scripts/new-character.mjs",
+    "sync-android": "node scripts/sync-android-assets.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",

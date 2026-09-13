@@ -11,6 +11,7 @@
 | NSFW | 年齢確認後だけ。気軽なコンパニオン用の性的拒否は通さない。プロンプトはおとなの合意ある会話を許可（未成年・女子高生枠・違法は禁止のまま）。未成年・違法は **どちらのモードでも** 拒否。 |
 | 広告 | NSFW 中はバナーもリワードも **完全オフ**。クライアントが隠すだけでなく、`POST /api/reward` も 403。 |
 | 強制 | クライアントの `mode` フラグだけでは足りない。年齢未確認で NSFW を送ると `nsfw_age_required`（403）。 |
+| 関係 | 年齢確認に **加えて**、そのキャラとの実効帯が特別（Lv2 / Ch2 告白のあと）に届いていること。届く前は `nsfw_relationship_required`（403、「まだ、そこまでじゃない。」）。`POST /api/mode` の NSFW 要求も同じ判定（`characterId` を付けなければ、どのキャラかで特別に届いていればよい）。既存の訪問者は count が届いていた帯まで `legacy` で付与されるので閉じない。閾値は `TOUYA_NSFW_MIN_LEVEL`（既定 2）。設計は [LOVEPLUS_ROMANCE_SLG.md §7](LOVEPLUS_ROMANCE_SLG.md)。 |
 
 保存先: `data/visitors.json`（`VISITOR_STORE_PATH`）。キーは既存どおりハッシュ済み訪問者 ID。生 UUID は置かない。
 

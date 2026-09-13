@@ -24,6 +24,7 @@ class ChatStore(context: Context) {
                                 id = row.optString("id").ifBlank { "m-$i" },
                                 role = role,
                                 content = content,
+                                narration = row.optBoolean("narration", false),
                             ),
                         )
                     }
@@ -42,7 +43,8 @@ class ChatStore(context: Context) {
                 JSONObject()
                     .put("id", msg.id)
                     .put("role", msg.role)
-                    .put("content", msg.content),
+                    .put("content", msg.content)
+                    .apply { if (msg.narration) put("narration", true) },
             )
         }
         prefs.edit().putString(chatKey(characterId), arr.toString()).apply()
