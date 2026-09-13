@@ -80,6 +80,17 @@ class SituationShelfTest {
     }
 
     @Test
+    fun stubSvgAndBlankImagesAreHiddenOnShelf() {
+        assertTrue(isStubShelfImage(null))
+        assertTrue(isStubShelfImage(""))
+        assertTrue(isStubShelfImage("/situations/hiyori/maid.svg"))
+        assertFalse(isStubShelfImage("/situations/hiyori/cafe-rain.png"))
+        val stubCard = collectShelfCards(listOf(character())).first { it.situation.id == "cafe-rain" }
+            .copy(image = "/situations/hiyori/cafe-rain.svg")
+        assertNull(mediaForShelf(stubCard))
+    }
+
+    @Test
     fun emptyAffinityIsAcquaintance() {
         assertEquals("知り合い", EMPTY_AFFINITY.name)
         assertEquals(0, EMPTY_AFFINITY.level)

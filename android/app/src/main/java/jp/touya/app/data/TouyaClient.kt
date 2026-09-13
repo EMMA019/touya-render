@@ -184,7 +184,7 @@ class TouyaClient(
                 val err = response.body?.string().orEmpty()
                 val obj = runCatching { JSONObject(err) }.getOrNull()
                 val message = obj?.optString("message").orEmpty().ifBlank {
-                    "本日の無料枠を使い切りました。"
+                    "本日の会話上限に達しました。"
                 }
                 if (obj != null && obj.has("remaining")) {
                     onQuota(parseQuota(obj))

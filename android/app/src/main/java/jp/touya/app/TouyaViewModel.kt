@@ -60,8 +60,6 @@ sealed interface Screen {
     data object Shelf : Screen
     data object List : Screen
     data class Chat(val character: CharacterPublic) : Screen
-    data object Diagnosis : Screen
-    data object Premium : Screen
     data object Policy : Screen
 }
 
@@ -221,14 +219,6 @@ class TouyaViewModel(
         open(character, pick.situationId)
     }
 
-    fun showDiagnosis() {
-        _state.update { it.copy(screen = Screen.Diagnosis, error = null) }
-    }
-
-    fun showPremium() {
-        _state.update { it.copy(screen = Screen.Premium, error = null) }
-    }
-
     fun showPolicy() {
         _state.update { it.copy(screen = Screen.Policy, error = null) }
     }
@@ -253,7 +243,7 @@ class TouyaViewModel(
             _state.value.quota?.debugUnlimited != true &&
             (_state.value.quota?.remaining ?: 1) <= 0
         ) {
-            _state.update { it.copy(error = screen.character.farewell.ifBlank { "本日の無料枠を使い切りました。" }) }
+            _state.update { it.copy(error = screen.character.farewell.ifBlank { "本日の会話上限に達しました。" }) }
             return
         }
 

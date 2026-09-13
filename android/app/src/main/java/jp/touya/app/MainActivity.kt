@@ -9,9 +9,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import jp.touya.app.ui.CharacterListScreen
 import jp.touya.app.ui.ChatScreen
-import jp.touya.app.ui.DiagnosisScreen
 import jp.touya.app.ui.PolicyScreen
-import jp.touya.app.ui.PremiumScreen
 import jp.touya.app.ui.SituationCardShelf
 import jp.touya.app.ui.theme.TouyaTheme
 
@@ -39,8 +37,6 @@ class MainActivity : ComponentActivity() {
                         onOpenDaily = viewModel::openDaily,
                         onRetry = viewModel::refresh,
                         onRoster = viewModel::showRoster,
-                        onDiagnosis = viewModel::showDiagnosis,
-                        onPremium = viewModel::showPremium,
                         onPolicy = viewModel::showPolicy,
                         mode = state.mode,
                         ageGateOpen = state.ageGateOpen,
@@ -56,8 +52,6 @@ class MainActivity : ComponentActivity() {
                         opening = state.opening,
                         onSelect = { viewModel.open(it) },
                         onRetry = viewModel::refresh,
-                        onDiagnosis = viewModel::showDiagnosis,
-                        onPremium = viewModel::showPremium,
                         onPolicy = viewModel::showPolicy,
                         onShelf = viewModel::showList,
                         mode = state.mode,
@@ -80,8 +74,6 @@ class MainActivity : ComponentActivity() {
                         unlocked = state.unlocked,
                         memoryOpen = state.memoryOpen,
                         feedbackSent = state.feedbackSent,
-                        rewarding = state.rewarding,
-                        rewardMessage = state.rewardMessage,
                         situationCard = state.situationCard,
                         onSituation = viewModel::setSituation,
                         onDismissCard = viewModel::dismissSituationCard,
@@ -91,20 +83,12 @@ class MainActivity : ComponentActivity() {
                         onToggleMemory = viewModel::toggleMemory,
                         onForget = viewModel::forget,
                         onReportWrong = viewModel::reportWrong,
-                        onReward = viewModel::watchReward,
-                        onPremium = viewModel::showPremium,
                         mode = state.mode,
                         ageGateOpen = state.ageGateOpen,
                         onToggleMode = viewModel::toggleMode,
                         onConfirmAge = viewModel::confirmAgeAndEnableNsfw,
                         onCloseAgeGate = viewModel::closeAgeGate,
                     )
-                    Screen.Diagnosis -> DiagnosisScreen(
-                        characters = state.characters,
-                        onSelect = { viewModel.open(it) },
-                        onBack = viewModel::showList,
-                    )
-                    Screen.Premium -> PremiumScreen(onBack = viewModel::showList)
                     Screen.Policy -> PolicyScreen(onBack = viewModel::showList)
                 }
             }

@@ -99,7 +99,12 @@ export function demoFallbackEnabled(): boolean {
   return process.env.TOUYA_DEMO !== "0";
 }
 
-/** Local-only: ignore the daily free chat cap. Affinity and content gates stay on. */
+/** Personal-use builds (Booth later). Same unlimited quota as TOUYA_DEBUG_UNLIMITED. */
+export function personalUseEnabled(): boolean {
+  return process.env.TOUYA_PERSONAL?.trim() === "1";
+}
+
+/** Local / personal: ignore the daily free chat cap. Affinity and content gates stay on. */
 export function debugUnlimitedEnabled(): boolean {
-  return process.env.TOUYA_DEBUG_UNLIMITED?.trim() === "1";
+  return process.env.TOUYA_DEBUG_UNLIMITED?.trim() === "1" || personalUseEnabled();
 }

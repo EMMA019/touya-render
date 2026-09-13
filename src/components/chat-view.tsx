@@ -11,7 +11,6 @@ import type { UiMessage } from "@/components/message-bubble";
 import { ModeToggle } from "@/components/mode-toggle";
 import { useChatMode } from "@/components/mode-provider";
 import { PortraitStage } from "@/components/portrait-stage";
-import { RewardedAdButton } from "@/components/rewarded-ad-button";
 import { DebugUnlimitedMark } from "@/components/quota-pill";
 import { SituationSceneCard } from "@/components/situation-scene-card";
 import { apiUrl } from "@/lib/api-base";
@@ -57,7 +56,7 @@ export function ChatView({
   initialAffinity: AffinityPublic;
   initialSituationId?: string;
 }) {
-  const { chatMode, adsEnabled } = useChatMode();
+  const { chatMode } = useChatMode();
   const search = useSearchParams();
   const wanted = (initialSituationId ?? search.get("s") ?? "").trim();
   const firstOpen =
@@ -536,19 +535,8 @@ export function ChatView({
               「{character.farewell}
               {` ${pickHook(character.presence, `${character.id}-hook`, "")}`}」
             </p>
-      {adsEnabled ? (
-        <RewardedAdButton
-          rewardsLeft={quota.rewardsLeft}
-          onGranted={(next) => setQuota(next)}
-        />
-      ) : null}
-      {adsEnabled ? (
-      <Link href="/premium" className="block text-center text-[11px] text-white/60 underline-offset-2 hover:underline">
-        広告を非表示にして話す
-      </Link>
-      ) : null}
-    </div>
-  ) : null}
+          </div>
+        ) : null}
 
         {error ? (
           <p className="px-4 pb-1 text-center text-[11px] text-rose-200" role="alert">

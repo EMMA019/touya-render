@@ -2,20 +2,18 @@
 
 import { PortalSidebar } from "@/components/portal-sidebar";
 import { PortalBannerHero } from "@/components/portal-banner-hero";
-import { PortalUpsellBanner } from "@/components/portal-upsell-banner";
 import { CharacterPortalCard } from "@/components/character-portal-card";
 import { DailyBanner } from "@/components/daily-banner";
 import { SituationCardGrid } from "@/components/situation-card-grid";
 import { RecentChatBar } from "@/components/recent-chat-bar";
 import { DifferenceNotes } from "@/components/difference-notes";
-import { AdSlot } from "@/components/ad-slot";
 import { SiteQuota } from "@/components/site-quota";
 import { apiUrl } from "@/lib/api-base";
 import { anonymousHeaders } from "@/lib/anonymous-client";
 import type { CharacterPublic } from "@/lib/character-types";
 import type { DailyPick, DailyPublic } from "@/lib/daily";
 import Link from "next/link";
-import { Compass, Moon } from "lucide-react";
+import { Moon } from "lucide-react";
 import { useEffect, useState } from "react";
 
 export function HomePortal({
@@ -61,13 +59,6 @@ export function HomePortal({
             <span className="font-semibold text-amber-200 border-b-2 border-amber-300 pb-1">
               ホーム
             </span>
-            <Link href="/diag" className="hover:text-amber-100 transition flex items-center gap-1">
-              <Compass className="size-3 text-amber-300" />
-              <span>今夜の相手診断</span>
-            </Link>
-            <Link href="/premium" className="hover:text-amber-100 transition">
-              プラン案内
-            </Link>
             <Link href="/policy" className="hover:text-amber-100 transition">
               安心の約束
             </Link>
@@ -82,10 +73,7 @@ export function HomePortal({
           <DailyBanner daily={daily} />
           <SituationCardGrid roster={characters} />
 
-          <AdSlot placement="banner" />
           <PortalBannerHero />
-
-          <PortalUpsellBanner />
 
           <section className="space-y-3" id="roster">
             <div className="flex items-center justify-between">
@@ -97,12 +85,6 @@ export function HomePortal({
                   相手のプロフィールから入るとき。
                 </p>
               </div>
-              <Link
-                href="/diag"
-                className="text-xs text-rose-300 hover:text-rose-200 underline-offset-4 hover:underline"
-              >
-                迷ったら診断する →
-              </Link>
             </div>
 
             <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
@@ -125,9 +107,6 @@ export function HomePortal({
             </p>
             <p>
               お使いの端末に保存されるのは、ランダムに発行された匿名識別子と対話履歴のみです。お名前や連絡先などを取得することはありません。
-            </p>
-            <p>
-              無料の会話可能数は日本時間の毎日午前0時にリセットされます。リワード広告をご覧いただくことで、当日分の会話数を増やすことができます。
             </p>
           </footer>
         </main>

@@ -13,6 +13,7 @@ import jp.touya.app.data.Quota
 @Composable
 fun QuotaPill(quota: Quota?, modifier: Modifier = Modifier, compact: Boolean = false) {
     val debug = quota?.debugUnlimited == true
+    if (debug) return
     val label = when {
         quota == null -> "…"
         debug && compact -> "DEBUG"

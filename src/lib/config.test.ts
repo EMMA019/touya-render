@@ -69,10 +69,12 @@ test("OpenRouter helpers stay server-side and default the NSFW model", () => {
   }
 });
 
-test("debug unlimited is only on when TOUYA_DEBUG_UNLIMITED is exactly 1", () => {
+test("debug unlimited is on when TOUYA_DEBUG_UNLIMITED=1 or TOUYA_PERSONAL=1", () => {
   const prev = process.env.TOUYA_DEBUG_UNLIMITED;
+  const prevPersonal = process.env.TOUYA_PERSONAL;
   try {
     delete process.env.TOUYA_DEBUG_UNLIMITED;
+    delete process.env.TOUYA_PERSONAL;
     assert.equal(debugUnlimitedEnabled(), false);
     process.env.TOUYA_DEBUG_UNLIMITED = "";
     assert.equal(debugUnlimitedEnabled(), false);
@@ -80,8 +82,13 @@ test("debug unlimited is only on when TOUYA_DEBUG_UNLIMITED is exactly 1", () =>
     assert.equal(debugUnlimitedEnabled(), false);
     process.env.TOUYA_DEBUG_UNLIMITED = "1";
     assert.equal(debugUnlimitedEnabled(), true);
+    process.env.TOUYA_DEBUG_UNLIMITED = "";
+    process.env.TOUYA_PERSONAL = "1";
+    assert.equal(debugUnlimitedEnabled(), true);
   } finally {
     if (prev === undefined) delete process.env.TOUYA_DEBUG_UNLIMITED;
     else process.env.TOUYA_DEBUG_UNLIMITED = prev;
+    if (prevPersonal === undefined) delete process.env.TOUYA_PERSONAL;
+    else process.env.TOUYA_PERSONAL = prevPersonal;
   }
 });

@@ -1,8 +1,9 @@
 import assert from "node:assert/strict";
-import { readdirSync, readFileSync } from "node:fs";
+import { mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { test } from "node:test";
 import { loadRoster } from "./catalog";
+import { hasRealSituationArt, publicArtPath } from "./situation-art";
 
 const ART_DIR = join(process.cwd(), "public/situations");
 
@@ -12,7 +13,7 @@ const BAKED_NAMES =
 const BAKED_WORDS =
   /MAID|NURSE|IDOL|HALLOWEEN|CAFE|メイド|ナース|巫女|アイドル|カフェ|オフィス/;
 
-test("situation art is character-only: no baked names or clothing/sign text", () => {
+test("situation SVG stubs stay character-only: no baked names or clothing/sign text", () => {
   const files: string[] = [];
   for (const character of readdirSync(ART_DIR)) {
     const dir = join(ART_DIR, character);
@@ -36,8 +37,24 @@ test("situation art is character-only: no baked names or clothing/sign text", ()
       const rel = scene.image?.replace(/^\//, "");
       assert.ok(rel, scene.id);
       assert.ok(rel.endsWith(".png"), scene.image ?? scene.id);
-      const abs = join(process.cwd(), "public", rel);
-      assert.ok(readFileSync(abs).length > 1000, scene.image ?? scene.id);
     }
+  }
+});
+
+test("hasRealSituationArt hides svg stubs and missing rasters", () => {
+  assert.equal(hasRealSituationArt(null), false);
+  assert.equal(hasRealSituationArt("/situations/hiyori/cafe-rain.svg"), false);
+  assert.equal(hasRealSituationArt("/situations/hiyori/cafe-rain.png"), false);
+  assert.equal(publicArtPath("/situations/hiyori/cafe-rain.png"), null);
+
+  const dir = join(process.cwd(), "public/situations/_art-test");
+  mkdirSync(dir, { recursive: true });
+  const png = join(dir, "real.png");
+  writeFileSync(png, Buffer.alloc(1200, 7));
+  try {
+    assert.equal(hasRealSituationArt("/situations/_art-test/real.png"), true);
+    assert.equal(publicArtPath("/situations/_art-test/real.png"), "/situations/_art-test/real.png");
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
   }
 });

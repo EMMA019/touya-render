@@ -42,6 +42,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import coil.compose.AsyncImagePainter
+import coil.compose.rememberAsyncImagePainter
 import jp.touya.app.data.CharacterPublic
 import jp.touya.app.data.EMPTY_MODE
 import jp.touya.app.data.Quota
@@ -68,8 +70,6 @@ fun SituationCardShelf(
     onOpenDaily: () -> Unit = {},
     onRetry: () -> Unit,
     onRoster: () -> Unit,
-    onDiagnosis: () -> Unit,
-    onPremium: () -> Unit,
     onPolicy: () -> Unit,
     mode: ModePublic = EMPTY_MODE,
     ageGateOpen: Boolean = false,
@@ -156,11 +156,7 @@ fun SituationCardShelf(
 
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             TextButton(onRoster) { Text("名簿") }
-            TextButton(onDiagnosis) { Text("今夜の相手診断") }
-        }
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             TextButton(onPolicy) { Text("燈夜のこだわりと約束") }
-            TextButton(onPremium) { Text("広告なしで話す") }
         }
 
         when {
@@ -177,93 +173,11 @@ fun SituationCardShelf(
                 contentPadding = PaddingValues(bottom = 24.dp),
             ) {
                 items(cards, key = { it.key }) { card ->
-                    val art = mediaForShelf(card)
-                    Box(
-                        Modifier
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(Color(0xFF161020))
-                            .clickable(enabled = !card.locked && !opening) {
-                                onOpenCard(card.character, card.situation.id)
-                            },
-                    ) {
-                        Box(Modifier.fillMaxWidth().aspectRatio(3f / 4f)) {
-                            if (art != null) {
-                                AsyncImage(
-                                    model = art,
-                                    contentDescription = card.title,
-                                    modifier = Modifier.fillMaxSize(),
-                                    contentScale = ContentScale.Crop,
-                                    alignment = Alignment.Center,
-                                )
-                            } else {
-                                Box(
-                                    Modifier
-                                        .fillMaxSize()
-                                        .background(
-                                            Brush.linearGradient(
-                                                listOf(
-                                                    parseHex(card.character.palette.from),
-                                                    parseHex(card.character.palette.to),
-                                                ),
-                                            ),
-                                        ),
-                                )
-                            }
-                            Box(
-                                Modifier
-                                    .fillMaxSize()
-                                    .background(
-                                        Brush.verticalGradient(
-                                            listOf(Color.Transparent, Color(0xE6120A16)),
-                                        ),
-                                    ),
-                            )
-                            if (card.locked) {
-                                Column(
-                                    Modifier
-                                        .fillMaxSize()
-                                        .background(Color.Black.copy(alpha = 0.55f)),
-                                    verticalArrangement = Arrangement.Center,
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                ) {
-                                    Text("🔒", color = Color(0xFFF6EDE0))
-                                    Text(
-                                        card.lockHint ?: "特別になってから",
-                                        color = Color(0xFFF6EDE0),
-                                        style = MaterialTheme.typography.labelSmall,
-                                    )
-                                }
-                            }
-                            Column(
-                                Modifier
-                                    .align(Alignment.BottomStart)
-                                    .padding(6.dp),
-                                verticalArrangement = Arrangement.spacedBy(2.dp),
-                            ) {
-                                Text(
-                                    card.title,
-                                    color = Color.White,
-                                    style = MaterialTheme.typography.labelMedium,
-                                    maxLines = 2,
-                                )
-                                Row(
-                                    Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                ) {
-                                    Text(
-                                        card.givenName,
-                                        color = Color(0xFFE8C48A),
-                                        style = MaterialTheme.typography.labelSmall,
-                                    )
-                                    Text(
-                                        affinityStars(card.affinity.level),
-                                        color = Color(0xFFE8C48A),
-                                        style = MaterialTheme.typography.labelSmall,
-                                    )
-                                }
-                            }
-                        }
-                    }
+                    ShelfSituationCard(
+                        card = card,
+                        opening = opening,
+                        onOpen = { onOpenCard(card.character, card.situation.id) },
+                    )
                 }
                 item(span = { GridItemSpan(3) }) {
                     Text(
@@ -276,6 +190,87 @@ fun SituationCardShelf(
             }
         }
         AgeGateDialog(open = ageGateOpen, onConfirm = onConfirmAge, onCancel = onCloseAgeGate)
+    }
+}
+
+@Composable
+private fun ShelfSituationCard(
+    card: jp.touya.app.domain.ShelfCard,
+    opening: Boolean,
+    onOpen: () -> Unit,
+) {
+    val art = mediaForShelf(card)
+    val painter = rememberAsyncImagePainter(art)
+    val showArt = art != null && painter.state is AsyncImagePainter.State.Success
+    if (art != null && !showArt) {
+        AsyncImage(model = art, contentDescription = null, modifier = Modifier.size(1.dp))
+    }
+    Box(
+        Modifier
+            .clip(RoundedCornerShape(12.dp))
+            .background(Color(0xFF161020))
+            .clickable(enabled = !card.locked && !opening, onClick = onOpen),
+    ) {
+        if (showArt) {
+            Box(Modifier.fillMaxWidth().aspectRatio(3f / 4f)) {
+                AsyncImage(
+                    model = art,
+                    contentDescription = card.title,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop,
+                    alignment = Alignment.Center,
+                )
+                Box(
+                    Modifier
+                        .fillMaxSize()
+                        .background(
+                            Brush.verticalGradient(
+                                listOf(Color.Transparent, Color(0xE6120A16)),
+                            ),
+                        ),
+                )
+                ShelfCardCaption(card, Modifier.align(Alignment.BottomStart))
+            }
+        } else {
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                if (card.locked) {
+                    Text("🔒 ${card.lockHint ?: "特別になってから"}", color = Color(0xFFF6EDE0), style = MaterialTheme.typography.labelSmall)
+                }
+                ShelfCardCaption(card)
+            }
+        }
+    }
+}
+
+@Composable
+private fun ShelfCardCaption(card: jp.touya.app.domain.ShelfCard, modifier: Modifier = Modifier) {
+    Column(modifier.padding(6.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Text(
+            card.title,
+            color = Color.White,
+            style = MaterialTheme.typography.labelMedium,
+            maxLines = 2,
+        )
+        Row(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Text(
+                card.givenName,
+                color = Color(0xFFE8C48A),
+                style = MaterialTheme.typography.labelSmall,
+            )
+            Text(
+                affinityStars(card.affinity.level),
+                color = Color(0xFFE8C48A),
+                style = MaterialTheme.typography.labelSmall,
+            )
+        }
     }
 }
 
@@ -327,7 +322,9 @@ private fun DailyShelfBanner(
     onClick: () -> Unit,
 ) {
     if (daily == null) return
-    val art = mediaUrl(daily.image)
+    val art = mediaUrl(daily.image)?.takeUnless { jp.touya.app.domain.isStubShelfImage(daily.image) }
+    val painter = rememberAsyncImagePainter(art)
+    val showArt = art != null && painter.state is AsyncImagePainter.State.Success
     val progress = untilNextLabel(daily.untilNext, daily.untilNextName)
     Row(
         Modifier
@@ -339,13 +336,13 @@ private fun DailyShelfBanner(
         horizontalArrangement = Arrangement.spacedBy(10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(
-            Modifier
-                .size(width = 72.dp, height = 96.dp)
-                .clip(RoundedCornerShape(10.dp))
-                .background(Color(0xFF2A2038)),
-        ) {
-            if (art != null) {
+        if (showArt) {
+            Box(
+                Modifier
+                    .size(width = 72.dp, height = 96.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(Color(0xFF2A2038)),
+            ) {
                 AsyncImage(
                     model = art,
                     contentDescription = daily.title,
@@ -380,7 +377,3 @@ private fun affinityStars(level: Int): String {
     val filled = level.coerceIn(0, 3)
     return "★".repeat(filled) + "☆".repeat(3 - filled)
 }
-
-private fun parseHex(hex: String): Color =
-    runCatching { Color(android.graphics.Color.parseColor(hex.ifBlank { "#1a1020" })) }
-        .getOrElse { Color(0xFF1A1020) }

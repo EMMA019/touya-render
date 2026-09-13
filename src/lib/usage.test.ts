@@ -10,6 +10,7 @@ test("caps free-tier turns at 10 per JST day", async () => {
   process.env.USAGE_STORE_PATH = path.join(dir, "usage.json");
   process.env.ENTITLEMENTS_STORE_PATH = path.join(dir, "entitlements.json");
   delete process.env.TOUYA_DEBUG_UNLIMITED;
+  delete process.env.TOUYA_PERSONAL;
   const { consumeTurn, resetUsageMemory } = await import("./usage");
   const { resetEntitlementsMemory } = await import("./entitlements");
   resetUsageMemory();
@@ -57,11 +58,47 @@ test("TOUYA_DEBUG_UNLIMITED=1 keeps remaining high after many turns", async () =
   }
 });
 
+test("TOUYA_PERSONAL=1 keeps remaining high after many turns", async () => {
+  const dir = await mkdtemp(path.join(os.tmpdir(), "touya-personal-quota-"));
+  const prev = process.env.TOUYA_PERSONAL;
+  const prevDebug = process.env.TOUYA_DEBUG_UNLIMITED;
+  process.env.USAGE_STORE_PATH = path.join(dir, "usage.json");
+  process.env.ENTITLEMENTS_STORE_PATH = path.join(dir, "entitlements.json");
+  delete process.env.TOUYA_DEBUG_UNLIMITED;
+  delete process.env.TOUYA_PERSONAL;
+  process.env.TOUYA_PERSONAL = "1";
+  try {
+    const { consumeTurn, readQuota, resetUsageMemory } = await import("./usage");
+    const { resetEntitlementsMemory } = await import("./entitlements");
+    resetUsageMemory();
+    resetEntitlementsMemory();
+    const now = new Date("2026-09-12T10:00:00.000Z");
+    let last = await consumeTurn("visitor-personal", now);
+    for (let i = 1; i < 25; i += 1) {
+      last = await consumeTurn("visitor-personal", now);
+      assert.equal(last.allowed, true);
+      assert.equal(last.debugUnlimited, true);
+      assert.equal(last.remaining, DEBUG_UNLIMITED_REMAINING);
+    }
+    assert.equal(last.used, 25);
+    const snapshot = await readQuota("visitor-personal", now);
+    assert.equal(snapshot.debugUnlimited, true);
+    assert.equal(snapshot.remaining, DEBUG_UNLIMITED_REMAINING);
+  } finally {
+    if (prev === undefined) delete process.env.TOUYA_PERSONAL;
+    else process.env.TOUYA_PERSONAL = prev;
+    if (prevDebug === undefined) delete process.env.TOUYA_DEBUG_UNLIMITED;
+    else process.env.TOUYA_DEBUG_UNLIMITED = prevDebug;
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
 test("TOUYA_DEBUG_UNLIMITED unset still enforces the daily cap", async () => {
   const dir = await mkdtemp(path.join(os.tmpdir(), "touya-debug-off-"));
   process.env.USAGE_STORE_PATH = path.join(dir, "usage.json");
   process.env.ENTITLEMENTS_STORE_PATH = path.join(dir, "entitlements.json");
   delete process.env.TOUYA_DEBUG_UNLIMITED;
+  delete process.env.TOUYA_PERSONAL;
   const { consumeTurn, resetUsageMemory } = await import("./usage");
   const { resetEntitlementsMemory } = await import("./entitlements");
   resetUsageMemory();
@@ -84,6 +121,7 @@ test("quota day rolls at Japan midnight, not UTC", async () => {
   process.env.USAGE_STORE_PATH = path.join(dir, "usage.json");
   process.env.ENTITLEMENTS_STORE_PATH = path.join(dir, "entitlements.json");
   delete process.env.TOUYA_DEBUG_UNLIMITED;
+  delete process.env.TOUYA_PERSONAL;
   const { consumeTurn, resetUsageMemory } = await import("./usage");
   const { resetEntitlementsMemory } = await import("./entitlements");
   resetUsageMemory();
@@ -102,6 +140,7 @@ test("rewarded stub adds extra chats without signup", async () => {
   process.env.USAGE_STORE_PATH = path.join(dir, "usage.json");
   process.env.ENTITLEMENTS_STORE_PATH = path.join(dir, "entitlements.json");
   delete process.env.TOUYA_DEBUG_UNLIMITED;
+  delete process.env.TOUYA_PERSONAL;
   const { consumeTurn, grantReward, resetUsageMemory } = await import("./usage");
   const { resetEntitlementsMemory } = await import("./entitlements");
   resetUsageMemory();
@@ -124,6 +163,7 @@ test("premium stub raises the daily cap", async () => {
   process.env.USAGE_STORE_PATH = path.join(dir, "usage.json");
   process.env.ENTITLEMENTS_STORE_PATH = path.join(dir, "entitlements.json");
   delete process.env.TOUYA_DEBUG_UNLIMITED;
+  delete process.env.TOUYA_PERSONAL;
   const { consumeTurn, resetUsageMemory } = await import("./usage");
   const { grantPremiumStub, resetEntitlementsMemory } = await import("./entitlements");
   resetUsageMemory();

@@ -33,12 +33,12 @@ export function QuotaPill({
   debugUnlimited?: boolean;
   className?: string;
 }) {
+  if (debugUnlimited) return null;
+
   const label =
     remaining === null
       ? "読み込み中…"
-      : debugUnlimited
-        ? "本日 残り ∞"
-        : `本日 残り ${remaining} / ${limit} 通`;
+      : `本日 残り ${remaining} / ${limit} 通`;
 
   return (
     <div

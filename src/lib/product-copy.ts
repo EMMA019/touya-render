@@ -3,18 +3,19 @@ import { FREE_DAILY_TURNS, PREMIUM_DAILY_TURNS } from "./config";
 /** Landing / metadata. Behavior lives in prompt + memory + gate — not just these lines. */
 export const META_TITLE = "燈夜 — 夜に、話せる相手がいる";
 export const META_DESCRIPTION =
-  "登録不要。無料枠は1日10通。雨のカフェ、終業後のオフィス、夜の屋上、黄昏のテラス。今夜の気分に合わせて相手を選べます。";
+  "登録不要。雨のカフェ、終業後のオフィス、夜の屋上、黄昏のテラス。今夜の気分に合わせて相手を選べます。";
 
 export const LANDING_KICKER = "とうや";
 export const LANDING_HEADLINE = "夜に、話せる相手がいる。";
-export const LANDING_LEAD = `雨の音を聴きながらでも、仕事帰りでも。4人の中から、今の気分に合う相手を選んでください。昨夜話した続きも覚えています。会員登録は不要です。無料枠は1日${FREE_DAILY_TURNS}通。日付が変わると、また話しかけられます。`;
+export const LANDING_LEAD =
+  "雨の音を聴きながらでも、仕事帰りでも。4人の中から、今の気分に合う相手を選んでください。昨夜話した続きも覚えています。会員登録は不要です。";
 
 export const DIFFERENCE_HEADING = "燈夜の特徴";
 
 export const DIFFERENCES = [
   {
     title: "今の気分で相手を選ぶ",
-    body: "甘えたい夜、少し突っかかってほしい夜、静かに隣にいてほしい夜、落ち着いて話したい夜。迷ったら診断からどうぞ。",
+    body: "甘えたい夜、少し突っかかってほしい夜、静かに隣にいてほしい夜、落ち着いて話したい夜。カードから今夜の相手を選んでください。",
   },
   {
     title: "会うほど、距離が縮まる",
@@ -28,12 +29,12 @@ export const DIFFERENCES = [
     title: "モードで雰囲気が変わります", body: "既定はSFWです。NSFWは18歳確認のあとだけ。未成年や違法な内容はどのモードでも扱いません。",
   },
   {
-    title: "登録不要。広告で運営しています",
-    body: `お名前やメールアドレスは一切いただきません。無料枠は1日${FREE_DAILY_TURNS}通。短い広告を見ることで、その日だけ会話数を追加できます。`,
+    title: "登録不要。個人利用から",
+    body: "お名前やメールアドレスは一切いただきません。広告や通数の案内は出しません。Booth はあとから。",
   },
   {
     title: "キャラクターが画面の主役",
-    body: "見やすい立ち絵と衣装の切り替え。残りの会話数はシンプルな数字表示だけで、邪魔をしません。",
+    body: "見やすい立ち絵と衣装の切り替え。数字の通数表示で会話を邪魔しません。",
   },
 ] as const;
 

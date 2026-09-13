@@ -177,7 +177,7 @@ export async function POST(request: Request) {
       request,
       {
         error: "quota",
-        message: "本日の無料枠を使い切りました。日本時間の0時に回復します。広告を見て足すか、また明日どうぞ。",
+        message: "本日の会話上限に達しました。日本時間の0時に回復します。",
         ...quota,
       },
       { status: 429 }

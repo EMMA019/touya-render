@@ -43,8 +43,6 @@ fun CharacterListScreen(
     opening: Boolean,
     onSelect: (CharacterPublic) -> Unit,
     onRetry: () -> Unit,
-    onDiagnosis: () -> Unit,
-    onPremium: () -> Unit,
     onPolicy: () -> Unit,
     onShelf: () -> Unit = {},
     mode: ModePublic = EMPTY_MODE,
@@ -75,17 +73,10 @@ fun CharacterListScreen(
         TextButton(onShelf) { Text("カード一覧へ戻る") }
         Text("夜に、話せる相手がいる。", style = MaterialTheme.typography.titleMedium)
         Text(
-            "雨の音を聴きながらでも、仕事帰りでも。4人の中から、今の気分に合う相手を選んでください。昨夜話した続きも覚えています。会員登録は不要です。無料枠は1日10通。日付が変わると、また話しかけられます。",
+            "雨の音を聴きながらでも、仕事帰りでも。4人の中から、今の気分に合う相手を選んでください。昨夜話した続きも覚えています。会員登録は不要です。",
             style = MaterialTheme.typography.bodyMedium,
         )
-        Button(onDiagnosis, Modifier.fillMaxWidth()) {
-            Text("今夜の相手を診断する")
-        }
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            TextButton(onPolicy) { Text("燈夜のこだわりと約束") }
-            TextButton(onPremium) { Text("広告なしで話す") }
-        }
-        AdPlaceholder(adsEnabled = mode.adsEnabled)
+        TextButton(onPolicy) { Text("燈夜のこだわりと約束") }
         when {
             loading -> CircularProgressIndicator()
             error != null -> {
@@ -150,10 +141,6 @@ fun CharacterListScreen(
                         )
                         Text(
                             "お使いの端末に保存されるのは、ランダムに発行された匿名識別子と対話履歴のみです。お名前や連絡先などを取得することはありません。",
-                            style = MaterialTheme.typography.labelSmall,
-                        )
-                        Text(
-                            "無料の会話可能数は日本時間の毎日午前0時にリセットされます。リワード広告をご覧いただくことで、当日分の会話数を増やすことができます。",
                             style = MaterialTheme.typography.labelSmall,
                         )
                     }
