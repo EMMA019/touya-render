@@ -29,6 +29,7 @@ Kairi（ローカル BYOK + 接地レイヤー）の「短い文脈」「生成�
 | `/` | Web MVP + API（Next.js）。これが正本 |
 | `shared/characters/*.json` | キャラ定義の正本（1人1ファイル）。サーバーだけが全文を読む |
 | `shared/presence/{id}.json` | 今夜の台詞・不在・明日への引き。LLM は増やさない |
+| `shared/story/{id}.json` | 章の台本（Ch0 出会い〜）。選択肢式、LLM は呼ばない。[shared/story/README.md](shared/story/README.md) |
 | `android/` | フェーズ 2。同じ API を叩く Kotlin / Compose シェル |
 
 Android は安全判定を持ちません。性的ゲート・DeepSeek・日次 10 通はすべてサーバーです。詳細は [android/README.md](android/README.md)。
@@ -93,6 +94,8 @@ npm start
 | `ENTITLEMENTS_STORE_PATH` | Play Billing スタブの JSON。既定 `./data/entitlements.json`。 |
 | `BOND_STORE_PATH` | 会った日数。既定 `./data/bonds.json`。 |
 | `AFFINITY_STORE_PATH` | 親密度カウンタ。既定 `./data/affinity.json`。日次リセットしない。 |
+| `STORY_STORE_PATH` | 章の進行（ビート・フラグ B1〜B5・出会いの経緯・今日の温度）。既定 `./data/story.json`。 |
+| `TOUYA_NSFW_MIN_LEVEL` | NSFW に要る実効帯。既定 `2`（特別）。全クライアントにランナーが載る前だけ `0` に下げられる。 |
 | `FEEDBACK_STORE_PATH` | 「違ったと感じた」の匿名ログ。既定 `./data/feedback.json`。 |
 | `NEXT_PUBLIC_ADMOB_APP_ID` | AdMob アプリ ID。未設定のままプレースホルダ。**仮の ID を書かない。** |
 | `NEXT_PUBLIC_ADMOB_BANNER_UNIT` | バナーユニット。空でよい。 |
@@ -152,12 +155,44 @@ MVP はアニメ名簿だけです。写実／実写は後から素材が揃っ�
 
 | id | 名前 | 口調 | 状況 | 拒否 |
 | --- | --- | --- | --- | --- |
-| `hiyori` | 桃瀬ひより（大学生） | 甘え | カフェ / 並木 / ハロウィン / メイド / ナース / 巫女 | やーん、えっちー！しらないっ |
-| `rione` | 橘川凛音（秘書） | ツンデレ | オフィス / 書店 / ハロウィン / メイド / ナース / アイドル | バカー！… |
-| `shiraishi` | 白石凛（研究者） | クール | 屋上 / 公園 / ハロウィン / メイド / ナース | そういう質問には答えません |
-| `clara` | クララ・ベルジュ（実業家） | エレガント | テラス / 書庫 / ハロウィン / メイド / ナース / 巫女 | ふふ、そういう話題は少し野暮ね。 |
+| `hiyori` | 桃瀬ひより（大学生） | 甘え | カフェ / 並木 / ニットのカフェ / ハロウィン / メイド / ナース / 巫女 | やーん、えっちー！しらないっ |
+| `rione` | 橘川凛音（秘書） | ツンデレ | オフィス / 書店 / イブニングドレス / ハロウィン / メイド / ナース / アイドル | バカー！… |
+| `shiraishi` | 白石凛（研究者） | クール | 屋上 / 公園 / 冬のパーカ / ハロウィン / メイド / ナース | そういう質問には答えません |
+| `clara` | クララ・ベルジュ（実業家） | エレガント | テラス / 書庫 / 浴衣 / ハロウィン / メイド / ナース / 巫女 | ふふ、そういう話題は少し野暮ね。 |
 
 体型数値は聖書の内部設定だけです。画面にも公開 API にも出しません。年齢は使いません。
+
+## 出会い（Ch0）と帯解放
+
+初めてキャラを開くと、挨拶の代わりに **出会い台本**（`shared/story/{id}.json`、3〜6 タップ）が流れます。選択肢は口調の分岐だけでバッドエンドは無く、最後の `end` で `B1 met` と「どう知り合ったか（`metVia`）」が確定して通常チャットに合流します。台本は LLM を呼びません。以後は `metVia` の一行がシステムプロンプトの【関係】に入り、履歴から落ちても出会いを忘れません。設計は [docs/LOVEPLUS_ROMANCE_SLG.md](docs/LOVEPLUS_ROMANCE_SLG.md) / [docs/MEETING_FLOW_SPEC.md](docs/MEETING_FLOW_SPEC.md)、台本は [docs/scripts/](docs/scripts/MEETING_SCRIPTS.md)。
+
+場面の解放は **親密度の帯だけ** で決まります。「会った日数が 3 日重なると衣装が開く」ガチャは廃止しました（`src/lib/situation-unlock.ts` / `android/.../domain/Unlock.kt`、テストで表と一致を確認）。
+
+| 帯 | 名前 | 開くもの | フラグ |
+| --- | --- | --- | --- |
+| 0 | 知り合い | 日常 SFW 場面（衣装・季節なし） | `B1`（Ch0 クリア） |
+| 1 | 仲良し（10 通） | `maid` / `nurse` / ハロウィン（10 月のみ）/ 追加 SFW 衣装（ニット・ドレス・パーカ・浴衣） | `B3` |
+| 2 | 特別（30 通） | `miko` / `idol` / `nsfwOnly` 場面（NSFW モードも必要）/ **NSFW モード自体** | `B4` |
+| 3 | 絆（60 通） | `nsfwOnly` で `minLevel: 3` と書いた場面 | `B5` |
+
+`nsfwOnly` は特別（`NSFW_MIN_AFFINITY_LEVEL = 2`）を下回れません（JSON に低い `minLevel` を書いても 2 に持ち上げます）。絆まで取っておきたい場面だけ `minLevel: 3` を明記します。ロック中のチップは「仲良しになったら」「続きを見てから」「今は季節じゃない」など理由だけを出し、数字や日数は出しません。口調も帯で変わります（知り合い＝丁寧 → 仲良し＝柔らか → 特別＝甘え・デレ → 絆＝恋人）。キャラ別の `systemPrompt` はそのままで、【関係】行が上に乗るだけです。
+
+## 画像の置き場所
+
+画像バイナリは git に無理に入れません。パスは JSON が決め、生成器のプレースホルダ PNG（約 25 KB）が同じ場所に入っています。本番絵は **同名で上書き** するだけです。
+
+```
+public/situations/{id}/{scene}.png   状況絵（Web が配信。キャラだけ、文字なし、服は着たまま）
+public/situations/{id}/{scene}.svg   プレースホルダ原画（消さなくてよい）
+public/portraits/{id}.png            名簿・アバター
+android/app/src/main/assets/situations/{id}/{scene}.png   Android 同梱（下のコマンドで同期）
+```
+
+1. `shared/characters/{id}.json` の `situations[].image` を見て同じパスに PNG を置く（例: `public/situations/hiyori/knit-cafe.png`、`public/situations/rione/evening-dress.png`、`public/situations/shiraishi/winter-parka.png`、`public/situations/clara/yukata-sfw.png`。`maid.png` などの差し替えも同じ）。
+2. `npm run sync-android` で `android/app/src/main/assets/situations/` に写す（`--check` で差分だけ確認）。
+3. `npm test`（`situation-art.test.ts` が PNG の存在と、SVG に文字が無いことを見る）。
+
+新しい場面を足すときは JSON に 1 要素追加 → `npm run portraits`（欠けた PNG だけプレースホルダで埋める）→ 上の 1〜3。`costume` が表に無い id（`knit-cafe` など）は仲良し帯、`nsfwOnly: true` なら特別帯です。制服・学生の場面は追加しません（`validateCharacter` が落とします）。
 
 ## 新キャラの追加方法
 
@@ -317,7 +352,13 @@ src/app/api/chat          ゲートのあとでのみ DeepSeek / デモ
 src/app/api/session       残通数のみ（ID は返さない）
 src/app/api/reward        AdMob リワード完了スタブ
 shared/characters/*.json  キャラ正本（1人1ファイル。サーバー専用）
+shared/story/*.json       章の台本（Ch0 出会い〜）。ランナーは LLM を呼ばない
+src/app/api/story         choice / advance。ビートを進めるだけ（通数・親密度は動かない）
+src/lib/story.ts          進行ストアと導出（effectiveLevel・pendingChapter・温度）
+src/lib/story-script.ts   台本の読み込み・検証・公開形
+src/lib/situation-unlock.ts 帯＋フラグの解放判定（日数は見ない）
 scripts/new-character.mjs テンプレ複製。パイプラインは触らない
+scripts/sync-android-assets.mjs public/situations → android assets の同期
 scripts/build-cf-pages.mjs Cloudflare 向け静的書き出し（API は含めない）
 docs/cloudflare.md        Pages の build / 出力 / 環境変数
 src/lib/anonymous-id.ts   インストール UUID のハッシュ

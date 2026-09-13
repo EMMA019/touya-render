@@ -63,20 +63,40 @@ GET  /api/session        # 残通数 + chatMode / adsEnabled。ID は返さな�
 GET  /api/mode           # モードと年齢確認
 POST /api/mode           # { confirmAge, chatMode }  NSFW は年齢確認後だけ
 GET  /api/characters     # 公開情報 + presence。prompt / bible は含まない
-GET  /api/companion      # ?characterId=  絆・記憶・解放済み場面
+GET  /api/companion      # ?characterId=  絆・記憶・解放済み場面 (unlocked/locks)・story・進行中の章 script
+POST /api/story/choice   # { characterId, chapterId, beatId, choiceId }  台本の選択肢。LLM も通数も動かない
+POST /api/story/advance  # { characterId, chapterId, beatId }            line / retry を次へ
 GET  /api/memory         # 覚えていること
 DELETE /api/memory       # { characterId, text }
 POST /api/feedback       # { characterId, situationId, assistantText }
 GET  /api/usage
 POST /api/reward         # AdMob リワード完了のスタブ。+3通
-POST /api/chat           # SSE: quota / bond / delta / replace / done / error
+POST /api/chat           # SSE: quota / bond / affinity / mode / story / delta / replace / done / error
+                         #   free ビートのときだけ body に chapterId / beatId を足す
 ```
 
-チャットはポートレート全面（パレットの夜空）。残通数は数字だけ。場面チップで衣装／背景を切り替えます。服は着たまま（AdMob）。衣装は会った日が重なると開きます（ハロウィンは10月）。年齢は出しません。MVP の名簿はアニメ4人です。
+チャットはポートレート全面（パレットの夜空）。残通数は数字だけ。場面チップで衣装／背景を切り替えます。服は着たまま（AdMob）。年齢は出しません。MVP の名簿はアニメ4人です。
+
+### 出会い（Ch0）と解放
+
+初めて開いたキャラは `companion.story.beat != null` で返ってきます。`TouyaViewModel.open()` は挨拶（`composeOpening`）を出さず、`script` の現在ビートを吹き出しにして（id `story-{chapterId}-{beatId}-{i}`、再開しても二重にならない）、背景を章の `situationId` に切り替え、コンポーザーの代わりに `StoryChoiceRow`（選択肢／つづける）を出します。タップは `client.storyChoice` / `storyAdvance` で、サーバーが次のビートを返します。`end` に着くと `story.beat` が `null` になりコンポーザーが戻ります。
+
+解放は **サーバーの `unlocked` / `locks` が正**。`domain/Unlock.kt` は `situation-unlock.ts` の写し（帯＋フラグ、日数は見ない）で、API に届かないときの表示フォールバックだけです。ロック文言は `locks[id]` の理由（band / chapter / flag / season / mode）から出します。NSFW トグルは `story.nsfwEligible == false` のとき年齢ゲートを開かず「まだ、そこまでじゃない。」を出します。
+
+### 画像の同期
+
+状況絵は Web の `public/situations/` が正本です。本番 PNG を置いたらルートで:
+
+```
+npm run sync-android            # android/app/src/main/assets/situations/ に写す
+npm run sync-android -- --check # 差分があれば exit 1
+```
+
+`SituationArt.kt` が API の `/situations/{id}/{scene}.png` を `file:///android_asset/situations/...` に写像します。巨大な PNG は git に入れず、ローカルで置いてから同期してください。
 
 診断の10問は `domain/Diagnosis.kt` に Web と同じ配点で置いてあります。結果は端末の中だけです。
 
-単体テスト（時刻・開口・診断・解放）:
+単体テスト（時刻・開口・診断・解放・台本ランナーの吹き出し）:
 
 ```
 # Android Studio の Gradle :app:testDebugUnitTest
