@@ -99,7 +99,12 @@ fun collectShelfCards(
     return cards
 }
 
+fun isStubShelfImage(path: String?): Boolean {
+    if (path.isNullOrBlank()) return true
+    return path.lowercase().endsWith(".svg")
+}
+
 fun mediaForShelf(card: ShelfCard): String? {
-    if (card.image.isNullOrBlank()) return null
+    if (isStubShelfImage(card.image)) return null
     return jp.touya.app.data.mediaUrl(card.image)
 }

@@ -59,6 +59,7 @@ Android は安全判定を持ちません。性的ゲート・DeepSeek・日次 
 ```bash
 cp .env.example .env.local
 # DEEPSEEK_API_KEY を入れる（無くてもデモは動く）
+# Personal local: keep TOUYA_DEBUG_UNLIMITED=1 (see docs/PERSONAL.md)
 npm install
 npm run dev
 ```
@@ -81,7 +82,8 @@ npm start
 | `OPENROUTER_NSFW_MODEL` | 既定 `nousresearch/hermes-3-llama-3.1-70b`。 |
 | `OPENROUTER_BASE_URL` | 既定 `https://openrouter.ai/api/v1`。 |
 | `TOUYA_DEMO` | 未設定: 鍵が無いときだけデモ。`1` でデモ強制。`0` でデモ禁止。 |
-| `TOUYA_DEBUG_UNLIMITED` | ローカル専用。`1` で日次無料枠を無視（親密度・内容ゲートはそのまま）。本番では未設定。 |
+| `TOUYA_DEBUG_UNLIMITED` | 個人利用 / ローカル。`1` で日次通数上限を無視（親密度・内容ゲートはそのまま）。`.env.local` に置いたままにする。 |
+| `TOUYA_PERSONAL` | `1` でも同じ無制限。個人ビルド用。 |
 | `USAGE_STORE_PATH` | 日次カウントの JSON。既定 `./data/usage.json`。 |
 | `SEXUAL_STORE_PATH` | 性的エスカレーションの JSON。既定 `./data/sexual-strikes.json`。 |
 | `MEMORY_STORE_PATH` | キャラ別の短い記憶。既定 `./data/memory.json`。 |

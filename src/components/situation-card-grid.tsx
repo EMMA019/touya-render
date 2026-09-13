@@ -1,16 +1,30 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Lock } from "lucide-react";
 import { SituationBackdrop } from "@/components/situation-backdrop";
 import type { CharacterPublic } from "@/lib/character-types";
 import {
   collectShelfCards,
   visibleShelfTabs,
+  type ShelfCard,
   type ShelfTab,
 } from "@/lib/situation-shelf";
 import { cn } from "@/lib/utils";
+
+function useLoadedArt(src: string | null | undefined) {
+  const [ok, setOk] = useState(false);
+  useEffect(() => {
+    setOk(false);
+  }, [src]);
+  return {
+    ok,
+    src: src || null,
+    markOk: () => setOk(true),
+    markBad: () => setOk(false),
+  };
+}
 
 export function SituationCardGrid({ roster }: { roster: CharacterPublic[] }) {
   const [characterId, setCharacterId] = useState<string | null>(null);
@@ -72,63 +86,69 @@ export function SituationCardGrid({ roster }: { roster: CharacterPublic[] }) {
       </div>
 
       <div className="grid grid-cols-3 gap-2 sm:gap-3">
-        {cards.map((card) => {
-          const inner = (
-            <article
-              className={cn(
-                "group relative flex flex-col overflow-hidden rounded-xl border border-white/10 bg-[#161020]",
-                !card.locked && "transition hover:-translate-y-0.5 hover:border-amber-200/40 hover:shadow-lg",
-              )}
-            >
-              <div className="relative aspect-[3/4] w-full overflow-hidden bg-black/40">
-                {card.image || card.video ? (
-                  <SituationBackdrop
-                    image={card.image}
-                    video={card.locked ? null : card.video}
-                    className="h-full w-full"
-                  />
-                ) : (
-                  <div
-                    className="h-full w-full"
-                    style={{
-                      background: `linear-gradient(145deg, ${card.palette.from}, ${card.palette.to})`,
-                    }}
-                  />
-                )}
-                <div className="absolute inset-0 bg-gradient-to-t from-[#120a16] via-transparent to-transparent opacity-90" />
-                {card.locked ? (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-black/55 px-2 text-center">
-                    <Lock className="size-4 text-amber-100/80" />
-                    <p className="text-[10px] leading-snug text-amber-50/90">{card.lockHint}</p>
-                  </div>
-                ) : null}
-                <div className="absolute bottom-0 inset-x-0 p-1.5 sm:p-2">
-                  <p className="truncate text-[11px] font-medium text-amber-50 sm:text-xs">{card.title}</p>
-                  <div className="mt-0.5 flex items-center justify-between gap-1">
-                    <p className="truncate text-[10px] text-amber-200/70">{card.givenName}</p>
-                    <AffinityStars level={card.affinityLevel} />
-                  </div>
-                </div>
-              </div>
-            </article>
-          );
-
-          if (card.locked) {
-            return (
-              <div key={card.key} aria-disabled>
-                {inner}
-              </div>
-            );
-          }
-
-          return (
-            <Link key={card.key} href={`/c/${card.characterId}?s=${encodeURIComponent(card.situationId)}`}>
-              {inner}
-            </Link>
-          );
-        })}
+        {cards.map((card) => (
+          <ShelfCardLink key={card.key} card={card} />
+        ))}
       </div>
     </section>
+  );
+}
+
+function ShelfCardLink({ card }: { card: ShelfCard }) {
+  const art = useLoadedArt(card.image);
+  const showArt = Boolean(art.src && (art.ok || card.video));
+  const inner = (
+    <article
+      className={cn(
+        "group relative flex flex-col overflow-hidden rounded-xl border border-white/10 bg-[#161020]",
+        !card.locked && "transition hover:-translate-y-0.5 hover:border-amber-200/40 hover:shadow-lg",
+      )}
+    >
+      {art.src ? (
+        // Hidden probe: keep real rasters, drop 404 / stub gray boxes.
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={art.src} alt="" className="hidden" onLoad={art.markOk} onError={art.markBad} />
+      ) : null}
+      {showArt ? (
+        <div className="relative aspect-[3/4] w-full overflow-hidden bg-black/40">
+          <SituationBackdrop
+            image={art.ok ? card.image : null}
+            video={card.locked ? null : card.video}
+            className="h-full w-full"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#120a16] via-transparent to-transparent opacity-90" />
+          <ShelfCardCaption card={card} />
+        </div>
+      ) : (
+        <div className="flex min-h-[4.5rem] flex-col justify-end gap-1 px-2 py-2">
+          <ShelfCardCaption card={card} stacked />
+        </div>
+      )}
+    </article>
+  );
+
+  if (card.locked) {
+    return <div aria-disabled>{inner}</div>;
+  }
+
+  return <Link href={`/c/${card.characterId}?s=${encodeURIComponent(card.situationId)}`}>{inner}</Link>;
+}
+
+function ShelfCardCaption({ card, stacked = false }: { card: ShelfCard; stacked?: boolean }) {
+  return (
+    <div className={cn(stacked ? "relative" : "absolute bottom-0 inset-x-0 p-1.5 sm:p-2")}>
+      <p className="truncate text-[11px] font-medium text-amber-50 sm:text-xs">{card.title}</p>
+      <div className="mt-0.5 flex items-center justify-between gap-1">
+        <p className="truncate text-[10px] text-amber-200/70">{card.givenName}</p>
+        <AffinityStars level={card.affinityLevel} />
+      </div>
+      {card.locked ? (
+        <p className="mt-1 flex items-center gap-1 text-[10px] text-amber-50/80">
+          <Lock className="size-3" />
+          {card.lockHint}
+        </p>
+      ) : null}
+    </div>
   );
 }
 
@@ -147,6 +167,7 @@ function FilterAvatar({
   to?: string;
   onClick: () => void;
 }) {
+  const art = useLoadedArt(image);
   return (
     <button type="button" onClick={onClick} className="flex shrink-0 flex-col items-center gap-1">
       <span
@@ -156,12 +177,21 @@ function FilterAvatar({
         )}
         style={{ background: `linear-gradient(160deg, ${from ?? "#2a2030"}, ${to ?? "#4a3040"})` }}
       >
-        {image ? (
+        {art.src ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={image} alt="" className="h-full w-full object-cover object-[center_20%]" />
-        ) : (
-          <span className="grid h-full w-full place-items-center text-[10px] text-amber-50/80">全</span>
-        )}
+          <img
+            src={art.src}
+            alt=""
+            className={cn("h-full w-full object-cover object-[center_20%]", !art.ok && "hidden")}
+            onLoad={art.markOk}
+            onError={art.markBad}
+          />
+        ) : null}
+        {!art.ok ? (
+          <span className="grid h-full w-full place-items-center text-[10px] text-amber-50/80">
+            {label === "全員" ? "全" : label.slice(0, 1)}
+          </span>
+        ) : null}
       </span>
       <span className="max-w-14 truncate text-[10px] text-amber-100/70">{label}</span>
     </button>

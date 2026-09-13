@@ -11,7 +11,8 @@
  */
 export type AdPlacement = "banner" | "sidebar" | "infeed" | "rewarded";
 
-export const ADS_ENABLED = process.env.NEXT_PUBLIC_ADS_ENABLED !== "0";
+/** Personal-use default: ads off unless explicitly enabled. No AdMob path in UI. */
+export const ADS_ENABLED = process.env.NEXT_PUBLIC_ADS_ENABLED === "1";
 export const ADS_PROVIDER = "admob";
 
 /**

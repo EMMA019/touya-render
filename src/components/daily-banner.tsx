@@ -1,8 +1,26 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import { dailyHref, untilNextLabel, type DailyPublic } from "@/lib/daily";
 import { cn } from "@/lib/utils";
+
+function DailyArt({ image }: { image: string }) {
+  const [ok, setOk] = useState(true);
+  if (!ok) return null;
+  return (
+    <div className="relative min-h-[7.5rem] overflow-hidden">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={image}
+        alt=""
+        className="h-full w-full object-cover object-[center_18%]"
+        onError={() => setOk(false)}
+      />
+      <div className="absolute inset-0 bg-gradient-to-r from-transparent to-[#161020]" />
+    </div>
+  );
+}
 
 export function DailyBanner({
   daily,
@@ -23,19 +41,10 @@ export function DailyBanner({
         className,
       )}
     >
-      <article className="grid grid-cols-[7.5rem_1fr] sm:grid-cols-[9rem_1fr]">
-        <div
-          className="relative min-h-[7.5rem] overflow-hidden"
-          style={{
-            background: "linear-gradient(160deg, #3a2030, #1a1020)",
-          }}
-        >
-          {daily.image ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={daily.image} alt="" className="h-full w-full object-cover object-[center_18%]" />
-          ) : null}
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent to-[#161020]" />
-        </div>
+      <article className={daily.image ? "grid grid-cols-[7.5rem_1fr] sm:grid-cols-[9rem_1fr]" : "grid grid-cols-1"}>
+        {daily.image ? (
+          <DailyArt image={daily.image} />
+        ) : null}
         <div className="flex flex-col justify-center gap-1.5 px-3 py-3 sm:px-4">
           <p className="text-[10px] font-semibold tracking-[0.18em] text-amber-200/70">今日のカード</p>
           <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">

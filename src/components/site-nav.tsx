@@ -1,10 +1,6 @@
 import Link from "next/link";
 
-const LINKS = [
-  { href: "/diag", label: "診断" },
-  { href: "/premium", label: "広告なし" },
-  { href: "/policy", label: "約束" },
-];
+const LINKS = [{ href: "/policy", label: "約束" }];
 
 export function SiteNav() {
   return (

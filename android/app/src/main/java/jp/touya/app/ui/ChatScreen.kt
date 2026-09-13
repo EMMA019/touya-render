@@ -19,7 +19,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
@@ -66,8 +65,6 @@ fun ChatScreen(
     unlocked: List<String>,
     memoryOpen: Boolean,
     feedbackSent: Boolean,
-    rewarding: Boolean,
-    rewardMessage: String?,
     situationCard: Boolean,
     onSituation: (String) -> Unit,
     onDismissCard: () -> Unit,
@@ -77,8 +74,6 @@ fun ChatScreen(
     onToggleMemory: (Boolean) -> Unit,
     onForget: (String) -> Unit,
     onReportWrong: () -> Unit,
-    onReward: () -> Unit,
-    onPremium: () -> Unit,
     mode: ModePublic = EMPTY_MODE,
     ageGateOpen: Boolean = false,
     onToggleMode: () -> Unit = {},
@@ -255,25 +250,6 @@ fun ChatScreen(
                         "「${character.farewell}${if (hook.isNotBlank()) " $hook" else ""}」",
                         color = Color.White,
                     )
-                    if (mode.adsEnabled) {
-                        if ((quota?.rewardsLeft ?: 0) <= 0) {
-                            Text("今日のリワード広告はここまで。日本時間の0時に戻ります。", color = Color.White.copy(alpha = 0.55f))
-                        } else {
-                            Button(onReward, enabled = !rewarding, modifier = Modifier.fillMaxWidth()) {
-                                Text(if (rewarding) "読み込み中…" else "広告を見て +3通（AdMob スタブ）")
-                            }
-                            Text(
-                                "本番は AdMob リワード。今は完了扱いで通数だけ足します。アカウントは不要です。",
-                                color = Color.White.copy(alpha = 0.5f),
-                            )
-                        }
-                        if (rewardMessage != null) {
-                            Text(rewardMessage, color = Color(0xFFE8C48A))
-                        }
-                        TextButton(onPremium, Modifier.fillMaxWidth()) {
-                            Text("広告なしで話す", color = Color.White.copy(alpha = 0.65f))
-                        }
-                    }
                 }
             }
             if (error != null) {

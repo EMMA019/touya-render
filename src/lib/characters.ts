@@ -9,6 +9,7 @@ import {
   type CharacterId,
   type CharacterPublic,
 } from "./character-types";
+import { publicArtPath } from "./situation-art";
 import { unlockedSituationIds } from "./situation-unlock";
 
 export type { Character, CharacterId, CharacterPublic } from "./character-types";
@@ -88,10 +89,13 @@ function toPublic(
     tone: character.tone,
     artStyle: resolveArtStyle(character.artStyle),
     suggestions: character.suggestions,
-    situations: character.situations.map((scene) => toPublicSituation(scene, access)),
+    situations: character.situations.map((scene) => {
+      const pub = toPublicSituation(scene, access);
+      return { ...pub, image: publicArtPath(pub.image) };
+    }),
     palette: character.palette,
     portrait: character.portrait,
-    portraitImage: character.portraitImage ?? null,
+    portraitImage: publicArtPath(character.portraitImage),
     presence: character.presence,
     bwh: character.bible.bwh,
   };
