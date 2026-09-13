@@ -14,6 +14,7 @@ import jp.touya.app.data.MemoryRow
 import jp.touya.app.data.EMPTY_MODE
 import jp.touya.app.data.Quota
 import jp.touya.app.data.TouyaClient
+import jp.touya.app.data.TtsPlayer
 import jp.touya.app.data.VisitorStore
 import jp.touya.app.data.seedSituationGreeting
 import jp.touya.app.data.situationGreeting
@@ -52,6 +53,8 @@ data class UiState(
     val situationCard: Boolean = true,
     val mode: ModePublic = EMPTY_MODE,
     val ageGateOpen: Boolean = false,
+    val ttsAvailable: Boolean = false,
+    val speakingId: String? = null,
 )
 
 sealed interface Screen {
@@ -66,6 +69,7 @@ class TouyaViewModel(
     private val client: TouyaClient,
     private val store: ChatStore,
     private val visitorStore: VisitorStore? = null,
+    private val ttsPlayer: TtsPlayer? = null,
 ) : ViewModel() {
     private val _state = MutableStateFlow(
         UiState(
@@ -88,15 +92,16 @@ class TouyaViewModel(
             _state.update { it.copy(loading = true, error = null) }
             runCatching {
                 withContext(Dispatchers.IO) {
-                    client.characters() to client.session()
+                    Triple(client.characters(), client.session(), client.ttsConfigured())
                 }
-            }.onSuccess { (characters, session) ->
+            }.onSuccess { (characters, session, ttsConfigured) ->
                 cacheMode(session.mode)
                 _state.update {
                     it.copy(
                         characters = characters,
                         quota = session.quota,
                         mode = session.mode,
+                        ttsAvailable = ttsConfigured,
                         loading = false,
                     )
                 }
@@ -192,8 +197,15 @@ class TouyaViewModel(
     }
 
     fun showList() {
+        ttsPlayer?.stop()
         _state.update {
-            it.copy(screen = Screen.List, messages = emptyList(), error = null, memoryOpen = false)
+            it.copy(
+                screen = Screen.List,
+                messages = emptyList(),
+                error = null,
+                memoryOpen = false,
+                speakingId = null,
+            )
         }
         refresh()
     }
@@ -349,6 +361,32 @@ class TouyaViewModel(
         }
     }
 
+    fun speakLine(message: ChatMessage) {
+        val screen = _state.value.screen as? Screen.Chat ?: return
+        if (!_state.value.ttsAvailable) return
+        val text = message.content.trim()
+        if (text.isEmpty() || message.pending) return
+        if (_state.value.speakingId == message.id) {
+            ttsPlayer?.stop()
+            _state.update { it.copy(speakingId = null) }
+            return
+        }
+        viewModelScope.launch {
+            _state.update { it.copy(speakingId = message.id) }
+            runCatching {
+                val audio = withContext(Dispatchers.IO) {
+                    client.speak(screen.character.id, text)
+                }
+                ttsPlayer?.play(audio.bytes, audio.mime)
+            }.onSuccess {
+                _state.update { it.copy(speakingId = null) }
+            }.onFailure {
+                ttsPlayer?.stop()
+                _state.update { it.copy(speakingId = null, ttsAvailable = false) }
+            }
+        }
+    }
+
     fun reportWrong() {
         val screen = _state.value.screen as? Screen.Chat ?: return
         if (_state.value.feedbackSent) return
@@ -468,12 +506,22 @@ class TouyaViewModel(
         return "$prefix-$seq"
     }
 
+    override fun onCleared() {
+        ttsPlayer?.stop()
+        super.onCleared()
+    }
+
     companion object {
-        fun factory(client: TouyaClient, store: ChatStore, visitorStore: VisitorStore? = null): ViewModelProvider.Factory =
+        fun factory(
+            client: TouyaClient,
+            store: ChatStore,
+            visitorStore: VisitorStore? = null,
+            ttsPlayer: TtsPlayer? = null,
+        ): ViewModelProvider.Factory =
             object : ViewModelProvider.Factory {
                 @Suppress("UNCHECKED_CAST")
                 override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                    return TouyaViewModel(client, store, visitorStore) as T
+                    return TouyaViewModel(client, store, visitorStore, ttsPlayer) as T
                 }
             }
     }

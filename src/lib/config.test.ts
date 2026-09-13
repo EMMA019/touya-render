@@ -5,7 +5,9 @@ import {
   demoFallbackEnabled,
   debugUnlimitedEnabled,
   hasDeepseekKey,
+  hasIrodoriTts,
   hasOpenRouterKey,
+  irodoriTtsBaseUrl,
   jstDayKey,
   jstMonth,
   openRouterNsfwModel,
@@ -67,6 +69,13 @@ test("OpenRouter helpers stay server-side and default the NSFW model", () => {
     if (prevModel === undefined) delete process.env.OPENROUTER_NSFW_MODEL;
     else process.env.OPENROUTER_NSFW_MODEL = prevModel;
   }
+});
+
+test("Irodori TTS is off unless IRODORI_TTS_BASE_URL is set", () => {
+  assert.equal(hasIrodoriTts({}), false);
+  assert.equal(irodoriTtsBaseUrl({}), "");
+  assert.equal(hasIrodoriTts({ IRODORI_TTS_BASE_URL: "http://127.0.0.1:8088/" }), true);
+  assert.equal(irodoriTtsBaseUrl({ IRODORI_TTS_BASE_URL: "http://127.0.0.1:8088/" }), "http://127.0.0.1:8088");
 });
 
 test("debug unlimited is only on when TOUYA_DEBUG_UNLIMITED is exactly 1", () => {

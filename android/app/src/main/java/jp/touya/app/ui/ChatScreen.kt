@@ -49,6 +49,7 @@ import jp.touya.app.data.situationCardLines
 import jp.touya.app.domain.ModePublic
 import jp.touya.app.domain.LOCKED_SITUATION_HINT
 import jp.touya.app.domain.pickHook
+import jp.touya.app.domain.showTtsSpeaker
 import jp.touya.app.domain.suggestionsFor
 
 @Composable
@@ -84,6 +85,9 @@ fun ChatScreen(
     onToggleMode: () -> Unit = {},
     onConfirmAge: () -> Unit = {},
     onCloseAgeGate: () -> Unit = {},
+    ttsAvailable: Boolean = false,
+    speakingId: String? = null,
+    onSpeak: (ChatMessage) -> Unit = {},
 ) {
     val limited = quota?.debugUnlimited != true && (quota?.remaining ?: 1) <= 0
     val situation = character.situations.firstOrNull { it.id == situationId }
@@ -218,11 +222,12 @@ fun ChatScreen(
                     Row(
                         Modifier.fillMaxWidth(),
                         horizontalArrangement = if (mine) Arrangement.End else Arrangement.Start,
+                        verticalAlignment = Alignment.Bottom,
                     ) {
                         Text(
                             message.content + if (message.pending) "▍" else "",
                             modifier = Modifier
-                                .fillMaxWidth(0.86f)
+                                .fillMaxWidth(0.80f)
                                 .background(
                                     if (mine) Color.White.copy(alpha = 0.9f) else Color.Black.copy(alpha = 0.45f),
                                     RoundedCornerShape(16.dp),
@@ -230,6 +235,20 @@ fun ChatScreen(
                                 .padding(horizontal = 12.dp, vertical = 8.dp),
                             color = if (mine) Color(0xFF1C1917) else Color.White,
                         )
+                        if (showTtsSpeaker(ttsAvailable, message.role, message.pending, message.content)) {
+                            Surface(
+                                onClick = { onSpeak(message) },
+                                shape = CircleShape,
+                                color = Color.Black.copy(alpha = 0.4f),
+                                modifier = Modifier.padding(start = 6.dp),
+                            ) {
+                                Text(
+                                    if (speakingId == message.id) "…" else "♪",
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+                                    color = Color.White.copy(alpha = 0.85f),
+                                )
+                            }
+                        }
                     }
                 }
                 if (lastAssistant != null && lastAssistant.pending.not()) {

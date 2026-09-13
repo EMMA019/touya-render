@@ -222,3 +222,8 @@ data class ChatMessage(
     val pending: Boolean = false,
     val id: String = "",
 )
+
+data class TtsAudio(
+    val bytes: ByteArray,
+    val mime: String,
+)

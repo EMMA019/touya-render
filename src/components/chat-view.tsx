@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { AffinityHeart } from "@/components/affinity-heart";
 import { BondLamp } from "@/components/bond-lamp";
 import { MemorySheet } from "@/components/memory-sheet";
+import { SpeakButton } from "@/components/speak-button";
 import type { UiMessage } from "@/components/message-bubble";
 import { ModeToggle } from "@/components/mode-toggle";
 import { useChatMode } from "@/components/mode-provider";
@@ -37,6 +38,7 @@ import { isMobileChatInput, resizeComposer } from "@/lib/chat-composer";
 import { seedSituationGreeting } from "@/lib/situation-greeting";
 import { situationIcon } from "@/lib/situation-icons";
 import { LOCKED_SITUATION_HINT, unlockedSituationIds } from "@/lib/situation-unlock";
+import { fetchTtsConfigured } from "@/lib/tts-client";
 import { cn } from "@/lib/utils";
 
 export function ChatView({
@@ -84,6 +86,7 @@ export function ChatView({
   const [hydrated, setHydrated] = useState(false);
   const [situationId, setSituationId] = useState(firstOpen ?? character.situations[0]?.id ?? "");
   const [cardOpen, setCardOpen] = useState(true);
+  const [ttsAvailable, setTtsAvailable] = useState(false);
   const boxRef = useRef<HTMLTextAreaElement>(null);
   const scroller = useRef<HTMLDivElement>(null);
   const seq = useRef(0);
@@ -157,6 +160,7 @@ export function ChatView({
         if (body.affinity) setAffinity(body.affinity);
       })
       .catch(() => undefined);
+    void fetchTtsConfigured().then(setTtsAvailable);
   }, [character.id]);
 
   const historyPayload = useMemo(
@@ -491,14 +495,31 @@ export function ChatView({
             <div
               key={message.id}
               className={cn(
-                "max-w-[86%] rounded-2xl px-3 py-2 text-sm leading-relaxed whitespace-pre-wrap backdrop-blur-md",
-                message.role === "user"
-                  ? "ml-auto bg-white/90 text-stone-900"
-                  : "bg-black/45 text-white"
+                "flex items-end gap-1.5",
+                message.role === "user" ? "justify-end" : "justify-start",
               )}
             >
-              {message.content}
-              {message.pending ? <span className="ml-1 animate-pulse">▍</span> : null}
+              <div
+                className={cn(
+                  "max-w-[86%] rounded-2xl px-3 py-2 text-sm leading-relaxed whitespace-pre-wrap backdrop-blur-md",
+                  message.role === "user"
+                    ? "bg-white/90 text-stone-900"
+                    : "bg-black/45 text-white"
+                )}
+              >
+                {message.content}
+                {message.pending ? <span className="ml-1 animate-pulse">▍</span> : null}
+              </div>
+              {ttsAvailable &&
+              message.role === "assistant" &&
+              !message.pending &&
+              message.content.trim() ? (
+                <SpeakButton
+                  characterId={character.id}
+                  text={message.content}
+                  onUnavailable={() => setTtsAvailable(false)}
+                />
+              ) : null}
             </div>
           ))}
           {lastAssistant && !lastAssistant.pending ? (

@@ -30,6 +30,37 @@ class TouyaClient(
         return JSONObject(body).optBoolean("ok")
     }
 
+    /** True only when the API has IRODORI_TTS_BASE_URL. Does not require Irodori to be up. */
+    fun ttsConfigured(): Boolean {
+        return runCatching {
+            val response = http.newCall(request("/api/health").get().build()).execute()
+            val body = response.body?.string().orEmpty()
+            response.isSuccessful && JSONObject(body).optBoolean("ttsConfigured")
+        }.getOrDefault(false)
+    }
+
+    fun speak(characterId: String, text: String): TtsAudio {
+        val payload = JSONObject()
+            .put("characterId", characterId)
+            .put("text", text)
+        val response = http.newCall(
+            request("/api/tts").post(payload.toString().toRequestBody(jsonType)).build(),
+        ).execute()
+        val mime = response.header("Content-Type")?.substringBefore(";")?.trim().orEmpty()
+        val bytes = response.body?.bytes() ?: ByteArray(0)
+        if (response.code == 503) {
+            val err = runCatching { JSONObject(String(bytes)) }.getOrNull()
+            throw ApiException(
+                err?.optString("message").orEmpty().ifBlank { "音声は未設定です。チャットはそのまま使えます。" },
+                503,
+            )
+        }
+        if (!response.isSuccessful || bytes.isEmpty()) {
+            throw ApiException("音声を再生できません (${response.code})", response.code)
+        }
+        return TtsAudio(bytes, mime.ifBlank { "audio/mpeg" })
+    }
+
     fun setMode(confirmAge: Boolean = false, chatMode: String? = null): ModePublic {
         val payload = JSONObject().apply {
             if (confirmAge) put("confirmAge", true)

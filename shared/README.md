@@ -4,7 +4,7 @@
 
 `shared/characters/{id}.json` に system prompt、`refusalStyle`、複数の `situations`、閉世界の `bible`（体型数値を含む場合あり）を置きます。`_` で始まるファイル（`_template.json`）は名簿に出しません。年齢は書きません。Android やブラウザにこのフォルダをコピーして同梱しないでください。公開プロフィールは `GET /api/characters` 経由で、聖書・look・数値は削ります。
 
-5人目を足すときは JSON 1枚と `public/situations/{id}/` だけです。チャットのパイプラインは触りません。手順はリポジトリ直下 README の「新キャラの追加方法」。
+5人目を足すときは JSON 1枚と `public/situations/{id}/` だけです。チャットのパイプラインは触りません。手順はリポジトリ直下 README の「新キャラの追加方法」。声は `shared/voices.json`（閉じた4人）か JSON の `voiceId`。マップに無いキャラはチャットだけです。
 
 安全ゲート（性的内容・未成年）は `src/lib/chat-gate.ts` にあり、どのクライアントからも迂回できません。聖書は持たせても自分から並べさせません。記憶は選んで残します。許可された1通につき DeepSeek は1回です。
 

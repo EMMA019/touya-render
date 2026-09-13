@@ -102,3 +102,18 @@ export function demoFallbackEnabled(): boolean {
 export function debugUnlimitedEnabled(): boolean {
   return process.env.TOUYA_DEBUG_UNLIMITED?.trim() === "1";
 }
+
+type EnvLike = Record<string, string | undefined>;
+
+/** Local Irodori-TTS-Server origin. Empty = voice off; chat still works. */
+export function irodoriTtsBaseUrl(env: EnvLike = process.env): string {
+  return (env.IRODORI_TTS_BASE_URL ?? "").trim().replace(/\/+$/, "");
+}
+
+export function irodoriTtsApiKey(env: EnvLike = process.env): string {
+  return (env.IRODORI_TTS_API_KEY ?? "").trim();
+}
+
+export function hasIrodoriTts(env: EnvLike = process.env): boolean {
+  return irodoriTtsBaseUrl(env).length > 0;
+}

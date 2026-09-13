@@ -38,6 +38,7 @@ yarn-error.log*
 
 # daily free-tier counters
 /data/*.json
+/data/tts-cache/
 
 # vercel
 .vercel

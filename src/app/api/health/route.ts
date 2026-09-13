@@ -1,5 +1,5 @@
 import { CHAT_MODES, DEFAULT_CHAT_MODE } from "@/lib/chat-mode";
-import { debugUnlimitedEnabled, hasOpenRouterKey } from "@/lib/config";
+import { debugUnlimitedEnabled, hasIrodoriTts, hasOpenRouterKey } from "@/lib/config";
 import { jsonApi } from "@/lib/cors";
 import { publicModeFromProfile } from "@/lib/mode-public";
 import { getVisitorId } from "@/lib/visitor";
@@ -21,6 +21,8 @@ export async function GET(request: Request) {
     chatModes: CHAT_MODES,
     backends: { sfw: "deepseek", nsfw: "openrouter" },
     openRouterConfigured: hasOpenRouterKey(),
+    ttsConfigured: hasIrodoriTts(),
+    tts: { configured: hasIrodoriTts() },
     ...mode,
     mode,
   });
