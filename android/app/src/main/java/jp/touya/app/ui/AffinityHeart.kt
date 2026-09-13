@@ -37,6 +37,13 @@ fun AffinityHeart(affinity: AffinityPublic = EMPTY_AFFINITY, modifier: Modifier 
         ) {
             Text("♡", color = Color(0xFFF4C4C8))
             Text(affinity.name, color = Color(0xFFF4C4C8), style = MaterialTheme.typography.labelSmall)
+            affinity.nextAt?.let { next ->
+                Text(
+                    "${affinity.count}/$next",
+                    color = Color(0xFFF4C4C8).copy(alpha = 0.7f),
+                    style = MaterialTheme.typography.labelSmall,
+                )
+            }
         }
     }
 }
@@ -51,6 +58,13 @@ fun AffinityGauge(affinity: AffinityPublic = EMPTY_AFFINITY, modifier: Modifier 
         ) {
             Text("♡", color = Color(0xFFF4C4C8), style = MaterialTheme.typography.labelSmall)
             Text(affinity.name, color = Color(0xFFF4C4C8), style = MaterialTheme.typography.labelSmall)
+            affinity.nextAt?.let { next ->
+                Text(
+                    "${affinity.count}/$next",
+                    color = Color(0xFFF4C4C8).copy(alpha = 0.7f),
+                    style = MaterialTheme.typography.labelSmall,
+                )
+            }
         }
         Box(
             Modifier

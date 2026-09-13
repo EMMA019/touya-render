@@ -35,6 +35,7 @@ export type SituationPublic = {
   greeting?: string;
   lines?: SituationLine[];
   minLevel?: number;
+  nsfwOnly?: boolean;
 };
 
 export type CharacterSituation = SituationPublic & {
@@ -69,16 +70,26 @@ export function situationGreeting(
   return line || fallback;
 }
 
-export function toPublicSituation(scene: CharacterSituation): SituationPublic {
+export function situationNsfwOnly(scene?: { nsfwOnly?: boolean } | null): boolean {
+  return scene?.nsfwOnly === true;
+}
+
+export function toPublicSituation(
+  scene: CharacterSituation,
+  access?: { nsfwAllowed?: boolean },
+): SituationPublic {
+  const nsfwOnly = situationNsfwOnly(scene);
+  const revealIntimate = !nsfwOnly || access?.nsfwAllowed === true;
   return {
     id: scene.id,
-    title: scene.title,
-    image: scene.image ?? null,
+    title: revealIntimate ? scene.title : "特別な時間",
+    image: revealIntimate ? scene.image ?? null : null,
     season: scene.season,
     costume: scene.costume,
-    greeting: scene.greeting,
-    minLevel: situationMinLevel(scene),
-    lines: Array.isArray(scene.lines)
+    greeting: revealIntimate ? scene.greeting : undefined,
+    minLevel: nsfwOnly ? Math.max(situationMinLevel(scene), 2) : situationMinLevel(scene),
+    nsfwOnly: nsfwOnly || undefined,
+    lines: revealIntimate && Array.isArray(scene.lines)
       ? scene.lines.filter((line) => situationLineText(line).length > 0).slice(0, 3)
       : undefined,
   };
@@ -122,6 +133,7 @@ export type CharacterPublic = {
   presence?: CharacterPresence;
   bwh?: CharacterBwh;
   affinity?: AffinityPublic;
+  nsfwUnlocked?: boolean;
 };
 
 export type CharacterBwh = {

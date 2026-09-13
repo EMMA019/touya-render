@@ -1,13 +1,25 @@
 import { adsAllowed } from "./ads";
-import { toModePublic, type ModePublic } from "./chat-mode";
+import {
+  effectiveChatMode,
+  effectiveStoredMode,
+  toModePublic,
+  type ModePublic,
+} from "./chat-mode";
 import type { VisitorProfile } from "./visitor-profile";
 
-export function publicModeFromProfile(profile: VisitorProfile): ModePublic {
-  const adsEnabled = adsAllowed(profile.chatMode);
+export function publicModeFromProfile(
+  profile: VisitorProfile,
+  affinityLevel?: number | null,
+): ModePublic {
+  const chatMode =
+    affinityLevel === undefined || affinityLevel === null
+      ? effectiveStoredMode(profile.chatMode, profile.ageConfirmed)
+      : effectiveChatMode(profile.chatMode, profile.ageConfirmed, affinityLevel);
   return toModePublic({
-    chatMode: profile.chatMode,
+    chatMode,
     ageConfirmed: profile.ageConfirmed,
     ageConfirmedAt: profile.ageConfirmedAt,
-    adsEnabled,
+    adsEnabled: adsAllowed(chatMode),
+    affinityLevel,
   });
 }

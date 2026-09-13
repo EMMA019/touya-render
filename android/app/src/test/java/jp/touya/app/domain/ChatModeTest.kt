@@ -15,20 +15,43 @@ class ChatModeTest {
     }
 
     @Test
-    fun nsfwWithoutAgeIsRejected() {
-        val rejected = resolveChatMode(requested = "nsfw", storedMode = "sfw", ageConfirmed = false)
-        assertTrue(rejected is ModeResolve.Rejected)
-        assertEquals(NSFW_AGE_REQUIRED, (rejected as ModeResolve.Rejected).error)
-
-        val stored = resolveChatMode(storedMode = "nsfw", ageConfirmed = false)
-        assertTrue(stored is ModeResolve.Rejected)
+    fun nsfwNeedsAgeAndSpecialAffinity() {
+        assertFalse(canAccessNsfw(0, true))
+        assertFalse(canAccessNsfw(1, true))
+        assertFalse(canAccessNsfw(2, false))
+        assertTrue(canAccessNsfw(2, true))
+        assertEquals(2, NSFW_MIN_AFFINITY_LEVEL)
     }
 
     @Test
-    fun nsfwWithAgeIsAccepted() {
-        val ok = resolveChatMode(requested = "nsfw", storedMode = "sfw", ageConfirmed = true)
+    fun nsfwWithoutAgeIsRejected() {
+        val rejected = resolveChatMode(requested = "nsfw", storedMode = "sfw", ageConfirmed = false, affinityLevel = 3)
+        assertTrue(rejected is ModeResolve.Rejected)
+        assertEquals(NSFW_AGE_REQUIRED, (rejected as ModeResolve.Rejected).error)
+    }
+
+    @Test
+    fun levelZeroAndOneCannotEnableNsfwEvenWithAge() {
+        val zero = resolveChatMode(requested = "nsfw", storedMode = "sfw", ageConfirmed = true, affinityLevel = 0)
+        assertTrue(zero is ModeResolve.Rejected)
+        assertEquals(NSFW_AFFINITY_REQUIRED, (zero as ModeResolve.Rejected).error)
+        val one = resolveChatMode(requested = "nsfw", storedMode = "sfw", ageConfirmed = true, affinityLevel = 1)
+        assertTrue(one is ModeResolve.Rejected)
+        assertEquals(NSFW_AFFINITY_REQUIRED, (one as ModeResolve.Rejected).error)
+    }
+
+    @Test
+    fun nsfwWithAgeAndSpecialIsAccepted() {
+        val ok = resolveChatMode(requested = "nsfw", storedMode = "sfw", ageConfirmed = true, affinityLevel = 2)
         assertTrue(ok is ModeResolve.Ok)
         assertEquals("nsfw", (ok as ModeResolve.Ok).mode)
+    }
+
+    @Test
+    fun storedNsfwFallsBackForLockedCharacter() {
+        val stored = resolveChatMode(storedMode = "nsfw", ageConfirmed = true, affinityLevel = 0)
+        assertTrue(stored is ModeResolve.Ok)
+        assertEquals("sfw", (stored as ModeResolve.Ok).mode)
     }
 
     @Test

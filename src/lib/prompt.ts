@@ -36,6 +36,22 @@ export type PromptContext = {
   chatMode?: ChatMode;
 };
 
+/** SFW dating-sim voice by stage. Same single LLM call — no supervisor. */
+export function affinityPromptLine(name: string, mode: ChatMode = DEFAULT_CHAT_MODE): string {
+  if (mode === "nsfw") {
+    return `【親密度】${name}。名前だけ持つ。数値や履歴は言わない。低親密度なら口調は距離を置いてよいが、体型・性的な質問への拒否や仕事へのそらしはしない。`;
+  }
+  const hint =
+    name === "絆"
+      ? "深い絆。安心した甘えは短くてよい。性的描写はしない。"
+      : name === "特別"
+        ? "特別な相手。恋人に近い甘さは短くてよい。服の上の距離まで。"
+        : name === "仲良し"
+          ? "仲良し。気軽で優しい。淡い好意は出してよい。性的にはしない。"
+          : "まだ知り合い。丁寧で少し距離を置く。甘い言葉は控えめ。";
+  return `【親密度】${name}。名前だけ持つ。数値や履歴は言わない。${hint}`;
+}
+
 const SITUATION_SHARED =
   "名札や看板の文字は言わない。聞かれない限り場面を並べない。返事は今の場面の空気に自然に合わせる。検索や別モデルは呼ばない。";
 
@@ -99,11 +115,7 @@ export function buildSystemPrompt(
     );
   }
   if (context.affinityName) {
-    parts.push(
-      chatMode === "nsfw"
-        ? `【親密度】${context.affinityName}。名前だけ持つ。数値や履歴は言わない。低親密度なら口調は距離を置いてよいが、体型・性的な質問への拒否や仕事へのそらしはしない。`
-        : `【親密度】${context.affinityName}。名前だけ持つ。数値や履歴は言わない。`
-    );
+    parts.push(affinityPromptLine(context.affinityName, chatMode));
   }
   if (context.clock) {
     parts.push(

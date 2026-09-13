@@ -4,15 +4,25 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import { apiUrl } from "@/lib/api-base";
 import { anonymousHeaders } from "@/lib/anonymous-client";
 import type { ChatMode, ModePublic } from "@/lib/chat-mode";
-import { DEFAULT_CHAT_MODE } from "@/lib/chat-mode";
+import {
+  DEFAULT_CHAT_MODE,
+  NSFW_AFFINITY_REQUIRED,
+  NSFW_AFFINITY_REQUIRED_JA,
+} from "@/lib/chat-mode";
 import { ADS_ENABLED } from "@/lib/ads";
+
+type NsfwContext = {
+  characterId?: string;
+  affinityLevel?: number;
+};
 
 type ModeContextValue = ModePublic & {
   ready: boolean;
   ageGateOpen: boolean;
-  openAgeGate: () => void;
+  nsfwLockMessage: string | null;
+  openAgeGate: (ctx?: NsfwContext) => void;
   closeAgeGate: () => void;
-  applyMode: (next: ChatMode) => Promise<ModePublic | null>;
+  applyMode: (next: ChatMode, ctx?: NsfwContext) => Promise<ModePublic | null>;
   confirmAgeAndEnableNsfw: () => Promise<ModePublic | null>;
   leaveNsfw: () => Promise<ModePublic | null>;
 };
@@ -40,6 +50,8 @@ export function ModeProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<ModePublic>(fallback);
   const [ready, setReady] = useState(false);
   const [ageGateOpen, setAgeGateOpen] = useState(false);
+  const [nsfwLockMessage, setNsfwLockMessage] = useState<string | null>(null);
+  const [pendingNsfw, setPendingNsfw] = useState<NsfwContext>({});
 
   const refresh = useCallback(async () => {
     try {
@@ -57,7 +69,11 @@ export function ModeProvider({ children }: { children: React.ReactNode }) {
     void refresh();
   }, [refresh]);
 
-  const postMode = useCallback(async (payload: { confirmAge?: boolean; chatMode?: ChatMode }) => {
+  const postMode = useCallback(async (payload: {
+    confirmAge?: boolean;
+    chatMode?: ChatMode;
+    characterId?: string;
+  }) => {
     const response = await fetch(apiUrl("/api/mode"), {
       method: "POST",
       headers: anonymousHeaders({ "Content-Type": "application/json" }),
@@ -66,29 +82,45 @@ export function ModeProvider({ children }: { children: React.ReactNode }) {
     const body = (await response.json().catch(() => ({}))) as Partial<ModePublic> & {
       mode?: ModePublic;
       error?: string;
+      message?: string;
     };
-    if (!response.ok) return null;
+    if (!response.ok) {
+      if (body.error === NSFW_AFFINITY_REQUIRED) {
+        setNsfwLockMessage(body.message ?? NSFW_AFFINITY_REQUIRED_JA);
+      }
+      if (body.chatMode || body.mode) setState(readBody(body));
+      return null;
+    }
     const next = readBody(body);
     setState(next);
+    setNsfwLockMessage(null);
     return next;
   }, []);
 
   const applyMode = useCallback(
-    async (next: ChatMode) => {
+    async (next: ChatMode, ctx?: NsfwContext) => {
+      if (ctx) setPendingNsfw(ctx);
       if (next === "nsfw" && !state.ageConfirmed) {
         setAgeGateOpen(true);
         return null;
       }
-      return postMode({ chatMode: next });
+      return postMode({
+        chatMode: next,
+        characterId: ctx?.characterId ?? pendingNsfw.characterId,
+      });
     },
-    [postMode, state.ageConfirmed]
+    [postMode, state.ageConfirmed, pendingNsfw.characterId]
   );
 
   const confirmAgeAndEnableNsfw = useCallback(async () => {
-    const next = await postMode({ confirmAge: true, chatMode: "nsfw" });
+    const next = await postMode({
+      confirmAge: true,
+      chatMode: "nsfw",
+      characterId: pendingNsfw.characterId,
+    });
     if (next) setAgeGateOpen(false);
     return next;
-  }, [postMode]);
+  }, [postMode, pendingNsfw.characterId]);
 
   const leaveNsfw = useCallback(async () => postMode({ chatMode: "sfw" }), [postMode]);
 
@@ -97,13 +129,17 @@ export function ModeProvider({ children }: { children: React.ReactNode }) {
       ...state,
       ready,
       ageGateOpen,
-      openAgeGate: () => setAgeGateOpen(true),
+      nsfwLockMessage,
+      openAgeGate: (ctx) => {
+        if (ctx) setPendingNsfw(ctx);
+        setAgeGateOpen(true);
+      },
       closeAgeGate: () => setAgeGateOpen(false),
       applyMode,
       confirmAgeAndEnableNsfw,
       leaveNsfw,
     }),
-    [state, ready, ageGateOpen, applyMode, confirmAgeAndEnableNsfw, leaveNsfw]
+    [state, ready, ageGateOpen, nsfwLockMessage, applyMode, confirmAgeAndEnableNsfw, leaveNsfw]
   );
 
   return <ModeContext.Provider value={value}>{children}</ModeContext.Provider>;
@@ -116,6 +152,7 @@ export function useChatMode(): ModeContextValue {
       ...fallback,
       ready: false,
       ageGateOpen: false,
+      nsfwLockMessage: null,
       openAgeGate: () => undefined,
       closeAgeGate: () => undefined,
       applyMode: async () => null,

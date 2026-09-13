@@ -1,13 +1,23 @@
 import type { CharacterId } from "./character-types";
 import { AFFINITY_STORE_FILENAME } from "./config";
 import { createJsonStore } from "./json-store";
-import { levelFromCount, type AffinityPublic } from "./affinity-types";
+import {
+  levelFromCount,
+  toAffinityEvent,
+  type AffinityEvent,
+  type AffinityPublic,
+} from "./affinity-types";
 
 export {
   AFFINITY_LEVELS,
   EMPTY_AFFINITY,
+  NSFW_MIN_AFFINITY_LEVEL,
+  affinityLevelName,
+  affinityLevelUpMessage,
   levelFromCount,
   shouldIncrementAffinity,
+  toAffinityEvent,
+  type AffinityEvent,
   type AffinityPublic,
 } from "./affinity-types";
 
@@ -52,14 +62,15 @@ export async function readAffinityMap(visitorId: string): Promise<Record<string,
 export async function incrementAffinity(
   visitorId: string,
   characterId: CharacterId,
-): Promise<AffinityPublic> {
+): Promise<AffinityEvent> {
   return store.enqueue(async () => {
     const data = await store.read();
     const key = pairKey(visitorId, characterId);
+    const previous = toPublic(data.pairs[key]);
     const count = (data.pairs[key]?.count ?? 0) + 1;
     data.pairs[key] = { count };
     await store.persist(data);
-    return levelFromCount(count);
+    return toAffinityEvent(previous, levelFromCount(count));
   });
 }
 

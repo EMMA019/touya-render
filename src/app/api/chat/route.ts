@@ -5,10 +5,11 @@ import { getCharacter } from "@/lib/characters";
 import { resolveChatBackend } from "@/lib/chat-backend";
 import { evaluateChatGate } from "@/lib/chat-gate";
 import {
-  NSFW_AGE_REQUIRED,
-  NSFW_AGE_REQUIRED_JA,
+  NSFW_MIN_AFFINITY_LEVEL,
+  nsfwDenialMessage,
   resolveChatMode,
 } from "@/lib/chat-mode";
+import { isSituationUnlocked } from "@/lib/situation-unlock";
 import {
   OPENROUTER_MISSING_JA,
   demoFallbackEnabled,
@@ -82,24 +83,39 @@ export async function POST(request: Request) {
   }
 
   const profile = await readVisitorProfile(visitorId);
+  const affinityNow = await readAffinity(visitorId, character.id);
   const resolved = resolveChatMode({
     requested: body.mode,
     storedMode: profile.chatMode,
     ageConfirmed: profile.ageConfirmed,
+    affinityLevel: affinityNow.level,
   });
   if (!resolved.ok) {
-    const mode = publicModeFromProfile(profile);
+    const mode = publicModeFromProfile(profile, affinityNow.level);
     return jsonApi(
       request,
-      { error: NSFW_AGE_REQUIRED, message: NSFW_AGE_REQUIRED_JA, ...mode, mode },
+      {
+        error: resolved.error,
+        message: nsfwDenialMessage(resolved.error),
+        ...mode,
+        mode,
+      },
       { status: 403 }
     );
   }
-  if (body.mode !== undefined && resolved.mode !== profile.chatMode) {
-    await applyVisitorModeChange(visitorId, { chatMode: resolved.mode });
+  if (
+    body.mode !== undefined &&
+    resolved.mode !== profile.chatMode &&
+    (resolved.mode === "sfw" || affinityNow.level >= NSFW_MIN_AFFINITY_LEVEL)
+  ) {
+    await applyVisitorModeChange(visitorId, {
+      chatMode: resolved.mode,
+      affinityLevel: affinityNow.level,
+    });
   }
   const chatMode = resolved.mode;
-  const modePublic = publicModeFromProfile({ ...profile, chatMode });
+  const modePublic = publicModeFromProfile({ ...profile, chatMode }, affinityNow.level);
+  const nsfwAllowed = chatMode === "nsfw";
 
   const strike = await readSexualStrike(visitorId, character.id);
   const gate = evaluateChatGate({
@@ -189,7 +205,18 @@ export async function POST(request: Request) {
   const facts = await rememberFacts(visitorId, character.id, extracted);
   const bond = await touchBond(visitorId, character.id, facts.length);
   const affinity = await incrementAffinity(visitorId, character.id);
-  const situation = character.situations.find((row) => row.id === body.situationId);
+  const requestedSituation = character.situations.find((row) => row.id === body.situationId);
+  const situation =
+    requestedSituation &&
+    isSituationUnlocked(
+      requestedSituation,
+      bond.daysMet,
+      new Date(),
+      affinityNow.level,
+      nsfwAllowed,
+    )
+      ? requestedSituation
+      : undefined;
   const systemPrompt = buildSystemPrompt(character, summarizeMemory(facts), situation, bond.stage, {
     clock: readClock(),
     daysAway: bond.daysAway,

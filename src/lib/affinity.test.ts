@@ -3,7 +3,13 @@ import { mkdtemp, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { test } from "node:test";
-import { EMPTY_AFFINITY, levelFromCount, shouldIncrementAffinity } from "./affinity-types";
+import {
+  EMPTY_AFFINITY,
+  affinityLevelUpMessage,
+  levelFromCount,
+  shouldIncrementAffinity,
+  toAffinityEvent,
+} from "./affinity-types";
 
 test("levelFromCount maps thresholds from shared/affinity.json", () => {
   const zero = levelFromCount(0);
@@ -11,6 +17,7 @@ test("levelFromCount maps thresholds from shared/affinity.json", () => {
   assert.equal(zero.name, "知り合い");
   assert.equal(zero.nextAt, 10);
   assert.equal(zero.progress, 0);
+  assert.equal(zero.remainingToNext, 10);
   assert.deepEqual(EMPTY_AFFINITY, zero);
 
   const nine = levelFromCount(9);
@@ -35,11 +42,22 @@ test("levelFromCount maps thresholds from shared/affinity.json", () => {
   assert.equal(sixty.name, "絆");
   assert.equal(sixty.nextAt, null);
   assert.equal(sixty.progress, 1);
+  assert.equal(sixty.remainingToNext, null);
 
   const over = levelFromCount(99);
   assert.equal(over.level, 3);
   assert.equal(over.name, "絆");
   assert.equal(over.nextAt, null);
+});
+
+test("toAffinityEvent surfaces a dating-sim level-up beat", () => {
+  const beat = toAffinityEvent(levelFromCount(29), levelFromCount(30));
+  assert.equal(beat.leveledUp, true);
+  assert.equal(beat.previousName, "仲良し");
+  assert.equal(beat.name, "特別");
+  assert.equal(beat.levelUpMessage, affinityLevelUpMessage("特別"));
+  assert.equal(beat.levelUpMessage, "特別になった");
+  assert.equal(toAffinityEvent(levelFromCount(10), levelFromCount(11)).leveledUp, false);
 });
 
 test("shouldIncrementAffinity follows the chat consume path, not greeting seeds", () => {
@@ -56,6 +74,7 @@ test("incrementAffinity is permanent per visitor×character and does not reset d
   const first = await incrementAffinity("v1", "hiyori");
   assert.equal(first.count, 1);
   assert.equal(first.name, "知り合い");
+  assert.equal(first.leveledUp, false);
   const second = await incrementAffinity("v1", "hiyori");
   assert.equal(second.count, 2);
   assert.equal((await readAffinity("v1", "hiyori")).count, 2);

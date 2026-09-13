@@ -30,10 +30,15 @@ class TouyaClient(
         return JSONObject(body).optBoolean("ok")
     }
 
-    fun setMode(confirmAge: Boolean = false, chatMode: String? = null): ModePublic {
+    fun setMode(
+        confirmAge: Boolean = false,
+        chatMode: String? = null,
+        characterId: String? = null,
+    ): ModePublic {
         val payload = JSONObject().apply {
             if (confirmAge) put("confirmAge", true)
             if (!chatMode.isNullOrBlank()) put("chatMode", chatMode)
+            if (!characterId.isNullOrBlank()) put("characterId", characterId)
         }
         val response = http.newCall(
             request("/api/mode").post(payload.toString().toRequestBody(jsonType)).build(),
@@ -75,6 +80,8 @@ class TouyaClient(
             memory = parseFacts(root.optJSONArray("memory")),
             unlocked = stringList(root.optJSONArray("unlocked")),
             affinity = parseAffinity(root.optJSONObject("affinity")),
+            nsfwUnlocked = root.optBoolean("nsfwUnlocked"),
+            situations = parseSituations(root.optJSONArray("situations")),
         )
     }
 
@@ -165,7 +172,7 @@ class TouyaClient(
                 val err = response.body?.string().orEmpty()
                 val obj = runCatching { JSONObject(err) }.getOrNull()
                 throw ApiException(obj?.optString("message").orEmpty().ifBlank {
-                    "18歳以上の確認が必要です。"
+                    "もっと仲良くなったら、特別な話ができるよ。"
                 }, response.code)
             }
             if (response.code == 429) {
@@ -237,24 +244,8 @@ class TouyaClient(
             tone = obj.getString("tone"),
             artStyle = obj.optString("artStyle").ifBlank { "anime" },
             suggestions = stringList(suggestions),
-            situations = buildList {
-                val scenes = obj.optJSONArray("situations") ?: return@buildList
-                for (i in 0 until scenes.length()) {
-                    val scene = scenes.getJSONObject(i)
-                    add(
-                        SituationPublic(
-                            id = scene.optString("id"),
-                            title = scene.optString("title"),
-                            image = scene.optNullString("image"),
-                            season = scene.optNullString("season"),
-                            costume = scene.optNullString("costume"),
-                            greeting = scene.optNullString("greeting"),
-                            lines = parseSituationLines(scene.optJSONArray("lines")),
-                            minLevel = scene.optInt("minLevel", 0),
-                        ),
-                    )
-                }
-            },
+            situations = parseSituations(obj.optJSONArray("situations")),
+            nsfwUnlocked = obj.optBoolean("nsfwUnlocked"),
             palette = Palette(
                 from = palette.optString("from"),
                 to = palette.optString("to"),
@@ -366,9 +357,36 @@ class TouyaClient(
                 name = name,
                 nextAt = if (obj.has("nextAt") && !obj.isNull("nextAt")) obj.optInt("nextAt") else null,
                 progress = obj.optDouble("progress", 0.0).toFloat(),
+                remainingToNext = if (obj.has("remainingToNext") && !obj.isNull("remainingToNext")) {
+                    obj.optInt("remainingToNext")
+                } else null,
+                leveledUp = obj.optBoolean("leveledUp"),
+                levelUpMessage = obj.optNullString("levelUpMessage"),
             )
         }
         return levelFromCount(obj.optInt("count"))
+    }
+
+    private fun parseSituations(arr: JSONArray?): List<SituationPublic> {
+        if (arr == null) return emptyList()
+        return buildList {
+            for (i in 0 until arr.length()) {
+                val scene = arr.getJSONObject(i)
+                add(
+                    SituationPublic(
+                        id = scene.optString("id"),
+                        title = scene.optString("title"),
+                        image = scene.optNullString("image"),
+                        season = scene.optNullString("season"),
+                        costume = scene.optNullString("costume"),
+                        greeting = scene.optNullString("greeting"),
+                        lines = parseSituationLines(scene.optJSONArray("lines")),
+                        minLevel = scene.optInt("minLevel", 0),
+                        nsfwOnly = scene.optBoolean("nsfwOnly"),
+                    ),
+                )
+            }
+        }
     }
 
     private fun parseSituationLines(arr: JSONArray?): List<SituationLine> {

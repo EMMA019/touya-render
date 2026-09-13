@@ -47,8 +47,11 @@ import jp.touya.app.data.EMPTY_MODE
 import jp.touya.app.data.Quota
 import jp.touya.app.data.situationCardLines
 import jp.touya.app.domain.ModePublic
-import jp.touya.app.domain.LOCKED_SITUATION_HINT
+import jp.touya.app.domain.NSFW_LOCK_HINT
+import jp.touya.app.domain.canAccessNsfw
 import jp.touya.app.domain.pickHook
+import jp.touya.app.domain.situationChipTitle
+import jp.touya.app.domain.situationLockHint
 import jp.touya.app.domain.suggestionsFor
 
 @Composable
@@ -81,9 +84,11 @@ fun ChatScreen(
     onPremium: () -> Unit,
     mode: ModePublic = EMPTY_MODE,
     ageGateOpen: Boolean = false,
+    levelUpMessage: String? = null,
     onToggleMode: () -> Unit = {},
     onConfirmAge: () -> Unit = {},
     onCloseAgeGate: () -> Unit = {},
+    onDismissLevelUp: () -> Unit = {},
 ) {
     val limited = quota?.debugUnlimited != true && (quota?.remaining ?: 1) <= 0
     val situation = character.situations.firstOrNull { it.id == situationId }
@@ -140,8 +145,28 @@ fun ChatScreen(
                     ) {
                         Text("覚", color = Color.White)
                     }
-                    ModeChip(mode, onClick = onToggleMode)
+                    ModeChip(
+                        mode,
+                        onClick = onToggleMode,
+                        locked = !canAccessNsfw(affinity.level, true),
+                        lockHint = NSFW_LOCK_HINT,
+                    )
                     QuotaPill(quota, compact = true)
+                }
+            }
+
+            if (levelUpMessage != null) {
+                Surface(
+                    onClick = onDismissLevelUp,
+                    shape = RoundedCornerShape(16.dp),
+                    color = Color(0x55FB7185),
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                ) {
+                    Text(
+                        levelUpMessage,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                        color = Color(0xFFFFE4E6),
+                    )
                 }
             }
 
@@ -166,8 +191,8 @@ fun ChatScreen(
                     ) {
                         Text(
                             buildString {
-                                append(if (open) scene.title else "🔒 ${scene.title}")
-                                if (!open) append(" $LOCKED_SITUATION_HINT")
+                                append(if (open) situationChipTitle(scene, true) else "🔒 ${situationChipTitle(scene, false)}")
+                                if (!open) append(" ${situationLockHint(scene, affinity.level)}")
                             },
                             modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
                             color = when {

@@ -100,6 +100,22 @@ test("shipped characters stay adult-coded without ages", () => {
   assert.deepEqual(pub.lines, cafe.lines);
   assert.equal("setting" in pub, false);
 
+  const intimate = {
+    ...cafe,
+    id: "late-night",
+    title: "夜更けの部屋",
+    nsfwOnly: true,
+    minLevel: 2,
+  };
+  const locked = toPublicSituation(intimate);
+  assert.equal(locked.nsfwOnly, true);
+  assert.equal(locked.title, "特別な時間");
+  assert.equal(locked.greeting, undefined);
+  assert.equal(locked.image, null);
+  const opened = toPublicSituation(intimate, { nsfwAllowed: true });
+  assert.equal(opened.title, "夜更けの部屋");
+  assert.equal(opened.greeting, cafe.greeting);
+
   for (const character of roster) {
     const first = character.situations[0];
     const second = character.situations[1];

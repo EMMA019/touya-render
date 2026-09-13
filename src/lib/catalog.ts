@@ -146,6 +146,15 @@ export function validateCharacter(character: Character, file = ""): string[] {
         issues.push(`${scene.id}: minLevel は 0〜3`);
       }
     }
+    if (scene.nsfwOnly != null && scene.nsfwOnly !== true && scene.nsfwOnly !== false) {
+      issues.push(`${scene.id}: nsfwOnly は boolean`);
+    }
+    if (scene.nsfwOnly === true) {
+      const min = scene.minLevel != null ? Number(scene.minLevel) : 2;
+      if (!Number.isInteger(min) || min < 2) {
+        issues.push(`${scene.id}: nsfwOnly は minLevel 2 以上（特別）`);
+      }
+    }
     const lineBlob = Array.isArray(scene.lines)
       ? scene.lines.map((line) => (typeof line === "string" ? line : line?.text ?? "")).join(" ")
       : "";
