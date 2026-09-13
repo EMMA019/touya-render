@@ -29,9 +29,8 @@ fun ChatArtSurface(
     }
     var live2dFailed by remember(resolved) { mutableStateOf(false) }
     val spec = resolved.second
-    val useLive2d = resolved.first == ChatArtMode.LIVE2D && spec != null && !live2dFailed
 
-    if (useLive2d && spec != null) {
+    if (resolved.first == ChatArtMode.LIVE2D && spec != null && !live2dFailed) {
         Live2dSurface(
             spec = spec,
             modifier = modifier,
