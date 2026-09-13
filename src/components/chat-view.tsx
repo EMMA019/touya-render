@@ -440,6 +440,7 @@ export function ChatView({
       if (body.affinity) setAffinity(body.affinity);
       setGiftedToday(true);
       setGiftOpen(false);
+      setCardOpen(false);
       const thanks = body.thanks?.trim();
       if (thanks) {
         seq.current += 1;
@@ -448,9 +449,8 @@ export function ChatView({
           { id: `gift-${seq.current}`, role: "assistant", content: thanks },
         ]);
       }
-      const toast = [body.affinityToast, thanks].filter(Boolean).join(" · ");
-      setGiftToast(toast || "受け取ってくれた");
-      window.setTimeout(() => setGiftToast(null), 4200);
+      setGiftToast(body.affinityToast?.trim() || "受け取ってくれた");
+      window.setTimeout(() => setGiftToast(null), 5500);
     } catch {
       setGiftError("贈れませんでした。");
     } finally {
@@ -493,6 +493,14 @@ export function ChatView({
       />
 
       <div className="relative z-10 flex h-full flex-col">
+        {giftToast ? (
+          <p
+            className="pointer-events-none absolute left-3 right-3 top-[max(4.25rem,calc(env(safe-area-inset-top)+3.25rem))] z-20 rounded-full bg-black/70 px-3 py-2 text-center text-[12px] text-amber-50 shadow-lg backdrop-blur-md"
+            role="status"
+          >
+            {giftToast}
+          </p>
+        ) : null}
         <header className="flex items-center justify-between px-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
           <Link
             href="/"
@@ -551,15 +559,6 @@ export function ChatView({
             );
           })}
         </div>
-
-        {giftToast ? (
-          <p
-            className="mx-3 mt-2 rounded-full bg-black/55 px-3 py-1.5 text-center text-[11px] text-amber-50 backdrop-blur-md"
-            role="status"
-          >
-            {giftToast}
-          </p>
-        ) : null}
 
         {cardOpen ? (
           <SituationSceneCard
