@@ -38,6 +38,10 @@ test("situation art is character-only: no baked names or clothing/sign text", ()
       assert.ok(rel.endsWith(".png"), scene.image ?? scene.id);
       const abs = join(process.cwd(), "public", rel);
       assert.ok(readFileSync(abs).length > 1000, scene.image ?? scene.id);
+      if (scene.video != null) {
+        assert.equal(typeof scene.video, "string");
+        assert.ok(scene.video.trim().length > 0, `${scene.id} video`);
+      }
     }
   }
 });

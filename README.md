@@ -171,6 +171,7 @@ MVP はアニメ名簿だけです。写実／実写は後から素材が揃っ�
 shared/characters/_template.json   雛形（名簿に出ない）
 shared/characters/{id}.json        1人1ファイル。ファイル名 = id
 public/situations/{id}/{scene}.png 状況画像。キャラだけ。名札・服の文字・看板なし
+public/situations/{id}/{scene}.mp4 任意。短いミュートループ（Oz 風カード）。無くてよい
 public/situations/{id}/{scene}.svg プレースホルダ原画（`npm run portraits`）
 public/portraits/{id}.png          名簿・アバター用ポートレート
 ```
@@ -202,7 +203,7 @@ mkdir -p public/situations/suzune
    - `refusalStyle` は `amae` / `tsun` / `cool` / `gentle` / `elegant`。新しい口調を足すときだけコードが要る。
    - `situations` は配列。`costume` は衣装（`maid` / `nurse` / `miko` / `idol` / `halloween`）。`season: "halloween"` は季節枠。
    - 各 `look` に **「服や背景に文字を焼き込まない」** を残す。服は着たまま。ランジェリー主役・肌の強調は禁止。
-   - `image` は `/situations/suzune/{scene}.png`。JSON は実在する `.png` を指す（壊れた `.svg` パスは使わない）。
+   - `image` は `/situations/suzune/{scene}.png`。JSON は実在する `.png` を指す（壊れた `.svg` パスは使わない）。任意の `video` は同じ場所の `.mp4`（[android/OZ_SITUATION_VIDEO.md](android/OZ_SITUATION_VIDEO.md)）。
    - `bible` に閉世界を短く。`never` に「年齢を数字で言う」。体型数値があっても UI には出さない。
    - `demoReplies` は鍵が無いときの短い返答。無ければ挨拶を使う。
    - `portrait` はプレースホルダ用の任意ヒント（髪の長さ、ハロウィン小物）。画像があれば無くてよい。
