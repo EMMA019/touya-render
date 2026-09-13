@@ -11,8 +11,16 @@ import {
   type CharacterId,
   type RefusalStyle,
 } from "./character-types";
+import { STORY_FLAGS } from "./story-types";
 
 const SKIP = /^_/;
+
+/** Adult-only cast: school framing is banned in scenes, cards and story scripts. */
+export const BANNED_SCHOOL_WORDS = /学生服|JK|女子高生|セーラー|制服|学校|教室|高校|部活|登下校|先生/;
+/** Situation looks / card copy / story text never carry underwear, nudity or explicit words. */
+export const BANNED_NSFW_WORDS = /下着見せ|下着|パンツ|ランジェリー|裸|乳首|性器|セックス|挿入/;
+/** Ages are never written as numbers. */
+export const AGE_NUMBER = /\d+歳/;
 
 export function catalogDir(): string {
   return join(process.cwd(), "shared/characters");
@@ -145,6 +153,17 @@ export function validateCharacter(character: Character, file = ""): string[] {
       if (!Number.isInteger(min) || min < 0 || min > 3) {
         issues.push(`${scene.id}: minLevel は 0〜3`);
       }
+    }
+    if (scene.requires != null) {
+      if (!Array.isArray(scene.requires) || scene.requires.some((flag) => !STORY_FLAGS.includes(flag))) {
+        issues.push(`${scene.id}: requires は ${STORY_FLAGS.join(" / ")} だけ`);
+      }
+    }
+    if (scene.nsfwOnly != null && typeof scene.nsfwOnly !== "boolean") {
+      issues.push(`${scene.id}: nsfwOnly は true / false`);
+    }
+    if (scene.nsfwOnly === true && scene.minLevel != null && Number(scene.minLevel) < 2) {
+      issues.push(`${scene.id}: nsfwOnly の minLevel は 2（特別）以上`);
     }
     const lineBlob = Array.isArray(scene.lines)
       ? scene.lines.map((line) => (typeof line === "string" ? line : line?.text ?? "")).join(" ")

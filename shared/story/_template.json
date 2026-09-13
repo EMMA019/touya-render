@@ -1,0 +1,153 @@
+{
+  "characterId": "example",
+  "version": 1,
+  "metViaLines": {
+    "seat": "静かな部屋で、相席を頼まれて知り合った",
+    "door": "静かな部屋の前で、扉を開けてもらって知り合った"
+  },
+  "reveals": {
+    "quiet": "静かな場所が好きだと話した"
+  },
+  "chapters": [
+    {
+      "id": "example-ch0",
+      "chapter": 0,
+      "situationId": "quiet-room",
+      "entry": "b0",
+      "beats": [
+        {
+          "id": "b0",
+          "kind": "line",
+          "narration": "明かりを落とした部屋。扉の音に、ゆっくり顔を上げる。",
+          "text": ["……来たの。明かり、落としてある。"],
+          "next": "b1"
+        },
+        {
+          "id": "b1",
+          "kind": "choice",
+          "text": ["声は、小さくでいい。どうする？"],
+          "choices": [
+            { "id": "c-seat", "label": "隣、いいですか", "metVia": "seat", "next": "b2-seat" },
+            { "id": "c-door", "label": "扉、開けておくね", "metVia": "door", "next": "b2-door" }
+          ]
+        },
+        {
+          "id": "b2-seat",
+          "kind": "line",
+          "text": ["うん。静かな場所、好きなの。隣は、空けてある。"],
+          "reveals": ["quiet"],
+          "next": "b3"
+        },
+        {
+          "id": "b2-door",
+          "kind": "line",
+          "text": ["……いいの？　じゃあ、少しだけ。"],
+          "next": "b3"
+        },
+        {
+          "id": "b3",
+          "kind": "choice",
+          "text": ["名前、聞いてもいい？　私の名前は、好きに呼んで。"],
+          "choices": [
+            { "id": "c-name-say", "label": "名前を言う", "userText": "（名前を伝える）", "setFlags": ["B2"], "next": "b4" },
+            { "id": "c-name-later", "label": "今日はまだいいかな", "next": "b4" }
+          ]
+        },
+        {
+          "id": "b4",
+          "kind": "free",
+          "text": ["じゃあ、ひとつだけ。今日は、どうしてここに？"],
+          "promptHint": "初対面。相手は今日ここに来た理由を話す。名前はまだ知らないかもしれない。2〜3文で受けて、聞き返しは一つ。",
+          "next": "end"
+        },
+        {
+          "id": "end",
+          "kind": "end",
+          "text": ["急がなくていい。", "明日も、この席あけておく。"],
+          "hook": "この席、あけておくって言った。",
+          "setFlags": ["B1"]
+        }
+      ]
+    },
+    {
+      "id": "example-ch1",
+      "chapter": 1,
+      "situationId": "quiet-room",
+      "entry": "b0",
+      "beats": [
+        {
+          "id": "b0",
+          "kind": "choice",
+          "text": ["また来てくれた。……嬉しい、って言っていい？"],
+          "choices": [
+            { "id": "c-again", "label": "また来るよ", "setFlags": ["B3"], "next": "end" },
+            { "id": "c-name", "label": "名前、呼んでほしい", "userText": "（呼び名を伝える）", "setFlags": ["B3", "B2"], "next": "end" }
+          ]
+        },
+        {
+          "id": "end",
+          "kind": "end",
+          "text": ["うん。じゃあ、次からは、名前で呼ぶ。"],
+          "hook": "次からは名前で呼ぶって言った。"
+        }
+      ]
+    },
+    {
+      "id": "example-ch2",
+      "chapter": 2,
+      "situationId": "quiet-room",
+      "entry": "b0",
+      "beats": [
+        {
+          "id": "b0",
+          "kind": "choice",
+          "text": ["……ひとつ、言っていい？　隣にいるのが、当たり前になってきた。"],
+          "choices": [
+            { "id": "c-accept", "label": "私も、同じ", "setFlags": ["B4"], "next": "end" },
+            { "id": "c-wait", "label": "まだ、待って", "defer": true, "next": "defer" }
+          ]
+        },
+        {
+          "id": "retry",
+          "kind": "retry",
+          "text": ["……前に言ったこと、まだ有効。急がないけど。"],
+          "next": "b0"
+        },
+        {
+          "id": "defer",
+          "kind": "defer",
+          "text": ["うん。待つ。急がなくていい。"]
+        },
+        {
+          "id": "end",
+          "kind": "end",
+          "text": ["……そっか。じゃあ、今夜は少しだけ近くにいて。"],
+          "hook": "今夜は少しだけ近くにいて、って言った。"
+        }
+      ]
+    },
+    {
+      "id": "example-ch3",
+      "chapter": 3,
+      "situationId": "quiet-room",
+      "entry": "b0",
+      "beats": [
+        {
+          "id": "b0",
+          "kind": "choice",
+          "text": ["長くなったね。……言葉、少なくても伝わる気がする。"],
+          "choices": [
+            { "id": "c-yes", "label": "うん、伝わってる", "setFlags": ["B5"], "next": "end" },
+            { "id": "c-more", "label": "それでも、聞きたい", "setFlags": ["B5"], "next": "end" }
+          ]
+        },
+        {
+          "id": "end",
+          "kind": "end",
+          "text": ["じゃあ、ひとつだけ。ここにいてくれて、ありがとう。"],
+          "hook": "ここにいてくれてありがとう、って言った。"
+        }
+      ]
+    }
+  ]
+}
