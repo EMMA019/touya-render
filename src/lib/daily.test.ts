@@ -175,6 +175,20 @@ test("locked costumes are skipped until the visitor unlocks them", () => {
   assert.equal(isDailyEligible(fresh.situations.find((row) => row.id === "maid")!, fresh), false);
 });
 
+test("unlocked costume stubs stay off the daily banner", () => {
+  const ready = character({
+    unlocked: ["cafe-rain", "maid"],
+    affinity: levelFromCount(12),
+  });
+  for (let i = 0; i < 8; i += 1) {
+    const now = new Date(Date.parse("2026-09-12T12:00:00+09:00") + i * 86_400_000);
+    const pick = pickDailyFromRoster([ready], "visitor-costume", now);
+    assert.ok(pick);
+    assert.notEqual(pick.situationId, "maid");
+  }
+  assert.equal(isDailyEligible(ready.situations.find((row) => row.id === "maid")!, ready), false);
+});
+
 test("until-next copy and chat href stay thin", () => {
   assert.equal(untilNextLabel(12, "特別"), "あと12で特別");
   assert.equal(untilNextLabel(0, "特別"), null);

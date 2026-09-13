@@ -14,8 +14,12 @@ android {
         targetSdk = 35
         versionCode = 1
         versionName = "0.1.0"
-        // Emulator loopback to the host Next.js API. Device on LAN: change to the PC IP.
-        buildConfigField("String", "API_BASE_URL", "\"https://touya.onrender.com\"")
+        // Override for a LAN phone build, e.g. -PtouyaApiBase=http://192.168.0.4:3000
+        val apiBase = (project.findProperty("touyaApiBase") as String?)
+            ?.trim()
+            ?.takeIf { it.isNotEmpty() }
+            ?: "https://touya.onrender.com"
+        buildConfigField("String", "API_BASE_URL", "\"$apiBase\"")
     }
 
     buildTypes {

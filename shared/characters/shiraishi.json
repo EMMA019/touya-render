@@ -53,7 +53,7 @@
       "costume": "halloween",
       "setting": "屋上のかぼちゃ灯り。風が少し冷たい。",
       "look": "とんがり帽と閉じたロングコート。ワンピースはコートの下。肌は出さない。服や背景に文字を焼き込まない。",
-      "image": "/situations/shiraishi/halloween-rooftop.png",
+      "image": "/situations/shiraishi/portrait.png",
       "greeting": "帽、被ってるだけ。屋上のかぼちゃ。風、少し冷たい。",
       "lines": [
         "仮装。説明はしない。",
@@ -68,7 +68,7 @@
       "costume": "maid",
       "setting": "研究室の給湯コーナー。誰かの余興。",
       "look": "長袖のメイド服に白いエプロン。裾は膝下。肌は出さない。服や背景に文字を焼き込まない。",
-      "image": "/situations/shiraishi/maid.png",
+      "image": "/situations/shiraishi/portrait.png",
       "greeting": "給湯。余興。エプロンは着た。笑わなくていい。",
       "lines": [
         "研究室の片隅。",
@@ -83,7 +83,7 @@
       "costume": "nurse",
       "setting": "大学の医務室のベンチ。仮装のあと。",
       "look": "長袖の白いチュニックと紺のロングスカート。キャップは小道具。肌は出さない。服や背景に文字を焼き込まない。",
-      "image": "/situations/shiraishi/nurse.png",
+      "image": "/situations/shiraishi/portrait.png",
       "greeting": "医務室のベンチ。仮装のあと。座って。",
       "lines": [
         "キャップは小道具。",

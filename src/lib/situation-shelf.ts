@@ -62,6 +62,17 @@ export function isDailySituation(scene: Pick<SituationPublic, "season" | "costum
   return !scene.costume && !scene.season && !scene.nsfwOnly;
 }
 
+/** Costume/season rows only have generated 390×844 stub rasters. Hide those from the shelf. */
+export function hasFinishedSituationArt(scene: {
+  costume?: string | null;
+  season?: string | null;
+  image?: string | null;
+  video?: string | null;
+}): boolean {
+  if (scene.costume || scene.season) return false;
+  return Boolean(scene.image || scene.video);
+}
+
 export function matchesShelfTab(scene: SituationPublic, tab: ShelfTab): boolean {
   if (tab === "all") return true;
   if (tab === "sfw") return !situationNsfwOnly(scene);
@@ -84,6 +95,7 @@ export function collectShelfCards(
     const unlockedIds = character.unlocked;
     for (const scene of character.situations) {
       if (!matchesShelfTab(scene, tab)) continue;
+      if (!hasFinishedSituationArt(scene) && !situationNsfwOnly(scene)) continue;
       const nsfwOnly = situationNsfwOnly(scene);
       const unlocked =
         unlockedIds && unlockedIds.length > 0
@@ -115,6 +127,8 @@ export function collectShelfCards(
 export function visibleShelfTabs(roster: CharacterPublic[]): { id: ShelfTab; label: string }[] {
   return SHELF_TABS.filter((tab) => {
     if (tab.id === "all" || tab.id === "sfw") return true;
-    return roster.some((character) => character.situations.some((scene) => matchesShelfTab(scene, tab.id)));
+    return roster.some((character) =>
+      character.situations.some((scene) => matchesShelfTab(scene, tab.id) && hasFinishedSituationArt(scene)),
+    );
   });
 }

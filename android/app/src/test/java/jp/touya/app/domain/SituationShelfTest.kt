@@ -80,6 +80,17 @@ class SituationShelfTest {
     }
 
     @Test
+    fun shelfHidesCostumeStubsAndEmptyTabs() {
+        val cards = collectShelfCards(listOf(character()))
+        assertTrue(cards.none { it.situation.id == "maid" })
+        assertFalse(hasFinishedSituationArt(maid.copy(image = "/situations/hiyori/portrait.png")))
+        assertTrue(hasFinishedSituationArt(daily))
+        val tabs = visibleShelfTabs(listOf(character()))
+        assertTrue(tabs.none { it == ShelfTab.MAID })
+        assertTrue(tabs.contains(ShelfTab.DAILY))
+    }
+
+    @Test
     fun emptyAffinityIsAcquaintance() {
         assertEquals("知り合い", EMPTY_AFFINITY.name)
         assertEquals(0, EMPTY_AFFINITY.level)

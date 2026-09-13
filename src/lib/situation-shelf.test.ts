@@ -11,8 +11,10 @@ import {
 import {
   collectShelfCards,
   givenName,
+  hasFinishedSituationArt,
   matchesShelfTab,
   situationSubtitle,
+  visibleShelfTabs,
 } from "./situation-shelf";
 import { LOCKED_INTIMATE_HINT, isSituationUnlocked } from "./situation-unlock";
 
@@ -136,6 +138,16 @@ test("SFW tab drops nsfwOnly cards; 特別 listing can show them", () => {
   assert.ok(intimate);
   assert.equal(intimate.locked, false);
   assert.equal(intimate.title, "夜更け");
+});
+
+test("shelf hides costume stubs and drops empty costume tabs", () => {
+  const cards = collectShelfCards([character()], { tab: "all" });
+  assert.equal(cards.some((card) => card.situationId === "maid"), false);
+  assert.equal(hasFinishedSituationArt({ costume: "maid", image: "/situations/hiyori/portrait.png" }), false);
+  assert.equal(hasFinishedSituationArt({ image: "/situations/hiyori/cafe-rain.png" }), true);
+  const tabs = visibleShelfTabs([character()]);
+  assert.equal(tabs.some((tab) => tab.id === "maid"), false);
+  assert.ok(tabs.some((tab) => tab.id === "daily"));
 });
 
 test("character filter and costume tabs", () => {

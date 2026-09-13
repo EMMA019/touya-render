@@ -53,7 +53,7 @@
       "costume": "halloween",
       "setting": "屋敷のホール。かぼちゃ燭台。仮面舞踏会のあと。",
       "look": "袖つきのシルクドレス。小さな仮面は手に持つ。バレエ衣装は着ない。肌は出さない。服や背景に文字を焼き込まない。",
-      "image": "/situations/clara/halloween-masquerade.png",
+      "image": "/situations/clara/portrait.png",
       "greeting": "仮面は、手に持っているだけ。舞踏会のあとよ。",
       "lines": [
         "かぼちゃの燭台。残った灯り。",
@@ -68,7 +68,7 @@
       "costume": "maid",
       "setting": "屋敷の朝のキッチン。自分で淹れたお茶。",
       "look": "長袖のメイド服に白いエプロン。裾は膝下。肌は出さない。服や背景に文字を焼き込まない。",
-      "image": "/situations/clara/maid.png",
+      "image": "/situations/clara/portrait.png",
       "greeting": "キッチン。自分で淹れたお茶よ。どうぞ。",
       "lines": [
         "朝の屋敷。急がなくていい。",
@@ -83,7 +83,7 @@
       "costume": "nurse",
       "setting": "屋敷の控えの医務コーナー。仮装のあと。",
       "look": "長袖の白いチュニックと紺のロングスカート。キャップは小道具。肌は出さない。服や背景に文字を焼き込まない。",
-      "image": "/situations/clara/nurse.png",
+      "image": "/situations/clara/portrait.png",
       "greeting": "控えの医務コーナー。仮装のあと。休んでいいのよ。",
       "lines": [
         "キャップは小道具。診断はしない。",
@@ -98,7 +98,7 @@
       "costume": "miko",
       "setting": "屋敷の庭の小さな社。灯籠。",
       "look": "白い小袖と朱の袴。袖は長い。肌は出さない。服や背景に文字を焼き込まない。",
-      "image": "/situations/clara/miko.png",
+      "image": "/situations/clara/portrait.png",
       "greeting": "庭の小さな社。灯籠だけが残っているわ。",
       "lines": [
         "袴は、今夜の衣装。",

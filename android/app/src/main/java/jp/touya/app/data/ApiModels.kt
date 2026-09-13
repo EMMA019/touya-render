@@ -149,8 +149,12 @@ data class CharacterPublic(
 ) {
     fun rosterArt(): String? = mediaUrl(portraitImage ?: situations.firstOrNull()?.image)
 
-    fun situationArt(situationId: String): String? =
-        mediaUrl(situations.firstOrNull { it.id == situationId }?.image ?: portraitImage)
+    fun situationArt(situationId: String): String? {
+        val scene = situations.firstOrNull { it.id == situationId }
+        val stub = scene != null && (!scene.costume.isNullOrBlank() || !scene.season.isNullOrBlank())
+        val image = if (stub) portraitImage else scene?.image
+        return mediaUrl(image ?: portraitImage)
+    }
 
     fun situationVideo(situationId: String): String? =
         situations.firstOrNull { it.id == situationId }?.video

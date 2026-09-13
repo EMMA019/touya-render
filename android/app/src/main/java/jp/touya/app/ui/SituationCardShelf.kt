@@ -68,7 +68,6 @@ fun SituationCardShelf(
     onOpenDaily: () -> Unit = {},
     onRetry: () -> Unit,
     onRoster: () -> Unit,
-    onDiagnosis: () -> Unit,
     onPremium: () -> Unit,
     onPolicy: () -> Unit,
     mode: ModePublic = EMPTY_MODE,
@@ -156,7 +155,6 @@ fun SituationCardShelf(
 
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             TextButton(onRoster) { Text("名簿") }
-            TextButton(onDiagnosis) { Text("今夜の相手診断") }
         }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             TextButton(onPolicy) { Text("燈夜のこだわりと約束") }

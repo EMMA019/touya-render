@@ -1,5 +1,6 @@
 import type { CharacterPublic, PortraitHints, SituationPublic } from "@/lib/character-types";
 import type { Expression } from "@/lib/expression";
+import { hasFinishedSituationArt } from "@/lib/situation-shelf";
 import { cn } from "@/lib/utils";
 
 const MOUTH: Record<Expression, string> = {
@@ -24,7 +25,10 @@ export function PortraitStage({
   const halloween = costume === "halloween";
   const uid = `${character.id}-${situation?.id ?? "base"}`;
   const look = outfit(character, costume);
-  const art = situation?.image || character.portraitImage;
+  const art =
+    (situation && hasFinishedSituationArt(situation) ? situation.image : null) ||
+    character.portraitImage ||
+    situation?.image;
 
   return (
     <div className={cn("relative overflow-hidden", className)}>

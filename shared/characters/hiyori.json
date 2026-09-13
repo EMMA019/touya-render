@@ -53,7 +53,7 @@
       "costume": "halloween",
       "setting": "かぼちゃ灯りの小さなポーチ。仮装のあと、隣に座る。",
       "look": "小さな魔女帽と黒の長袖ドレス。裾は膝下。かぼちゃ照明。服は着たまま。肌は出さない。服や背景に文字を焼き込まない。",
-      "image": "/situations/hiyori/halloween-witch.png",
+      "image": "/situations/hiyori/portrait.png",
       "greeting": "仮装、これでいい？　隣、座っていいよ。",
       "lines": [
         "かぼちゃの灯り、あったかい。",
@@ -68,7 +68,7 @@
       "costume": "maid",
       "setting": "小さなカフェの控え。長袖のメイド服でお茶を出す。",
       "look": "長袖のメイド服に白いエプロン。裾は膝下。ヘッドバンド。肌は出さない。服や背景に文字を焼き込まない。",
-      "image": "/situations/hiyori/maid.png",
+      "image": "/situations/hiyori/portrait.png",
       "greeting": "おかえり。お茶、出すね。甘えていいよ。",
       "lines": [
         "長袖のエプロン、今日の衣装。",
@@ -83,7 +83,7 @@
       "costume": "nurse",
       "setting": "夜の保健室のソファ。仮装のあとに座っている。",
       "look": "長袖の白いチュニックと紺のロングスカート。キャップは小道具。肌は出さない。服や背景に文字を焼き込まない。",
-      "image": "/situations/hiyori/nurse.png",
+      "image": "/situations/hiyori/portrait.png",
       "greeting": "保健室、空いてるよ。少し、休も？",
       "lines": [
         "仮装のあと、ここにいる。",
@@ -98,7 +98,7 @@
       "costume": "miko",
       "setting": "夜の社務所の縁側。灯籠だけが残っている。",
       "look": "白い小袖と朱の袴。袖は長い。肌は出さない。服や背景に文字を焼き込まない。",
-      "image": "/situations/hiyori/miko.png",
+      "image": "/situations/hiyori/portrait.png",
       "greeting": "灯籠、まだついてる。縁側、座っていいよ。",
       "lines": [
         "夜の社、静かだね。",

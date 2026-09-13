@@ -2,7 +2,7 @@
 
 Web MVP と同じ Next.js API を叩く薄い Jetpack Compose クライアントです。公開 Web を Cloudflare Pages に出しても、**API は Render（`https://touya.onrender.com`）のまま**です。このアプリの `API_BASE_URL` は変えません。Web の戻りループ（今夜の台詞・不在・フック・絆・記憶・解放）を Kotlin 側でも同じ規則で組み立てます。
 
-- **状況カード棚が既定ホーム**（3列。タップでその相手＋場面のチャット）・名簿は残す・SSE・残通数・診断・約束・広告なし案内
+- **状況カード棚が既定ホーム**（3列。タップでその相手＋場面のチャット）・名簿は残す・SSE・残通数・約束・広告なし案内
 - 会話は端末に最大20通。昨日のフックは翌日の開口に使う
 - **安全ゲート・DeepSeek・日次上限はサーバーだけ**。このアプリは判定を持ちません
 - 会員登録なし。端末のインストール UUID だけを持ち、サーバーはハッシュだけ見る
@@ -45,7 +45,7 @@ buildConfigField("String", "API_BASE_URL", "\"http://10.0.2.2:43127\"")
 | 実行環境 | `API_BASE_URL` |
 | --- | --- |
 | エミュレータ | `http://10.0.2.2:43127`（既定。ホストの `localhost:43127` に届く） |
-| 実機（同じ LAN） | `http://<PCのLAN IP>:43127`。例: `http://192.168.0.12:43127` |
+| 実機（同じ LAN） | `-PtouyaApiBase=http://<PCのLAN IP>:3000`（または API のポート） |
 
 実機では PC の IPv4（`ip a` / `ipconfig`）に書き換え、ルートで `npm run dev` を出したままにしてください。ファイアウォールで 43127 を許可します。`127.0.0.1` は実機からホストの Next.js には届きません。
 
@@ -75,9 +75,20 @@ POST /api/chat           # SSE: quota / bond / delta / replace / done / error
 
 既定ホームは状況カード棚です。名簿は棚から入れます。チャットはポートレート全面（パレットの夜空）。残通数は数字だけ。場面チップで衣装／背景を切り替えます。状況に短いループ動画があるときは PNG のまま落ちます（再生は [OZ_SITUATION_VIDEO.md](OZ_SITUATION_VIDEO.md) / PR #6）。服は着たまま（AdMob）。衣装は会った日が重なると開きます（ハロウィンは10月）。`nsfwOnly` は特別になるまでロックします。年齢は出しません。MVP の名簿はアニメ4人です。ロードマップは [docs/OZ_COMPETE_ROADMAP.md](../docs/OZ_COMPETE_ROADMAP.md)。
 
-診断の10問は `domain/Diagnosis.kt` に Web と同じ配点で置いてあります。結果は端末の中だけです。
+相手診断の入口は外してあります（棚・名簿・`/diag`）。配点ファイルは残っていますが画面には出しません。
 
-単体テスト（時刻・開口・診断・解放）:
+## 実機へ入れ直す
+
+棚ブランチ（この系統）をクリーンビルドするとき:
+
+```
+cd android
+./gradlew :app:installDebug -PtouyaApiBase=http://192.168.0.4:3000
+```
+
+API のホストとポートは、電話から届く LAN 上の Next.js / ローカルスタックに合わせてください。既定（プロパティなし）は `https://touya.onrender.com` です。
+
+単体テスト（時刻・開口・解放）:
 
 ```
 # Android Studio の Gradle :app:testDebugUnitTest
