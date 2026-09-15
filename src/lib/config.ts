@@ -11,10 +11,10 @@ export const REWARD_MAX_PER_DAY = 2;
 /** Later Play Billing / anonymous unlock. App still collects no PII. */
 export const PREMIUM_DAILY_TURNS = 40;
 
-/** Keep prompts and history short to cut DeepSeek tokens. */
+/** Keep prompts and history short to cut tokens. Completions need room for 3–6 JP sentences. */
 export const MAX_HISTORY_MESSAGES = 8;
 export const MAX_MESSAGE_CHARS = 400;
-export const MAX_COMPLETION_TOKENS = 260;
+export const MAX_COMPLETION_TOKENS = 480;
 export const DEEPSEEK_BASE_URL = "https://api.deepseek.com";
 export const DEFAULT_DEEPSEEK_MODEL = "deepseek-chat";
 export const OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";

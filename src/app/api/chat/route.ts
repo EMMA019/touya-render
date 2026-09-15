@@ -16,8 +16,9 @@ import {
   hasOpenRouterKey,
 } from "@/lib/config";
 import { applyCors, corsHeaders, jsonApi } from "@/lib/cors";
-import { extractDelta, streamDeepseek } from "@/lib/deepseek";
-import { streamOpenRouter } from "@/lib/openrouter";
+import { extractDelta, streamDeepseek, completeDeepseek } from "@/lib/deepseek";
+import { streamOpenRouter, completeOpenRouter } from "@/lib/openrouter";
+import { LATIN_REGEN_INSTRUCTION, latinAllowFor, repairAssistantLatin } from "@/lib/latin-repair";
 import { pickDemoReply, streamText } from "@/lib/demo";
 import { extractMemoryFacts } from "@/lib/memory-extract";
 import { rememberFacts } from "@/lib/memory-store";
@@ -261,15 +262,37 @@ export async function POST(request: Request) {
         }
 
         const filtered = applyBibleFilter(assembled, character, chatMode, userText);
+        let next = filtered;
         if (chatMode === "sfw" && isSexualOutput(filtered)) {
-          controller.enqueue(
-            sse({
-              type: "replace",
-              text: refusalText(character.refusalStyle, 2),
-            })
-          );
-        } else if (filtered !== assembled) {
-          controller.enqueue(sse({ type: "replace", text: filtered }));
+          next = refusalText(character.refusalStyle, 2);
+        } else {
+          const allow = latinAllowFor(character);
+          const repaired = await repairAssistantLatin({
+            text: filtered,
+            allow,
+            regenerate: () =>
+              liveBackend === "openrouter"
+                ? completeOpenRouter({
+                    systemPrompt: `${systemPrompt}\n${LATIN_REGEN_INSTRUCTION}`,
+                    messages: [
+                      ...history,
+                      { role: "assistant", content: filtered },
+                      { role: "user", content: LATIN_REGEN_INSTRUCTION },
+                    ],
+                  })
+                : completeDeepseek({
+                    systemPrompt: `${systemPrompt}\n${LATIN_REGEN_INSTRUCTION}`,
+                    messages: [
+                      ...history,
+                      { role: "assistant", content: filtered },
+                      { role: "user", content: LATIN_REGEN_INSTRUCTION },
+                    ],
+                  }),
+          });
+          next = applyBibleFilter(repaired.text, character, chatMode, userText);
+        }
+        if (next !== assembled) {
+          controller.enqueue(sse({ type: "replace", text: next }));
         }
 
         controller.enqueue(sse({ type: "done" }));

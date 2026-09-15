@@ -31,6 +31,8 @@ test("shipped characters stay adult-coded without ages", () => {
     assert.ok(character.systemPrompt.length > 20, character.id);
     assert.match(character.systemPrompt, /自分から並べない/);
     assert.match(character.systemPrompt, /フィクションの大人の女性/);
+    assert.doesNotMatch(character.systemPrompt, /2〜4文|日本語で短く話す/);
+    assert.match(character.systemPrompt, /話し方の例/);
     assert.ok(character.refusalStyle);
     assert.equal(character.artStyle, "anime");
     assert.ok(character.situations.length >= 1, character.id);
@@ -93,6 +95,17 @@ test("shipped characters stay adult-coded without ages", () => {
   assert.equal(clara.job, "実業家");
   assert.doesNotMatch(clara.job, /バレリーナ/);
   assert.match(clara.systemPrompt, /現役のバレリーナではない/);
+  assert.match(clara.systemPrompt, /Oui/);
+  const hiyori = roster.find((c) => c.id === "hiyori");
+  assert.ok(hiyori);
+  assert.match(hiyori.systemPrompt, /柑橘のサワー/);
+  assert.match(hiyori.systemPrompt, /ひより、隣にいるから/);
+  assert.match(hiyori.systemPrompt, /疑問符で毎回終わらせない/);
+  const shiraishi = roster.find((c) => c.id === "shiraishi");
+  assert.ok(shiraishi);
+  assert.match(shiraishi.systemPrompt, /ワイン、近いかも/);
+  assert.match(shiraishi.systemPrompt, /司会進行はしない/);
+  assert.doesNotMatch(shiraishi.systemPrompt, /次はどんな/);
   const cafe = roster.find((c) => c.id === "hiyori")?.situations.find((scene) => scene.id === "cafe-rain");
   assert.ok(cafe);
   const pub = toPublicSituation(cafe);

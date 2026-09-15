@@ -14,6 +14,7 @@ import {
   PRODUCT_BEHAVIOR_NSFW,
   productBehaviorFor,
 } from "./product-behavior";
+import { affinityPromptLine } from "./reply-style";
 
 export {
   COMPANION_ADULT_OK,
@@ -78,6 +79,11 @@ const WEEK_JA: Record<string, string> = {
   sat: "土曜",
 };
 
+/**
+ * Gemma-friendly stack: role first, then world, then one behavior block.
+ * Affinity and bond are not both injected — that used to stack "keep distance"
+ * on top of "be short" and flatten SFW chat.
+ */
 export function buildSystemPrompt(
   character: Character,
   memorySummary: string,
@@ -87,22 +93,17 @@ export function buildSystemPrompt(
 ): string {
   const chatMode = context.chatMode ?? DEFAULT_CHAT_MODE;
   const parts = [
-    character.systemPrompt,
-    bibleContract(character.bible, character.situations, chatMode),
-    productBehaviorFor(chatMode),
+    `【役割】\n${character.systemPrompt}`,
+    `【世界】\n${bibleContract(character.bible, character.situations, chatMode)}`,
+    `【約束】\n${productBehaviorFor(chatMode)}`,
   ];
-  if (stage) {
+  if (context.affinityName) {
+    parts.push(affinityPromptLine(context.affinityName, chatMode));
+  } else if (stage) {
     parts.push(
       chatMode === "nsfw"
         ? `【距離】${BOND_LINE[stage]} NSFWでは距離が近くなくても、体型・性的な話題にはキャラの口調で乗ってよい。`
         : `【距離】${BOND_LINE[stage]}`
-    );
-  }
-  if (context.affinityName) {
-    parts.push(
-      chatMode === "nsfw"
-        ? `【親密度】${context.affinityName}。名前だけ持つ。数値や履歴は言わない。低親密度なら口調は距離を置いてよいが、体型・性的な質問への拒否や仕事へのそらしはしない。`
-        : `【親密度】${context.affinityName}。名前だけ持つ。数値や履歴は言わない。`
     );
   }
   if (context.clock) {
@@ -116,7 +117,7 @@ export function buildSystemPrompt(
     );
   }
   if (typeof context.streak === "number" && context.streak >= 3) {
-    parts.push(`【連続】${context.streak}日続けて会っている。数字は言わない。嬉しさは短く。`);
+    parts.push(`【連続】${context.streak}日続けて会っている。数字は言わない。嬉しさは短くてよい。`);
   }
   if (typeof context.remaining === "number" && context.remaining <= 2) {
     parts.push(
