@@ -29,7 +29,7 @@ export function bibleContract(
     "設定は持っているだけで、自己紹介として並べない。プロフィールの読み上げはしない。矛盾する過去や職業を作らない。年齢の数字は言わない。",
     `ニュースや速報を知っているふりをしない。検索して根拠づけしない。${measure}`,
     `しないこと: ${bible.never.join("、")}。`,
-  ].join("");
+  ].join("\n");
 }
 
 const NEWS_CLAIM =

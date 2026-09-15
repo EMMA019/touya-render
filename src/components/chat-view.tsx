@@ -27,6 +27,7 @@ import {
   saveChat,
   saveHook,
 } from "@/lib/chat-history";
+import { EMPTY_CHAT_MESSAGES, hydrateChatMessages } from "@/lib/chat-hydrate";
 import { readClock } from "@/lib/clock";
 import type { MemoryRow } from "@/lib/memory-types";
 import { MAX_MESSAGE_CHARS, jstDayKey } from "@/lib/config";
@@ -58,20 +59,7 @@ export function ChatView({
   const firstOpen = character.situations.find((scene) => initialUnlocked.includes(scene.id))?.id;
   const initialSituation =
     character.situations.find((scene) => scene.id === firstOpen) ?? character.situations[0];
-  const opening = composeOpening({
-    id: character.id,
-    greeting: situationGreeting(initialSituation, character.greeting),
-    welcomeBack: character.welcomeBack,
-    presence: character.presence,
-    clock: readClock(),
-    stage: initialBond.stage,
-    daysAway: initialBond.daysAway,
-    streak: initialBond.streak,
-    firstVisit: initialBond.daysMet <= 1 && initialBond.daysAway === 0,
-  });
-  const [messages, setMessages] = useState<UiMessage[]>([
-    { id: "greeting", role: "assistant", content: opening.text },
-  ]);
+  const [messages, setMessages] = useState<UiMessage[]>(EMPTY_CHAT_MESSAGES);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [quota, setQuota] = useState<Quota>(initialQuota);
@@ -113,25 +101,26 @@ export function ChatView({
       welcomeBack: character.welcomeBack,
       presence: character.presence,
       clock: readClock(),
-      stage: bond.stage,
+      stage: initialBond.stage,
       daysAway: lastDay && lastDay !== today ? Math.max(initialBond.daysAway, 1) : 0,
       streak: initialBond.streak,
       hook,
       firstVisit: saved.length === 0 && !lastDay,
     });
-    if (saved.length > 0) {
-      const next =
-        lastDay && lastDay !== today
-          ? [...saved, { id: `welcome-${today}`, role: "assistant" as const, content: nextOpening.text }]
-          : saved;
-      setMessages(next);
-      if (lastDay !== today) clearHook(character.id);
-    } else {
-      setMessages([{ id: "greeting", role: "assistant", content: nextOpening.text }]);
-    }
+    const next = hydrateChatMessages({
+      saved,
+      lastDay,
+      today,
+      openingText: nextOpening.text,
+    });
+    setMessages(next.messages);
+    if (next.shouldClearHook) clearHook(character.id);
     markVisit(character.id);
     setHydrated(true);
-  }, [character, bond.stage, initialBond.daysAway, initialBond.streak, initialSituation]);
+    // Greeting depends on localStorage + client clock. Hydrate once per character
+    // so a later bond fetch cannot rewrite the thread.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [character.id]);
 
   useEffect(() => {
     if (hydrated) saveChat(character.id, messages);
@@ -487,20 +476,22 @@ export function ChatView({
         ) : null}
 
         <div ref={scroller} className="mt-auto min-h-0 flex-1 space-y-2 overflow-y-auto px-3 pb-2">
-          {recent.map((message) => (
-            <div
-              key={message.id}
-              className={cn(
-                "max-w-[86%] rounded-2xl px-3 py-2 text-sm leading-relaxed whitespace-pre-wrap backdrop-blur-md",
-                message.role === "user"
-                  ? "ml-auto bg-white/90 text-stone-900"
-                  : "bg-black/45 text-white"
-              )}
-            >
-              {message.content}
-              {message.pending ? <span className="ml-1 animate-pulse">▍</span> : null}
-            </div>
-          ))}
+          {hydrated
+            ? recent.map((message) => (
+                <div
+                  key={message.id}
+                  className={cn(
+                    "max-w-[86%] rounded-2xl px-3 py-2 text-sm leading-relaxed whitespace-pre-wrap backdrop-blur-md",
+                    message.role === "user"
+                      ? "ml-auto bg-white/90 text-stone-900"
+                      : "bg-black/45 text-white"
+                  )}
+                >
+                  {message.content}
+                  {message.pending ? <span className="ml-1 animate-pulse">▍</span> : null}
+                </div>
+              ))
+            : null}
           {lastAssistant && !lastAssistant.pending ? (
             <button
               type="button"
