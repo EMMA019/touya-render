@@ -9,6 +9,7 @@ import {
   KNOW_DONT_VOLUNTEER,
   ONE_REPLY_CONTRACT,
 } from "./prompt";
+import { KEEP_THE_THREAD, REPLY_STYLE_LONGFORM, REPLY_STYLE_STORY } from "./reply-style";
 
 test("prompt injects a short memory summary once and forbids volunteering", () => {
   const character = {
@@ -195,4 +196,40 @@ test("nsfw prompt uses adult-allowed companion rules and relaxes clothing", () =
   assert.match(prompt, /知っていても言わない/);
   assert.match(prompt, /一回で返す/);
   assert.match(prompt, /会話の続き/);
+});
+
+test("longform and story inject style contracts without changing NSFW routing language", () => {
+  const basic = buildSystemPrompt(fixtureCharacter(), "", halloween, "familiar", {
+    chatMode: "sfw",
+    replyStyle: "basic",
+  });
+  const longform = buildSystemPrompt(fixtureCharacter(), "", halloween, "familiar", {
+    chatMode: "sfw",
+    replyStyle: "longform",
+  });
+  const story = buildSystemPrompt(fixtureCharacter(), "", halloween, "familiar", {
+    chatMode: "sfw",
+    replyStyle: "story",
+  });
+  const nsfwStory = buildSystemPrompt(fixtureCharacter(), "", halloween, "familiar", {
+    chatMode: "nsfw",
+    replyStyle: "story",
+  });
+
+  assert.ok(basic.includes(KEEP_THE_THREAD));
+  assert.ok(!basic.includes(REPLY_STYLE_LONGFORM));
+  assert.ok(!basic.includes(REPLY_STYLE_STORY));
+
+  assert.ok(longform.includes(REPLY_STYLE_LONGFORM));
+  assert.ok(!longform.includes(KEEP_THE_THREAD));
+  assert.ok(longform.includes(COMPANION_NOT_NSFW));
+  assert.doesNotMatch(longform, /合意のあるおとなの性的な会話/);
+
+  assert.ok(story.includes(REPLY_STYLE_STORY));
+  assert.ok(!story.includes(KEEP_THE_THREAD));
+  assert.ok(story.includes(COMPANION_NOT_NSFW));
+
+  assert.ok(nsfwStory.includes(REPLY_STYLE_STORY));
+  assert.ok(nsfwStory.includes(COMPANION_ADULT_OK));
+  assert.ok(!nsfwStory.includes(COMPANION_NOT_NSFW));
 });

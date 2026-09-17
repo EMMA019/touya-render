@@ -1,3 +1,9 @@
+import {
+  DEFAULT_REPLY_STYLE,
+  coerceReplyStyle,
+  type ReplyStyle,
+} from "./reply-style";
+
 export type ChatMode = "sfw" | "nsfw";
 
 export const DEFAULT_CHAT_MODE: ChatMode = "sfw";
@@ -13,6 +19,7 @@ export type ModePublic = {
   ageConfirmed: boolean;
   ageConfirmedAt: string | null;
   adsEnabled: boolean;
+  replyStyle: ReplyStyle;
 };
 
 export type ModeResolve =
@@ -61,6 +68,7 @@ export function toModePublic(input: {
   ageConfirmed: boolean;
   ageConfirmedAt: string | null;
   adsEnabled: boolean;
+  replyStyle?: unknown;
 }): ModePublic {
   const chatMode = effectiveStoredMode(input.chatMode, input.ageConfirmed);
   return {
@@ -68,5 +76,6 @@ export function toModePublic(input: {
     ageConfirmed: input.ageConfirmed,
     ageConfirmedAt: input.ageConfirmed ? input.ageConfirmedAt : null,
     adsEnabled: input.adsEnabled && chatMode !== "nsfw",
+    replyStyle: coerceReplyStyle(input.replyStyle ?? DEFAULT_REPLY_STYLE),
   };
 }

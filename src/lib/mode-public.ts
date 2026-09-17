@@ -9,5 +9,6 @@ export function publicModeFromProfile(profile: VisitorProfile): ModePublic {
     ageConfirmed: profile.ageConfirmed,
     ageConfirmedAt: profile.ageConfirmedAt,
     adsEnabled,
+    replyStyle: profile.replyStyle,
   });
 }

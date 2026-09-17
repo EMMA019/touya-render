@@ -22,9 +22,10 @@ export async function GET(request: Request) {
 }
 
 /**
- * Confirm 18+ and/or switch SFW ↔ NSFW.
+ * Confirm 18+ and/or switch SFW ↔ NSFW and/or 基本 / 長文 / ストーリー.
  * NSFW is rejected unless age is already confirmed server-side
  * (or confirmAge is sent in the same request).
+ * replyStyle does not change NSFW policy or model routing.
  */
 export async function POST(request: Request) {
   const visitorId = await getVisitorId();
@@ -32,7 +33,7 @@ export async function POST(request: Request) {
     return jsonApi(request, { error: "visitor_missing" }, { status: 400 });
   }
 
-  let body: { confirmAge?: boolean; chatMode?: unknown };
+  let body: { confirmAge?: boolean; chatMode?: unknown; replyStyle?: unknown };
   try {
     body = (await request.json()) as typeof body;
   } catch {
@@ -42,6 +43,7 @@ export async function POST(request: Request) {
   const result = await applyVisitorModeChange(visitorId, {
     confirmAge: body.confirmAge === true,
     chatMode: body.chatMode,
+    replyStyle: body.replyStyle,
   });
   const mode = publicModeFromProfile(result.profile);
   if (!result.ok) {

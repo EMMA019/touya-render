@@ -73,6 +73,7 @@ class TouyaViewModel(
                 chatMode = visitorStore?.cachedChatMode() ?: "sfw",
                 ageConfirmed = visitorStore?.cachedAgeConfirmed() == true,
                 adsEnabled = (visitorStore?.cachedChatMode() ?: "sfw") != "nsfw",
+                replyStyle = visitorStore?.cachedReplyStyle() ?: "basic",
             ),
         ),
     )
@@ -255,6 +256,7 @@ class TouyaViewModel(
                         characterId = screen.character.id,
                         situationId = _state.value.situationId.ifBlank { null },
                         mode = _state.value.mode.chatMode,
+                        replyStyle = _state.value.mode.replyStyle,
                         messages = history,
                         onQuota = { quota -> _state.update { s -> s.copy(quota = quota) } },
                         onMode = { mode ->
@@ -387,10 +389,19 @@ class TouyaViewModel(
         if (_state.value.mode.nsfw) leaveNsfw() else requestNsfw()
     }
 
-    private fun setMode(confirmAge: Boolean = false, chatMode: String? = null, closeGate: Boolean = false) {
+    fun setReplyStyle(style: String) {
+        setMode(replyStyle = style)
+    }
+
+    private fun setMode(
+        confirmAge: Boolean = false,
+        chatMode: String? = null,
+        replyStyle: String? = null,
+        closeGate: Boolean = false,
+    ) {
         viewModelScope.launch {
             runCatching {
-                withContext(Dispatchers.IO) { client.setMode(confirmAge, chatMode) }
+                withContext(Dispatchers.IO) { client.setMode(confirmAge, chatMode, replyStyle) }
             }.onSuccess { mode ->
                 cacheMode(mode)
                 _state.update {
@@ -412,7 +423,7 @@ class TouyaViewModel(
     }
 
     private fun cacheMode(mode: ModePublic) {
-        visitorStore?.cacheMode(mode.chatMode, mode.ageConfirmed)
+        visitorStore?.cacheMode(mode.chatMode, mode.ageConfirmed, mode.replyStyle)
     }
 
     fun watchReward() {

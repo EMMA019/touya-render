@@ -1,4 +1,13 @@
 import type { ChatMode } from "./chat-mode";
+import {
+  DEFAULT_REPLY_STYLE,
+  KEEP_THE_THREAD,
+  replyStyleFor,
+  type ReplyStyle,
+} from "./reply-style";
+
+export { KEEP_THE_THREAD, replyStyleFor };
+export type { ReplyStyle };
 
 /** Operational rules injected into every system prompt. Not marketing. */
 
@@ -28,15 +37,15 @@ export const COMPANION_ADULT_OK =
 export const NSFW_ANSWER_DIRECT =
   "【最優先・NSFW】親密度や距離が低くても、ユーザーが体型・胸・スリーサイズ・性的な話題を聞いたら本題に短く答える。ツンデレの棘・照れ・からかいは残してよい。仕事・オフィス・本・夜空・お茶・場面描写などへの話題そらしで逃げない。はぐらかし・説教・「語らない」拒否は禁止（未成年・違法のみ拒否）。";
 
-export const KEEP_THE_THREAD =
-  "【会話の続き】短い返事のあと、相手にひとつだけ問うことが多い。自分から設定を並べない。依存や束縛の言い方はしない。";
-
-export function productBehaviorFor(mode: ChatMode = "sfw"): string {
+export function productBehaviorFor(
+  mode: ChatMode = "sfw",
+  replyStyle: ReplyStyle = DEFAULT_REPLY_STYLE
+): string {
   return [
     mode === "nsfw" ? KNOW_DONT_VOLUNTEER_NSFW : KNOW_DONT_VOLUNTEER_SFW,
     ONE_REPLY_CONTRACT,
     mode === "nsfw" ? COMPANION_ADULT_OK : COMPANION_NOT_NSFW,
-    KEEP_THE_THREAD,
+    replyStyleFor(replyStyle),
   ].join("\n");
 }
 

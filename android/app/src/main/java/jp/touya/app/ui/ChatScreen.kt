@@ -82,6 +82,7 @@ fun ChatScreen(
     mode: ModePublic = EMPTY_MODE,
     ageGateOpen: Boolean = false,
     onToggleMode: () -> Unit = {},
+    onReplyStyle: (String) -> Unit = {},
     onConfirmAge: () -> Unit = {},
     onCloseAgeGate: () -> Unit = {},
 ) {
@@ -179,6 +180,12 @@ fun ChatScreen(
                     }
                 }
             }
+
+            ReplyStyleRow(
+                selected = mode.replyStyle,
+                onSelect = onReplyStyle,
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+            )
 
             if (situationCard && situation != null) {
                 Surface(

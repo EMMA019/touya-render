@@ -87,6 +87,7 @@ test("ads flag is false when nsfw and true in sfw when env allows", () => {
   });
   assert.equal(nsfw.adsEnabled, false);
   assert.equal(nsfw.chatMode, "nsfw");
+  assert.equal(nsfw.replyStyle, "basic");
 
   const sfw = toModePublic({
     chatMode: "sfw",
@@ -96,4 +97,5 @@ test("ads flag is false when nsfw and true in sfw when env allows", () => {
   });
   assert.equal(sfw.adsEnabled, true);
   assert.equal(sfw.chatMode, "sfw");
+  assert.equal(sfw.replyStyle, "basic");
 });

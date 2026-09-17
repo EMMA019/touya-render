@@ -14,6 +14,7 @@ test("visitor profile defaults to SFW and rejects NSFW without age", async () =>
 
   const idle = await readVisitorProfile("v1");
   assert.equal(idle.chatMode, "sfw");
+  assert.equal(idle.replyStyle, "basic");
   assert.equal(idle.ageConfirmed, false);
   assert.equal(idle.ageConfirmedAt, null);
 
@@ -40,7 +41,23 @@ test("visitor profile defaults to SFW and rejects NSFW without age", async () =>
   if (back.ok) {
     assert.equal(back.profile.chatMode, "sfw");
     assert.equal(back.profile.ageConfirmed, true);
+    assert.equal(back.profile.replyStyle, "basic");
   }
+
+  const longform = await applyVisitorModeChange("v1", { replyStyle: "longform" });
+  assert.equal(longform.ok, true);
+  if (longform.ok) {
+    assert.equal(longform.profile.replyStyle, "longform");
+    assert.equal(longform.profile.chatMode, "sfw");
+  }
+
+  const story = await applyVisitorModeChange("v1", { replyStyle: "story" });
+  assert.equal(story.ok, true);
+  if (story.ok) assert.equal(story.profile.replyStyle, "story");
+
+  const bogus = await applyVisitorModeChange("v1", { replyStyle: "novel" });
+  assert.equal(bogus.ok, true);
+  if (bogus.ok) assert.equal(bogus.profile.replyStyle, "story");
 
   await rm(dir, { recursive: true, force: true });
 });
