@@ -9,6 +9,7 @@ import type { ChatTurn } from "./messages";
 export async function streamOpenRouter(args: {
   systemPrompt: string;
   messages: ChatTurn[];
+  maxTokens?: number;
 }): Promise<ReadableStream<Uint8Array>> {
   const key = process.env.OPENROUTER_API_KEY?.trim();
   if (!key) {
@@ -28,7 +29,7 @@ export async function streamOpenRouter(args: {
       model: openRouterNsfwModel(),
       stream: true,
       temperature: 0.7,
-      max_tokens: MAX_COMPLETION_TOKENS,
+      max_tokens: args.maxTokens ?? MAX_COMPLETION_TOKENS,
       messages: [
         { role: "system", content: args.systemPrompt },
         ...args.messages,

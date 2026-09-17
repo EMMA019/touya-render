@@ -74,6 +74,7 @@ class MainActivity : ComponentActivity() {
                         mode = state.mode,
                         ageGateOpen = state.ageGateOpen,
                         onToggleMode = viewModel::toggleMode,
+                        onReplyStyle = viewModel::setReplyStyle,
                         onConfirmAge = viewModel::confirmAgeAndEnableNsfw,
                         onCloseAgeGate = viewModel::closeAgeGate,
                     )

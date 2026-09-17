@@ -14,7 +14,10 @@ export const PREMIUM_DAILY_TURNS = 40;
 /** Keep prompts and history short to cut DeepSeek tokens. */
 export const MAX_HISTORY_MESSAGES = 8;
 export const MAX_MESSAGE_CHARS = 400;
+/** 基本 reply style. 長文 / ストーリー raise the cap in `completionTokensFor`. */
 export const MAX_COMPLETION_TOKENS = 260;
+export const MAX_COMPLETION_TOKENS_LONGFORM = 720;
+export const MAX_COMPLETION_TOKENS_STORY = 900;
 export const DEEPSEEK_BASE_URL = "https://api.deepseek.com";
 export const DEFAULT_DEEPSEEK_MODEL = "deepseek-chat";
 export const OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";

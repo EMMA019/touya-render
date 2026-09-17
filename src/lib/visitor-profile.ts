@@ -8,11 +8,18 @@ import {
   type ChatMode,
 } from "./chat-mode";
 import { createJsonStore } from "./json-store";
+import {
+  DEFAULT_REPLY_STYLE,
+  coerceReplyStyle,
+  parseReplyStyle,
+  type ReplyStyle,
+} from "./reply-style";
 
 export type VisitorProfile = {
   ageConfirmed: boolean;
   ageConfirmedAt: string | null;
   chatMode: ChatMode;
+  replyStyle: ReplyStyle;
 };
 
 type StoreShape = { visitors: Record<string, VisitorProfile> };
@@ -28,6 +35,7 @@ export function emptyVisitorProfile(): VisitorProfile {
     ageConfirmed: false,
     ageConfirmedAt: null,
     chatMode: DEFAULT_CHAT_MODE,
+    replyStyle: DEFAULT_REPLY_STYLE,
   };
 }
 
@@ -42,6 +50,7 @@ function normalize(row: VisitorProfile | undefined): VisitorProfile {
     ageConfirmed,
     ageConfirmedAt,
     chatMode: effectiveStoredMode(coerceChatMode(row.chatMode), ageConfirmed),
+    replyStyle: coerceReplyStyle(row.replyStyle),
   };
 }
 
@@ -55,6 +64,7 @@ export async function readVisitorProfile(visitorId: string): Promise<VisitorProf
 export type ModeChangeInput = {
   confirmAge?: boolean;
   chatMode?: unknown;
+  replyStyle?: unknown;
 };
 
 export type ModeChangeResult =
@@ -62,7 +72,7 @@ export type ModeChangeResult =
   | { ok: false; error: typeof NSFW_AGE_REQUIRED; profile: VisitorProfile };
 
 /**
- * Persist age self-attestation and/or chat mode.
+ * Persist age self-attestation, chat mode, and/or reply style.
  * NSFW is stored only after the visitor is age-confirmed on the server.
  */
 export async function applyVisitorModeChange(
@@ -91,6 +101,11 @@ export async function applyVisitorModeChange(
         return { ok: false, error: NSFW_AGE_REQUIRED, profile: current };
       }
       if (mode) next = { ...next, chatMode: mode };
+    }
+
+    if (input.replyStyle !== undefined) {
+      const style = parseReplyStyle(input.replyStyle);
+      if (style) next = { ...next, replyStyle: style };
     }
 
     data.visitors[visitorId] = next;

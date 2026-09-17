@@ -8,6 +8,7 @@ data class ModePublic(
     val ageConfirmed: Boolean = false,
     val ageConfirmedAt: String? = null,
     val adsEnabled: Boolean = true,
+    val replyStyle: String = DEFAULT_REPLY_STYLE,
 ) {
     val nsfw: Boolean get() = chatMode == "nsfw"
 }

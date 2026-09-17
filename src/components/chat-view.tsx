@@ -8,6 +8,7 @@ import { BondLamp } from "@/components/bond-lamp";
 import { MemorySheet } from "@/components/memory-sheet";
 import type { UiMessage } from "@/components/message-bubble";
 import { ModeToggle } from "@/components/mode-toggle";
+import { ReplyStylePicker } from "@/components/reply-style-picker";
 import { useChatMode } from "@/components/mode-provider";
 import { PortraitStage } from "@/components/portrait-stage";
 import { RewardedAdButton } from "@/components/rewarded-ad-button";
@@ -54,7 +55,7 @@ export function ChatView({
   initialUnlocked: string[];
   initialAffinity: AffinityPublic;
 }) {
-  const { chatMode, adsEnabled } = useChatMode();
+  const { chatMode, adsEnabled, replyStyle } = useChatMode();
   const firstOpen = character.situations.find((scene) => initialUnlocked.includes(scene.id))?.id;
   const initialSituation =
     character.situations.find((scene) => scene.id === firstOpen) ?? character.situations[0];
@@ -218,6 +219,7 @@ export function ChatView({
           characterId: character.id,
           situationId,
           mode: chatMode,
+          replyStyle,
           messages: [...historyPayload, { role: "user", content: trimmed }],
         }),
       });
@@ -476,6 +478,10 @@ export function ChatView({
               </button>
             );
           })}
+        </div>
+
+        <div className="mt-2 px-3">
+          <ReplyStylePicker />
         </div>
 
         {cardOpen ? (

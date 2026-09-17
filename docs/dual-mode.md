@@ -17,9 +17,9 @@
 ## API
 
 - `GET /api/session` / `GET /api/usage` / `GET /api/health` / `GET /api/mode`  
-  `chatMode` / `ageConfirmed` / `ageConfirmedAt` / `adsEnabled` を返す（`mode` オブジェクトでも同じ）。
-- `POST /api/mode` `{ confirmAge?: true, chatMode?: "sfw" \| "nsfw" }`
-- `POST /api/chat` は任意で `mode` を受け取る。サーバーの年齢確認と照合する。
+  `chatMode` / `ageConfirmed` / `ageConfirmedAt` / `adsEnabled` / `replyStyle` を返す（`mode` オブジェクトでも同じ）。
+- `POST /api/mode` `{ confirmAge?: true, chatMode?: "sfw" \| "nsfw", replyStyle?: "basic" \| "longform" \| "story" }`
+- `POST /api/chat` は任意で `mode` と `replyStyle` を受け取る。サーバーの年齢確認と照合する。`replyStyle` は生成の長さ／形だけ変える（SFW/NSFW の振り分けは変えない）。
 
 ## モデルの振り分け
 

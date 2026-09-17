@@ -6,6 +6,11 @@ import { anonymousHeaders } from "@/lib/anonymous-client";
 import type { ChatMode, ModePublic } from "@/lib/chat-mode";
 import { DEFAULT_CHAT_MODE } from "@/lib/chat-mode";
 import { ADS_ENABLED } from "@/lib/ads";
+import {
+  DEFAULT_REPLY_STYLE,
+  coerceReplyStyle,
+  type ReplyStyle,
+} from "@/lib/reply-style";
 
 type ModeContextValue = ModePublic & {
   ready: boolean;
@@ -13,6 +18,7 @@ type ModeContextValue = ModePublic & {
   openAgeGate: () => void;
   closeAgeGate: () => void;
   applyMode: (next: ChatMode) => Promise<ModePublic | null>;
+  applyReplyStyle: (next: ReplyStyle) => Promise<ModePublic | null>;
   confirmAgeAndEnableNsfw: () => Promise<ModePublic | null>;
   leaveNsfw: () => Promise<ModePublic | null>;
 };
@@ -22,6 +28,7 @@ const fallback: ModePublic = {
   ageConfirmed: false,
   ageConfirmedAt: null,
   adsEnabled: ADS_ENABLED,
+  replyStyle: DEFAULT_REPLY_STYLE,
 };
 
 const ModeContext = createContext<ModeContextValue | null>(null);
@@ -33,6 +40,7 @@ function readBody(body: Partial<ModePublic> & { mode?: ModePublic }): ModePublic
     ageConfirmed: nested?.ageConfirmed ?? body.ageConfirmed === true,
     ageConfirmedAt: nested?.ageConfirmedAt ?? body.ageConfirmedAt ?? null,
     adsEnabled: nested?.adsEnabled ?? body.adsEnabled !== false,
+    replyStyle: coerceReplyStyle(nested?.replyStyle ?? body.replyStyle ?? DEFAULT_REPLY_STYLE),
   };
 }
 
@@ -57,7 +65,11 @@ export function ModeProvider({ children }: { children: React.ReactNode }) {
     void refresh();
   }, [refresh]);
 
-  const postMode = useCallback(async (payload: { confirmAge?: boolean; chatMode?: ChatMode }) => {
+  const postMode = useCallback(async (payload: {
+    confirmAge?: boolean;
+    chatMode?: ChatMode;
+    replyStyle?: ReplyStyle;
+  }) => {
     const response = await fetch(apiUrl("/api/mode"), {
       method: "POST",
       headers: anonymousHeaders({ "Content-Type": "application/json" }),
@@ -84,6 +96,11 @@ export function ModeProvider({ children }: { children: React.ReactNode }) {
     [postMode, state.ageConfirmed]
   );
 
+  const applyReplyStyle = useCallback(
+    async (next: ReplyStyle) => postMode({ replyStyle: next }),
+    [postMode]
+  );
+
   const confirmAgeAndEnableNsfw = useCallback(async () => {
     const next = await postMode({ confirmAge: true, chatMode: "nsfw" });
     if (next) setAgeGateOpen(false);
@@ -100,10 +117,11 @@ export function ModeProvider({ children }: { children: React.ReactNode }) {
       openAgeGate: () => setAgeGateOpen(true),
       closeAgeGate: () => setAgeGateOpen(false),
       applyMode,
+      applyReplyStyle,
       confirmAgeAndEnableNsfw,
       leaveNsfw,
     }),
-    [state, ready, ageGateOpen, applyMode, confirmAgeAndEnableNsfw, leaveNsfw]
+    [state, ready, ageGateOpen, applyMode, applyReplyStyle, confirmAgeAndEnableNsfw, leaveNsfw]
   );
 
   return <ModeContext.Provider value={value}>{children}</ModeContext.Provider>;
@@ -119,6 +137,7 @@ export function useChatMode(): ModeContextValue {
       openAgeGate: () => undefined,
       closeAgeGate: () => undefined,
       applyMode: async () => null,
+      applyReplyStyle: async () => null,
       confirmAgeAndEnableNsfw: async () => null,
       leaveNsfw: async () => null,
     };

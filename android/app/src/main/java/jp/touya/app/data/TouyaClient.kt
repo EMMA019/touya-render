@@ -2,6 +2,7 @@ package jp.touya.app.data
 
 import jp.touya.app.BuildConfig
 import jp.touya.app.domain.ModePublic
+import jp.touya.app.domain.coerceReplyStyle
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -30,10 +31,15 @@ class TouyaClient(
         return JSONObject(body).optBoolean("ok")
     }
 
-    fun setMode(confirmAge: Boolean = false, chatMode: String? = null): ModePublic {
+    fun setMode(
+        confirmAge: Boolean = false,
+        chatMode: String? = null,
+        replyStyle: String? = null,
+    ): ModePublic {
         val payload = JSONObject().apply {
             if (confirmAge) put("confirmAge", true)
             if (!chatMode.isNullOrBlank()) put("chatMode", chatMode)
+            if (!replyStyle.isNullOrBlank()) put("replyStyle", replyStyle)
         }
         val response = http.newCall(
             request("/api/mode").post(payload.toString().toRequestBody(jsonType)).build(),
@@ -128,6 +134,7 @@ class TouyaClient(
         characterId: String,
         situationId: String? = null,
         mode: String? = null,
+        replyStyle: String? = null,
         messages: List<ChatMessage>,
         onQuota: (Quota) -> Unit,
         onBond: (Bond) -> Unit,
@@ -142,6 +149,7 @@ class TouyaClient(
             .apply {
                 if (!situationId.isNullOrBlank()) put("situationId", situationId)
                 if (!mode.isNullOrBlank()) put("mode", mode)
+                if (!replyStyle.isNullOrBlank()) put("replyStyle", replyStyle)
             }
             .put(
                 "messages",
@@ -325,11 +333,13 @@ class TouyaClient(
         val src = nested ?: obj
         val chatMode = src.optString("chatMode").ifBlank { obj.optString("chatMode") }.ifBlank { "sfw" }
         val ads = if (src.has("adsEnabled")) src.optBoolean("adsEnabled") else obj.optBoolean("adsEnabled", chatMode != "nsfw")
+        val replyStyle = src.optString("replyStyle").ifBlank { obj.optString("replyStyle") }.ifBlank { "basic" }
         return ModePublic(
             chatMode = if (chatMode == "nsfw") "nsfw" else "sfw",
             ageConfirmed = src.optBoolean("ageConfirmed", obj.optBoolean("ageConfirmed")),
             ageConfirmedAt = src.optNullString("ageConfirmedAt") ?: obj.optNullString("ageConfirmedAt"),
             adsEnabled = ads && chatMode != "nsfw",
+            replyStyle = coerceReplyStyle(replyStyle),
         )
     }
 

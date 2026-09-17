@@ -27,6 +27,11 @@ import { publicModeFromProfile } from "@/lib/mode-public";
 import { isSexualOutput } from "@/lib/output-moderation";
 import { buildSystemPrompt } from "@/lib/prompt";
 import { checkRateLimit } from "@/lib/rate-limit";
+import {
+  coerceReplyStyle,
+  completionTokensFor,
+  parseReplyStyle,
+} from "@/lib/reply-style";
 import { refusalText } from "@/lib/sexual-refusals";
 import { bumpSexualStrike, readSexualStrike } from "@/lib/sexual-strikes";
 import { consumeTurn, readQuota } from "@/lib/usage";
@@ -43,6 +48,7 @@ type Body = {
   situationId?: string;
   messages?: ChatTurn[];
   mode?: unknown;
+  replyStyle?: unknown;
 };
 
 function sse(data: unknown): Uint8Array {
@@ -98,8 +104,13 @@ export async function POST(request: Request) {
   if (body.mode !== undefined && resolved.mode !== profile.chatMode) {
     await applyVisitorModeChange(visitorId, { chatMode: resolved.mode });
   }
+  const requestedStyle = body.replyStyle === undefined ? null : parseReplyStyle(body.replyStyle);
+  const replyStyle = requestedStyle ?? coerceReplyStyle(profile.replyStyle);
+  if (requestedStyle && requestedStyle !== profile.replyStyle) {
+    await applyVisitorModeChange(visitorId, { replyStyle: requestedStyle });
+  }
   const chatMode = resolved.mode;
-  const modePublic = publicModeFromProfile({ ...profile, chatMode });
+  const modePublic = publicModeFromProfile({ ...profile, chatMode, replyStyle });
 
   const strike = await readSexualStrike(visitorId, character.id);
   const gate = evaluateChatGate({
@@ -197,6 +208,7 @@ export async function POST(request: Request) {
     remaining: quota.remaining,
     affinityName: affinity.name,
     chatMode,
+    replyStyle,
   });
 
   const stream = new ReadableStream({
@@ -228,10 +240,11 @@ export async function POST(request: Request) {
           return;
         }
 
+        const maxTokens = completionTokensFor(replyStyle);
         const upstream =
           liveBackend === "openrouter"
-            ? await streamOpenRouter({ systemPrompt, messages: history })
-            : await streamDeepseek({ systemPrompt, messages: history });
+            ? await streamOpenRouter({ systemPrompt, messages: history, maxTokens })
+            : await streamDeepseek({ systemPrompt, messages: history, maxTokens });
         const reader = upstream.getReader();
         const decoder = new TextDecoder();
         let carry = "";

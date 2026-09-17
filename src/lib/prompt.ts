@@ -2,6 +2,11 @@ import { BOND_LINE, type BondStage } from "./bond-types";
 import { bibleContract } from "./character-bible";
 import type { Character, CharacterSituation } from "./character-types";
 import { DEFAULT_CHAT_MODE, type ChatMode } from "./chat-mode";
+import {
+  DEFAULT_REPLY_STYLE,
+  coerceReplyStyle,
+  type ReplyStyle,
+} from "./reply-style";
 import type { Clock } from "./clock";
 import {
   COMPANION_ADULT_OK,
@@ -34,6 +39,7 @@ export type PromptContext = {
   remaining?: number;
   affinityName?: string;
   chatMode?: ChatMode;
+  replyStyle?: ReplyStyle;
 };
 
 const SITUATION_SHARED =
@@ -86,10 +92,11 @@ export function buildSystemPrompt(
   context: PromptContext = {}
 ): string {
   const chatMode = context.chatMode ?? DEFAULT_CHAT_MODE;
+  const replyStyle = coerceReplyStyle(context.replyStyle ?? DEFAULT_REPLY_STYLE);
   const parts = [
     character.systemPrompt,
     bibleContract(character.bible, character.situations, chatMode),
-    productBehaviorFor(chatMode),
+    productBehaviorFor(chatMode, replyStyle),
   ];
   if (stage) {
     parts.push(
