@@ -150,6 +150,9 @@ data class CharacterPublic(
 
     fun situationArt(situationId: String): String? =
         mediaUrl(situations.firstOrNull { it.id == situationId }?.image ?: portraitImage)
+
+    fun situationVideo(situationId: String): String? =
+        situations.firstOrNull { it.id == situationId }?.video
 }
 
 data class SituationLine(
@@ -161,6 +164,7 @@ data class SituationPublic(
     val id: String,
     val title: String,
     val image: String? = null,
+    val video: String? = null,
     val season: String? = null,
     val costume: String? = null,
     val greeting: String? = null,

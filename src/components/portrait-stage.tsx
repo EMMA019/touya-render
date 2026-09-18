@@ -1,3 +1,4 @@
+import { SituationBackdrop } from "@/components/situation-backdrop";
 import type { CharacterPublic, PortraitHints, SituationPublic } from "@/lib/character-types";
 import type { Expression } from "@/lib/expression";
 import { cn } from "@/lib/utils";
@@ -14,27 +15,30 @@ export function PortraitStage({
   situation,
   expression = "neutral",
   className,
+  motion = true,
 }: {
   character: CharacterPublic;
   situation?: SituationPublic;
   expression?: Expression;
   className?: string;
+  /** Play `situation.video` when set. Roster cards pass false. */
+  motion?: boolean;
 }) {
   const costume = situation?.costume ?? (situation?.season === "halloween" ? "halloween" : undefined);
   const halloween = costume === "halloween";
   const uid = `${character.id}-${situation?.id ?? "base"}`;
   const look = outfit(character, costume);
   const art = situation?.image || character.portraitImage;
+  const video = motion ? situation?.video : undefined;
 
   return (
     <div className={cn("relative overflow-hidden", className)}>
-      {art ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={art}
-          alt=""
+      {art || video ? (
+        <SituationBackdrop
+          image={art}
+          video={video}
           className={cn(
-            "h-full w-full object-contain object-center transition duration-500",
+            "transition duration-500",
             expression === "smile" && "brightness-110",
             expression === "troubled" && "saturate-75 contrast-110"
           )}

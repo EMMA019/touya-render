@@ -115,6 +115,14 @@ export function validateCharacter(character: Character, file = ""): string[] {
     if (!scene.id || !scene.title || !scene.setting || !scene.look) {
       issues.push(`situation ${scene.id ?? "?"} の必須欄`);
     }
+    if (!scene.image || typeof scene.image !== "string" || !scene.image.trim()) {
+      issues.push(`${scene.id ?? "?"}: image が必要`);
+    }
+    if (scene.video != null) {
+      if (typeof scene.video !== "string" || !scene.video.trim()) {
+        issues.push(`${scene.id ?? "?"}: video はパス文字列`);
+      }
+    }
     if (scene.look && !/文字を焼き込まない/.test(scene.look)) {
       issues.push(`${scene.id}: look に「服や背景に文字を焼き込まない」`);
     }
