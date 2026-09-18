@@ -13,11 +13,14 @@ import { apiUrl } from "@/lib/api-base";
 import { anonymousHeaders } from "@/lib/anonymous-client";
 import type { CharacterPublic } from "@/lib/character-types";
 import Link from "next/link";
-import { Compass, Moon } from "lucide-react";
+import { Moon } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useChatMode } from "@/components/mode-provider";
 
 export function HomePortal({ initialCharacters }: { initialCharacters: CharacterPublic[] }) {
   const [characters, setCharacters] = useState(initialCharacters);
+  const { chatMode } = useChatMode();
+  const nsfw = chatMode === "nsfw";
 
   useEffect(() => {
     void fetch(apiUrl("/api/characters"), { headers: anonymousHeaders() })
@@ -49,16 +52,14 @@ export function HomePortal({ initialCharacters }: { initialCharacters: Character
             <span className="font-semibold text-amber-200 border-b-2 border-amber-300 pb-1">
               ホーム
             </span>
-            <Link href="/diag" className="hover:text-amber-100 transition flex items-center gap-1">
-              <Compass className="size-3 text-amber-300" />
-              <span>今夜の相手診断</span>
-            </Link>
             <Link href="/premium" className="hover:text-amber-100 transition">
               プラン案内
             </Link>
-            <Link href="/policy" className="hover:text-amber-100 transition">
-              安心の約束
-            </Link>
+            {!nsfw ? (
+              <Link href="/policy" className="hover:text-amber-100 transition">
+                約束
+              </Link>
+            ) : null}
           </div>
 
           <div className="flex items-center gap-3">
@@ -71,21 +72,13 @@ export function HomePortal({ initialCharacters }: { initialCharacters: Character
           <PortalBannerHero />
 
           <section className="space-y-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-base font-bold tracking-tight text-amber-50">
-                  今夜の相手を選ぶ
-                </h3>
-                <p className="text-xs text-amber-100/50">
-                  4人の女性コンパニオン。今の気分に合う人を選んでお話しください。
-                </p>
-              </div>
-              <Link
-                href="/diag"
-                className="text-xs text-rose-300 hover:text-rose-200 underline-offset-4 hover:underline"
-              >
-                迷ったら診断する →
-              </Link>
+            <div>
+              <h3 className="text-base font-bold tracking-tight text-amber-50">
+                今夜の相手を選ぶ
+              </h3>
+              <p className="text-xs text-amber-100/50">
+                4人の女性コンパニオン。今の気分に合う人を選んでお話しください。
+              </p>
             </div>
 
             <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
@@ -108,7 +101,9 @@ export function HomePortal({ initialCharacters }: { initialCharacters: Character
 
           <footer className="border-t border-white/5 pt-6 text-xs leading-relaxed text-amber-100/40 space-y-2">
             <p>
-              登場人物はすべて大人のフィクションキャラクターです。未成年を連想させる表現や、成人向け・既定はSFW、NSFWは18歳確認後のみ。未成年や違法な内容は扱いません。
+              {nsfw
+                ? "登場人物はすべて大人のフィクションキャラクターです。未成年や違法な内容は扱いません。"
+                : "登場人物はすべて大人のフィクションキャラクターです。未成年を連想させる表現や、成人向け・既定はSFW、NSFWは18歳確認後のみ。未成年や違法な内容は扱いません。"}
             </p>
             <p>
               お使いの端末に保存されるのは、ランダムに発行された匿名識別子と対話履歴のみです。お名前や連絡先などを取得することはありません。

@@ -1,6 +1,4 @@
-import Link from "next/link";
-import { Sparkles, Calendar, Coffee, Briefcase, Moon, Sunset } from "lucide-react";
-import { APP_NAME } from "@/lib/config";
+import { Sparkles, Coffee, Briefcase, Moon, Sunset } from "lucide-react";
 import { LANDING_HEADLINE } from "@/lib/product-copy";
 
 export function PortalBannerHero() {
@@ -26,21 +24,6 @@ export function PortalBannerHero() {
             今のあなたの気分に寄り添う相手と、静かな時間をお過ごしください。
           </p>
 
-          <div className="flex flex-wrap items-center gap-3 pt-2">
-            <Link
-              href="/diag"
-              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-rose-200 to-amber-200 px-4 py-2 text-xs font-semibold text-stone-900 shadow-md transition hover:opacity-90"
-            >
-              <span>10問で相手を診断する</span>
-            </Link>
-
-            <Link
-              href="/policy"
-              className="inline-flex items-center gap-1.5 rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-xs text-amber-100/80 transition hover:bg-white/10"
-            >
-              <span>燈夜のこだわりと安心</span>
-            </Link>
-          </div>
         </div>
 
         {/* Small atmosphere tags pill */}
