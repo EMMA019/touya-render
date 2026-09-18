@@ -320,6 +320,9 @@ shared/characters/*.json  キャラ正本（1人1ファイル。サーバー専�
 scripts/new-character.mjs テンプレ複製。パイプラインは触らない
 scripts/build-cf-pages.mjs Cloudflare 向け静的書き出し（API は含めない）
 docs/cloudflare.md        Pages の build / 出力 / 環境変数
+docs/LOVEPLUS_ROMANCE_SLG.md 恋愛SLG化の設計（出会い章・フラグ・帯解放・放置冷え・NSFWゲート）
+docs/LOVEPLUS_CHAPTER_TABLE.md 章ごとの開始／クリア条件
+docs/MEETING_FLOW_SPEC.md 台本ランナーの実装仕様（スキーマ・API・差し込み点・PR分割）
 src/lib/anonymous-id.ts   インストール UUID のハッシュ
 src/lib/chat-gate.ts      性的内容の事前ゲート（API禁止）
 src/lib/product-behavior.ts 知っていても言わない／1回生成／NSFWに乗らない
