@@ -5,3 +5,10 @@ local.properties
 *.iml
 .cxx/
 captures/
+
+# Live2D Cubism Core is proprietary — do not commit the AAR.
+app/libs/*.aar
+live2d/Core/
+live2d/Framework/
+live2d/Sample/
+live2d/samples/
